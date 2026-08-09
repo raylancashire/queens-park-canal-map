@@ -51,7 +51,59 @@ select {
   border-radius:6px;
   background:white;
 }
+
+
 #map { height:590px; width:100%; position:relative; z-index:1; overflow:hidden; }
+
+.bottom-stats {
+  display:grid;
+  grid-template-columns:1fr 1fr 1.6fr;
+  gap:24px;
+  margin:0 4px 22px;
+}
+.bottom-stat {
+  background:#fff;
+  border:2px solid #dce5df;
+  border-radius:16px;
+  padding:22px 28px 18px;
+  min-height:124px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.bottom-stat strong {
+  display:block;
+  font-size:40px;
+  line-height:1.05;
+  color:#143823;
+  font-weight:750;
+  white-space:nowrap;
+}
+.bottom-stat span {
+  display:block;
+  margin-top:14px;
+  font-size:22px;
+  line-height:1.1;
+  color:#617065;
+}
+@media(max-width:750px) {
+  .bottom-stats {
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .bottom-stat {
+    min-height:auto;
+    padding:14px 18px;
+  }
+  .bottom-stat strong {
+    font-size:27px;
+  }
+  .bottom-stat span {
+    margin-top:6px;
+    font-size:16px;
+  }
+}
+
 .below {
   background:#fff;
   padding:16px 20px 20px;
@@ -180,14 +232,25 @@ select {
   <span id="recordCount" style="font-size:13px;color:#5f6f64;">Loading data…</span>
 </section>
 
+
+
 <div id="error" class="error" style="display:none;"></div>
 <div id="map"></div>
 
 <section class="below">
-  <div class="stats">
-    <div class="stat"><strong id="siteCount">0</strong><span>sampling sites</span></div>
-    <div class="stat"><strong id="sampleCount">0</strong><span>samples in dataset</span></div>
-    <div class="stat"><strong id="latestDate">—</strong><span>latest sample</span></div>
+  <div class="bottom-stats">
+    <div class="bottom-stat">
+      <strong id="siteCount">0</strong>
+      <span>Sampling sites</span>
+    </div>
+    <div class="bottom-stat">
+      <strong id="sampleCount">0</strong>
+      <span>Samples in dataset</span>
+    </div>
+    <div class="bottom-stat latest">
+      <strong id="latestDate">—</strong>
+      <span>Latest sample</span>
+    </div>
   </div>
   <div style="font-size:13px;line-height:1.5;">
     <strong>How to use the map</strong><br>
@@ -617,12 +680,21 @@ async function loadData() {
       `${validRows} records loaded across ${siteNames.length} sites`;
 
     const dated = data
-      .map(r => ({text:getDate(r), value:toDateValue(getDate(r))}))
+      .map(r => ({
+        date:getDate(r),
+        time:getTime(r),
+        value:toDateValue(getDate(r))
+      }))
       .filter(d => d.value > 0)
       .sort((a,b) => a.value - b.value);
 
-    document.getElementById("latestDate").textContent =
-      dated.length ? dated[dated.length - 1].text : "—";
+    if (dated.length) {
+      const latest = dated[dated.length - 1];
+      document.getElementById("latestDate").textContent =
+        latest.time ? `${latest.date} ${latest.time}` : latest.date;
+    } else {
+      document.getElementById("latestDate").textContent = "—";
+    }
 
   } catch (err) {
     console.error(err);
