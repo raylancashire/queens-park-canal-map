@@ -10,7 +10,7 @@
   --green:#006400;
   --emerald:#00a86b;
   --fair:#ffd966;
-  --poor:#C00000;
+  --poor:#f4b183;
   --ink:#17321f;
   --muted:#5f6f64;
   --line:#dfe7e1;
@@ -336,9 +336,14 @@ function getNotes(r) {
 
 function getTurbidity(r) {
   return getField(r,
+    "Water Turbidity",
+    "Water Turbidity (cm)",
+    "water_turbidity",
     "optical_secchi_turbidity",
     "Turbidity",
-    "Turbidity (cm)"
+    "Turbidity (cm)",
+    "Secchi Turbidity",
+    "Optical Secchi Turbidity"
   );
 }
 
@@ -372,7 +377,7 @@ function assessment(r) {
     return ["Fair", "#ffd966", "triangle"];
   }
   if (text.includes("poor")) {
-    return ["Poor", "#f4b183", "square"];
+    return ["Poor", "#c00000", "square"];
   }
   return ["Not yet assessed", "#777777", "circle"];
 }
@@ -454,7 +459,7 @@ function popup(rows) {
     <table>
       ${resultRow("Nitrate", nitrate, nitrateMid)}
       ${resultRow("Phosphate", phosphate, phosphateMid)}
-      ${turbidity ? `<tr><td>Turbidity</td><td>${esc(turbidity)}</td></tr>` : ""}
+      <tr><td>Turbidity</td><td class="result">${turbidity ? esc(turbidity) : "Not taken"}</td></tr>
       ${waterColour ? `<tr><td>Water colour</td><td>${esc(waterColour)}</td></tr>` : ""}
     </table>
 
@@ -626,7 +631,7 @@ legend.onAdd = () => {
     '<span class="key"><span class="mini-pin" style="--pin-colour:#006400"></span>Excellent</span><br>' +
     '<span class="key"><span class="mini-pin" style="--pin-colour:#00a86b"></span>Good</span><br>' +
     '<span class="key"><span class="mini-pin" style="--pin-colour:#ffd966"></span>Fair</span><br>' +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#f4b183"></span>Poor</span><br>' +
+    '<span class="key"><span class="mini-pin" style="--pin-colour:#c00000"></span>Poor</span><br>' +
     '<span class="key"><span class="mini-pin" style="--pin-colour:#777"></span>Not yet assessed</span>';
   return d;
 };
