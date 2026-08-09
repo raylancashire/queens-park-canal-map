@@ -489,6 +489,39 @@ function toDateValue(text) {
   return 0;
 }
 
+function formatUKDateTime(text) {
+  if (!text) return "";
+
+  // Handles US-style FreshWater Watch values such as:
+  // 8/8/2026 11:00:00 AM
+  const m = String(text).trim().match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/
+  );
+
+  if (m) {
+    const month = Number(m[1]);
+    const day = Number(m[2]);
+    const year = m[3];
+
+    let result = `${String(day).padStart(2,"0")}/${String(month).padStart(2,"0")}/${year}`;
+
+    if (m[4]) {
+      let hour = Number(m[4]);
+      const minute = m[5];
+      const ampm = (m[7] || "").toUpperCase();
+
+      if (ampm === "PM" && hour < 12) hour += 12;
+      if (ampm === "AM" && hour === 12) hour = 0;
+
+      result += ` ${String(hour).padStart(2,"0")}:${minute}`;
+    }
+
+    return result;
+  }
+
+  return text;
+}
+
 function popup(rows) {
   const r = rows[0];
   const [assessmentLabel, assessmentColour] = assessment(r);
@@ -504,7 +537,7 @@ function popup(rows) {
 
   const history = rows.map(x => {
     return `<tr>
-      <td>${esc(getDate(x) || "—")}</td>
+      <td>${esc(formatUKDateTime(getDate(x)) || "—")}</td>
       <td>${esc(getNitrate(x) || "—")}</td>
       <td>${esc(getPhosphate(x) || "—")}</td>
     </tr>`;
@@ -513,8 +546,8 @@ function popup(rows) {
   return `<div class="popup">
     <h3>${esc(getSite(r))}</h3>
     <div class="date">
-      ${getDate(r) ? "Latest sample: " + esc(getDate(r)) : ""}
-      ${getTime(r) ? " at " + esc(getTime(r)) : ""}
+      ${getDate(r) ? "Latest sample: " + esc(formatUKDateTime(getDate(r))) : ""}
+      ${getTime(r) && !/\b\d{1,2}:\d{2}/.test(getDate(r)) ? " at " + esc(getTime(r)) : ""}
     </div>
 
     <div style="margin-bottom:8px">
@@ -534,7 +567,9 @@ function popup(rows) {
     ${feedback ? `<div style="margin-top:9px;font-size:11px;color:#5f6f64;">${esc(feedback)}</div>` : ""}
 
     <div class="history">
-      <div style="margin-bottom:5px;font-weight:700;font-size:12px;">Results over time</div>
+      <div style="margin-bottom:5px;font-weight:700;font-size:12px;">
+        Results over time (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
+      </div>
       <table>
         <thead>
           <tr><th>Date</th><th>Nitrate</th><th>Phosphate</th></tr>
@@ -698,7 +733,7 @@ async function loadData() {
         displayDate += ` ${latest.time}`;
       }
 
-      document.getElementById("latestDate").textContent = displayDate;
+      document.getElementById("latestDate").textContent = formatUKDateTime(displayDate);
     } else {
       document.getElementById("latestDate").textContent = "—";
     }
