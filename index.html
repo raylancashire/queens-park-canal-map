@@ -126,6 +126,37 @@ select {
   border-radius:7px;
 }
 .key { display:inline-flex; align-items:center; gap:6px; }
+
+.legend-symbol {
+  width:16px;
+  height:16px;
+  display:inline-block;
+  border:2px solid #222;
+  flex:0 0 auto;
+}
+.legend-symbol.circle {
+  border-radius:50%;
+}
+.legend-symbol.diamond {
+  transform:rotate(45deg);
+  width:14px;
+  height:14px;
+  margin:0 2px;
+}
+.legend-symbol.square {
+  border-radius:1px;
+}
+.legend-symbol.triangle {
+  width:0;
+  height:0;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-bottom-width:15px;
+  border-bottom-style:solid;
+  border-top:0;
+  background:transparent !important;
+  border-radius:0;
+}
 .keyshape { width:16px; height:16px; display:inline-block; border:1.5px solid #333; }
 .circle { border-radius:50%; }
 
@@ -188,20 +219,90 @@ select {
   box-shadow:0 0 0 1px rgba(0,0,0,.12);
 }
 
-.popup h3 { margin:0 0 5px; font-size:17px; }
-.popup .date { color:#5f6f64; font-size:12px; margin-bottom:9px; }
-.popup table { border-collapse:collapse; width:100%; font-size:12px; }
-.popup td { padding:5px 3px; border-bottom:1px solid #edf1ed; vertical-align:top; }
-.popup td:first-child { font-weight:600; width:43%; }
-.result { font-size:14px; font-weight:700; }
-.history { margin-top:10px; max-height:210px; overflow:auto; }
-.history table { font-size:11px; }
-.history th { text-align:left; padding:4px 3px; border-bottom:2px solid #dfe7e1; }
+.popup {
+  font-size:14px;
+  line-height:1.45;
+  color:#17251c;
+}
+.popup h3 {
+  margin:0 0 6px;
+  font-size:18px;
+  line-height:1.3;
+}
+.popup .date {
+  color:#435248;
+  font-size:14px;
+  margin-bottom:10px;
+}
+.popup table {
+  border-collapse:collapse;
+  width:100%;
+  font-size:14px;
+}
+.popup td {
+  padding:7px 4px;
+  border-bottom:1px solid #dfe7e1;
+  vertical-align:top;
+}
+.popup td:first-child {
+  font-weight:700;
+  width:40%;
+}
+.result {
+  font-size:14px;
+  font-weight:700;
+}
+.history {
+  margin-top:12px;
+  max-height:220px;
+  overflow:auto;
+}
+.history table {
+  font-size:13px;
+}
+.history th {
+  text-align:left;
+  padding:6px 4px;
+  border-bottom:2px solid #bfcac2;
+  font-weight:700;
+  color:#17251c;
+}
+.assessment-status {
+  margin:8px 0 10px;
+  padding:7px 9px;
+  border:2px solid #2f3b33;
+  border-radius:6px;
+  font-size:14px;
+  font-weight:700;
+  background:#fff;
+}
+.assessment-symbol {
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border:2px solid #222;
+  margin-right:7px;
+  vertical-align:-1px;
+}
+.assessment-symbol.circle { border-radius:50%; }
+.assessment-symbol.diamond { transform:rotate(45deg); margin-right:9px; }
+.assessment-symbol.square { border-radius:1px; }
+.assessment-symbol.triangle {
+  width:0;
+  height:0;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-bottom-width:13px;
+  border-bottom-style:solid;
+  border-top:0;
+  margin-right:7px;
+  border-radius:0;
+}
 .badge {
   display:inline-block;
-  padding:3px 7px;
+  padding:4px 8px;
   border-radius:12px;
-  font-size:11px;
+  font-size:13px;
   font-weight:700;
   color:#111;
 }
@@ -484,6 +585,20 @@ function assessment(r) {
   return ["Not yet assessed", "#777777", "circle"];
 }
 
+function assessmentStatusHTML(r) {
+  const [label, colour, shape] = assessment(r);
+
+  let symbolStyle = `background:${colour};`;
+  if (shape === "triangle") {
+    symbolStyle = `background:transparent;border-bottom-color:${colour};`;
+  }
+
+  return `<div class="assessment-status" aria-label="Water quality assessment: ${esc(label)}">
+    <span class="assessment-symbol ${esc(shape)}" style="${symbolStyle}" aria-hidden="true"></span>
+    Water quality assessment: ${esc(label)}
+  </div>`;
+}
+
 function markerIcon(r) {
   const [label, colour] = assessment(r);
 
@@ -598,16 +713,12 @@ function popup(rows) {
       ${getDate(r) ? "Latest sample: " + esc(sampleDateTime(r)) : ""}
     </div>
 
-    <div style="margin-bottom:8px">
-      <span class="badge" style="background:${assessmentColour}">
-        ${esc(assessmentLabel)}
-      </span>
-    </div>
+    ${assessmentStatusHTML(r)}
 
     <table>
-      ${resultRow("Nitrate", nitrate, nitrateMid)}
-      ${resultRow("Phosphate", phosphate, phosphateMid)}
-      <tr><td>Turbidity</td><td class="result">${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}</td></tr>
+      ${resultRow("Nitrate result", nitrate, nitrateMid)}
+      ${resultRow("Phosphate result", phosphate, phosphateMid)}
+      <tr><td>Turbidity result</td><td class="result">${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}</td></tr>
       ${waterColour ? `<tr><td>Water colour</td><td>${esc(waterColour)}</td></tr>` : ""}
     </table>
 
@@ -616,11 +727,11 @@ function popup(rows) {
 
     <div class="history">
       <div style="margin-bottom:5px;font-weight:700;font-size:12px;">
-        Results over time (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
+        Previous sample results (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
       </div>
       <table>
         <thead>
-          <tr><th>Date &amp; time</th><th>Nitrate</th><th>Phosphate</th><th>Turbidity</th></tr>
+          <tr><th scope="col">Date &amp; time</th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity</th></tr>
         </thead>
         <tbody>${history}</tbody>
       </table>
@@ -795,11 +906,11 @@ legend.onAdd = () => {
   const d = L.DomUtil.create("div","legend");
   d.innerHTML =
     "<strong>Assessment</strong><br>" +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#006400"></span>Excellent</span><br>' +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#00a86b"></span>Good</span><br>' +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#ffd966"></span>Fair</span><br>' +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#c00000"></span>Poor</span><br>' +
-    '<span class="key"><span class="mini-pin" style="--pin-colour:#777"></span>Not yet assessed</span>';
+    '<span class="key"><span class="legend-symbol circle" style="background:#006400"></span>Excellent</span><br>' +
+    '<span class="key"><span class="legend-symbol diamond" style="background:#00a86b"></span>Good</span><br>' +
+    '<span class="key"><span class="legend-symbol triangle" style="border-bottom-color:#ffd966"></span>Fair</span><br>' +
+    '<span class="key"><span class="legend-symbol square" style="background:#c00000"></span>Poor</span><br>' +
+    '<span class="key"><span class="legend-symbol circle" style="background:#777"></span>Not yet assessed</span>';
   return d;
 };
 legend.addTo(map);
