@@ -50,6 +50,9 @@ select {
   border:1px solid #cbd7ce;
   border-radius:6px;
   background:white;
+  width:auto;
+  max-width:100%;
+  field-sizing:content;
 }
 
 
@@ -229,6 +232,17 @@ select {
   font-size:18px;
   line-height:1.3;
 }
+.site-photo {
+  display:block;
+  width:100%;
+  max-width:300px;
+  height:150px;
+  object-fit:cover;
+  border-radius:7px;
+  margin:6px 0 9px;
+  border:1px solid #dfe7e1;
+}
+
 .popup .date {
   color:#435248;
   font-size:14px;
@@ -920,6 +934,32 @@ function sampleDateTime(r) {
   return [d, t].filter(Boolean).join(" ");
 }
 
+function sitePhotoSlug(siteName) {
+  return String(siteName || "")
+    .toLowerCase()
+    .trim()
+    .replace(/['’]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function sitePhotoHTML(siteName) {
+  const slug = sitePhotoSlug(siteName);
+  if (!slug) return "";
+
+  const src = `images/${slug}.jpg`;
+  const alt = `View of ${siteName} sampling site`;
+
+  return `<img
+    class="site-photo"
+    src="${esc(src)}"
+    alt="${esc(alt)}"
+    loading="lazy"
+    onerror="this.style.display='none';"
+  >`;
+}
+
 function popup(rows) {
   const r = rows[0];
   const [assessmentLabel, assessmentColour] = assessment(r);
@@ -964,6 +1004,7 @@ function popup(rows) {
 
   return `<div class="popup">
     <h3>${esc(getSite(r))}</h3>
+    ${sitePhotoHTML(getSite(r))}
     <div class="date">
       ${getDate(r) ? "Latest sample: " + esc(sampleDateTime(r)) : ""}
     </div>
@@ -1083,8 +1124,9 @@ async function loadData() {
 
     siteNames.forEach(site => {
       const opt = document.createElement("option");
+      const sampleCount = groups[site].length;
       opt.value = site;
-      opt.textContent = site;
+      opt.textContent = `${site} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
       sel.appendChild(opt);
     });
 
