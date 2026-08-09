@@ -26,8 +26,9 @@ body {
   background:#fff;
   padding:20px 20px 14px;
   border-bottom:1px solid var(--line);
-  position:relative;
-  z-index:3000;
+  position:sticky;
+  top:0;
+  z-index:5000;
 }
 .header h1 { margin:0 0 5px; font-size:24px; }
 .header p { margin:0; color:var(--muted); font-size:14px; line-height:1.45; }
@@ -39,8 +40,9 @@ body {
   gap:10px;
   flex-wrap:wrap;
   align-items:center;
-  position:relative;
-  z-index:3000;
+  position:sticky;
+  top:72px;
+  z-index:4999;
 }
 .controls label { font-size:13px; font-weight:600; }
 select {
@@ -651,5 +653,15 @@ loadData();
 <style>
 .leaflet-popup-pane {
   z-index:700 !important;
+}
+</style>
+
+<style>
+html, body {
+  scroll-behavior:auto;
+}
+.leaflet-container:focus,
+.leaflet-interactive:focus {
+  outline:none;
 }
 </style>
