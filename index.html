@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Queen's Park Canal – Water Quality Monitoring</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--ink:#17321f;--muted:#5f6f64;--line:#dfe7e1;--green:#006400;--good:#65a30d;--fair:#ffd966;--poor:#f4b183;--verypoor:#c00000}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:#f4f7f4}
+.header{background:#fff;padding:20px 20px 14px;border-bottom:1px solid var(--line)}
+.header h1{margin:0 0 5px;font-size:24px;line-height:1.2}
+.header p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.controls{background:#fff;padding:12px 20px;border-bottom:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.controls label{font-size:13px;font-weight:600}
+select{padding:9px 34px 9px 10px;border:1px solid #cbd7ce;border-radius:6px;background:#fff;max-width:100%}
+#map{height:590px;width:100%}
+.below{background:#fff;padding:16px 20px 20px;border-top:1px solid var(--line)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:145px}
+.stat strong{display:block;font-size:19px}.stat span{color:var(--muted);font-size:12px}
+.popup h3{margin:0 0 5px;font-size:17px}.popup .date{color:#5f6f64;font-size:12px;margin-bottom:9px}
+.popup table{border-collapse:collapse;width:100%;font-size:12px}.popup td,.popup th{padding:5px 4px;border-bottom:1px solid #edf1ed;vertical-align:top;text-align:left}
+.popup td:first-child{font-weight:600}.result{font-weight:700}.history{margin-top:12px;max-height:220px;overflow:auto}.history-title{font-weight:700;margin-bottom:4px}
+.badge{display:inline-block;padding:3px 7px;border-radius:12px;font-size:11px;font-weight:700;margin-bottom:7px}
+.legend{background:#fff;padding:10px 12px;line-height:22px;box-shadow:0 1px 5px rgba(0,0,0,.25);border-radius:7px;font-size:12px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #333;margin-right:6px;vertical-align:-1px}
+.footer-note{color:#66746b;font-size:11px;margin-top:12px}.error{display:none;background:#fff2f2;color:#8b1e1e;padding:12px 20px;border-bottom:1px solid #e5bcbc;font-size:13px}
+@media(max-width:600px){.header h1{font-size:20px}#map{height:520px}.stat{min-width:120px}.leaflet-popup-content{margin:10px 12px;max-width:82vw}}
+</style>
+</head>
+<body>
+<section class="header">
+  <h1>Queen's Park Canal – Water Quality Monitoring</h1>
+  <p>Citizen-science observations and FreshWater Watch results from the Grand Union Canal around Queen's Park.</p>
+</section>
+<section class="controls">
+  <label for="siteFilter">Sampling site:</label>
+  <select id="siteFilter"><option value="all">All sites</option></select>
+  <span id="recordCount" style="font-size:13px;color:#5f6f64">Loading freshwater.csv…</span>
+</section>
+<div id="error" class="error"></div>
+<div id="map" aria-label="Interactive Queen's Park canal water-quality map"></div>
+<section class="below">
+  <div class="stats">
+    <div class="stat"><strong id="siteCount">0</strong><span>sampling sites</span></div>
+    <div class="stat"><strong id="sampleCount">0</strong><span>samples in dataset</span></div>
+    <div class="stat"><strong id="latestDate">—</strong><span>latest sample</span></div>
+  </div>
+  <div style="font-size:13px;line-height:1.5"><strong>How to use the map</strong><br>Select a sampling site or click a marker to see the latest nitrate and phosphate result, followed by previous results for that site.</div>
+  <div class="footer-note">This page reads <strong>freshwater.csv</strong> directly. To update the map later, replace that CSV in GitHub with the newer FreshWater Watch export using the same filename.</div>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+const CSV_URL = 'freshwater.csv';
+const map = L.map('map').setView([51.5250,-0.2085],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const clean = v => (v == null || String(v).trim()==='' ? '' : String(v).trim());
+
+function parseDate(v){
+  if(!v) return null;
+  const d=new Date(v);
+  return isNaN(d) ? null : d;
+}
+function formatDate(v){
+  const d=parseDate(v); return d ? d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : clean(v);
+}
+function statusFromFeedback(r){
+  const t=(clean(r.feedback_eng)+' '+clean(r.feedback_core)).toLowerCase();
+  if(t.includes('very poor')||t.includes('bad ecological')) return {label:'Very Poor',colour:'#c00000'};
+  if(t.includes('poor ecological')) return {label:'Poor',colour:'#f4b183'};
+  if(t.includes('moderate ecological')) return {label:'Fair',colour:'#ffd966'};
+  if(t.includes('good ecological')) return {label:'Good',colour:'#65a30d'};
+  if(t.includes('high ecological')||t.includes('excellent')) return {label:'Excellent',colour:'#006400'};
+  return {label:'Result',colour:'#3388ff'};
+}
+function resultValue(range,mid){
+  if(!clean(range)) return '—';
+  return esc(range)+' mg/L'+(clean(mid)?` <span style="font-weight:400;color:#66746b">(midpoint ${esc(mid)} mg/L)</span>`:'');
+}
+function popupHTML(rows){
+  const r=rows[0], st=statusFromFeedback(r);
+  const history=rows.map(x=>`<tr><td>${esc(formatDate(x.sample_date)||'—')}</td><td>${esc(clean(x.chemical_nitrate)||'—')}</td><td>${esc(clean(x.chemical_phosphate)||'—')}</td></tr>`).join('');
+  const notes=clean(r.notes);
+  return `<div class="popup">
+    <h3>${esc(clean(r.site_name)||'Sampling site')}</h3>
+    <div class="date">Latest sample: ${esc(formatDate(r.sample_date)||'Date not recorded')}${clean(r.sample_time)?' · '+esc(r.sample_time):''}</div>
+    <span class="badge" style="background:${st.colour};${st.label==='Fair'?'color:#222':'color:#fff'}">${st.label}</span>
+    <table>
+      <tr><td>Nitrate</td><td class="result">${resultValue(r.chemical_nitrate,r.nitrate_mid)}</td></tr>
+      <tr><td>Phosphate</td><td class="result">${resultValue(r.chemical_phosphate,r.phosphate_mid)}</td></tr>
+      ${clean(r.optical_secchi_turbidity)?`<tr><td>Turbidity</td><td>${esc(r.optical_secchi_turbidity)}</td></tr>`:''}
+      ${clean(r.optical_colour)?`<tr><td>Water colour</td><td>${esc(r.optical_colour)}</td></tr>`:''}
+    </table>
+    ${notes?`<div style="margin-top:8px"><strong>Notes:</strong> ${esc(notes)}</div>`:''}
+    <div class="history"><div class="history-title">Results over time</div><table><thead><tr><th>Date</th><th>Nitrate<br>(mg/L)</th><th>Phosphate<br>(mg/L)</th></tr></thead><tbody>${history}</tbody></table></div>
+  </div>`;
+}
+function showError(msg){const e=document.getElementById('error');e.textContent=msg;e.style.display='block';}
+
+Papa.parse(CSV_URL,{
+  download:true,header:true,skipEmptyLines:'greedy',transformHeader:h=>h.replace(/^\uFEFF/,'').trim(),
+  complete:function(results){
+    if(results.errors.length) console.warn('CSV parsing warnings:',results.errors);
+    const data=results.data.filter(r=>clean(r.site_name));
+    const valid=data.filter(r=>Number.isFinite(parseFloat(r.y))&&Number.isFinite(parseFloat(r.x)));
+    if(!valid.length){showError('No map records with valid x/y coordinates were found in freshwater.csv.');return;}
+
+    const groups={};
+    valid.forEach(r=>{
+      const key=clean(r.site_name);
+      (groups[key] ||= []).push(r);
+    });
+    Object.values(groups).forEach(rows=>rows.sort((a,b)=>(parseDate(b.sample_date)?.getTime()||0)-(parseDate(a.sample_date)?.getTime()||0)));
+
+    const select=document.getElementById('siteFilter');
+    Object.keys(groups).sort().forEach(site=>{const o=document.createElement('option');o.value=site;o.textContent=site;select.appendChild(o)});
+
+    const markers=[]; const bounds=[];
+    Object.entries(groups).forEach(([site,rows])=>{
+      const latest=rows[0], lat=parseFloat(latest.y), lon=parseFloat(latest.x), st=statusFromFeedback(latest);
+      const marker=L.circleMarker([lat,lon],{radius:9,fillColor:st.colour,color:'#333',weight:2,opacity:1,fillOpacity:.9})
+        .bindPopup(popupHTML(rows),{maxWidth:430});
+      marker.site=site; marker.addTo(map); markers.push(marker); bounds.push([lat,lon]);
+    });
+    if(bounds.length) map.fitBounds(bounds,{padding:[25,25],maxZoom:16});
+
+    select.addEventListener('change',()=>{
+      const chosen=select.value;
+      markers.forEach(m=>{if(chosen==='all'||m.site===chosen){if(!map.hasLayer(m))m.addTo(map)}else if(map.hasLayer(m))map.removeLayer(m)});
+      if(chosen==='all'){map.fitBounds(bounds,{padding:[25,25],maxZoom:16});}
+      else {const m=markers.find(x=>x.site===chosen);if(m){map.setView(m.getLatLng(),16);m.openPopup();}}
+    });
+
+    document.getElementById('siteCount').textContent=Object.keys(groups).length;
+    document.getElementById('sampleCount').textContent=data.length;
+    document.getElementById('recordCount').textContent=`${data.length} records loaded`;
+    const dates=data.map(r=>parseDate(r.sample_date)).filter(Boolean).sort((a,b)=>a-b);
+    document.getElementById('latestDate').textContent=dates.length?dates.at(-1).toLocaleDateString('en-GB'):'—';
+  },
+  error:function(err){showError('Could not load freshwater.csv: '+err);document.getElementById('recordCount').textContent='CSV loading error';}
+});
+
+const legend=L.control({position:'bottomright'});
+legend.onAdd=()=>{const d=L.DomUtil.create('div','legend');d.innerHTML='<strong>FreshWater Watch status</strong><br><span class="dot" style="background:#006400"></span>Excellent<br><span class="dot" style="background:#65a30d"></span>Good<br><span class="dot" style="background:#ffd966"></span>Fair / Moderate<br><span class="dot" style="background:#f4b183"></span>Poor<br><span class="dot" style="background:#c00000"></span>Very Poor<br><span class="dot" style="background:#3388ff"></span>Unclassified';return d};
+legend.addTo(map);
+</script>
+</body>
+</html>
