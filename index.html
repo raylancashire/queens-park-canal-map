@@ -65,15 +65,15 @@ select {
   background:#fff;
   border:2px solid #dce5df;
   border-radius:16px;
-  padding:22px 28px 18px;
-  min-height:124px;
+  padding:16px 22px 14px;
+  min-height:96px;
   display:flex;
   flex-direction:column;
   justify-content:center;
 }
 .bottom-stat strong {
   display:block;
-  font-size:40px;
+  font-size:30px;
   line-height:1.05;
   color:#143823;
   font-weight:750;
@@ -81,8 +81,8 @@ select {
 }
 .bottom-stat span {
   display:block;
-  margin-top:14px;
-  font-size:22px;
+  margin-top:8px;
+  font-size:16px;
   line-height:1.1;
   color:#617065;
 }
@@ -251,10 +251,6 @@ select {
       <strong id="latestDate">—</strong>
       <span>Latest sample</span>
     </div>
-  </div>
-  <div style="font-size:13px;line-height:1.5;">
-    <strong>How to use the map</strong><br>
-    Click a marker or choose a site to see the latest nitrate and phosphate results and the site's sample history.
   </div>
   <div class="footer-note">
     The page reads <strong>freshwater.csv</strong> directly. It accepts both the original FreshWater Watch export headings and simplified headings used in edited CSV files.
@@ -639,7 +635,7 @@ async function loadData() {
       const marker = L.marker([lat, lon], {
         icon: markerIcon(r),
         title: site
-      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:false, offset:[0,-8]});
+      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
       marker.site = site;
       marker.addTo(map);
