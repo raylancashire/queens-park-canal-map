@@ -252,6 +252,62 @@ select {
   font-size:14px;
   font-weight:700;
 }
+.nutrient-level {
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 6px;
+  border:2px solid #222;
+  border-radius:4px;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:700;
+  color:#111;
+  background:#fff;
+}
+.nutrient-good::before {
+  content:"● ";
+}
+.nutrient-moderate::before {
+  content:"▲ ";
+}
+.nutrient-poor::before {
+  content:"■ ";
+}
+
+.current-results-heading {
+  margin:4px 0 3px;
+  font-size:12px;
+  font-weight:700;
+  color:#17251c;
+}
+.turbidity-row td {
+  padding-top:4px;
+  padding-bottom:4px;
+}
+.turbidity-result {
+  font-size:13px;
+  font-weight:600;
+}
+.turbidity-level {
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 6px;
+  border:1px solid #222;
+  border-radius:4px;
+  font-size:12px;
+  line-height:1.2;
+  font-weight:700;
+  color:#111;
+  background:#fff;
+}
+.turbidity-clear::before {
+  content:"● ";
+}
+.turbidity-measured::before {
+  content:"○ ";
+}
+
+
 .history {
   margin-top:12px;
   max-height:220px;
@@ -267,20 +323,56 @@ select {
   font-weight:700;
   color:#17251c;
 }
+.history-symbol {
+  transform-origin:center;
+  margin:0 auto !important;
+}
+.assessment-col {
+  width:20px;
+  min-width:20px;
+  max-width:20px;
+  padding-left:1px !important;
+  padding-right:3px !important;
+  text-align:center !important;
+}
+.history-level {
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+  font-weight:700;
+  color:#28362d;
+}
+.history-turbidity {
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.sr-only {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
 .assessment-status {
-  margin:8px 0 10px;
-  padding:7px 9px;
-  border:2px solid #2f3b33;
-  border-radius:6px;
-  font-size:14px;
+  display:inline-block;
+  margin:5px 0 7px;
+  padding:3px 7px;
+  border:1px solid #2f3b33;
+  border-radius:4px;
+  font-size:12px;
   font-weight:700;
   background:#fff;
 }
 .assessment-symbol {
   display:inline-block;
-  width:12px;
-  height:12px;
-  border:2px solid #222;
+  width:10px;
+  height:10px;
+  border:1px solid #222;
   margin-right:7px;
   vertical-align:-1px;
 }
@@ -318,6 +410,24 @@ select {
   #map { height:520px; }
   .stat { min-width:120px; }
 }
+
+.reset-map-control a.reset-map-button {
+  width:30px;
+  height:30px;
+  line-height:28px;
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  color:#17251c;
+  background:#fff;
+  text-decoration:none;
+}
+.reset-map-control a.reset-map-button:hover,
+.reset-map-control a.reset-map-button:focus {
+  background:#f2f5f2;
+  color:#000;
+}
+
 </style>
 </head>
 <body>
@@ -364,6 +474,9 @@ const CSV_SOURCES = [
 
 const map = L.map("map").setView([51.5250, -0.2085], 14);
 
+// Stores the default view containing all loaded sampling-result markers.
+let defaultResultBounds = null;
+
 // Basemap choices
 const lightMap = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -406,6 +519,40 @@ L.control.layers(
     collapsed:true
   }
 ).addTo(map);
+
+// Reset button: return the map to a view containing all sampling results.
+const ResetControl = L.Control.extend({
+  options: { position: "topleft" },
+
+  onAdd: function() {
+    const container = L.DomUtil.create("div", "leaflet-bar reset-map-control");
+    const button = L.DomUtil.create("a", "reset-map-button", container);
+
+    button.href = "#";
+    button.title = "Reset map to show all sampling results";
+    button.setAttribute("role", "button");
+    button.setAttribute("aria-label", "Reset map to show all sampling results");
+    button.innerHTML = "↺";
+
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.on(button, "click", function(e) {
+      L.DomEvent.preventDefault(e);
+      map.closePopup();
+
+      if (defaultResultBounds && defaultResultBounds.isValid()) {
+        map.fitBounds(defaultResultBounds, {
+          padding:[25,25],
+          maxZoom:16
+        });
+      }
+    });
+
+    return container;
+  }
+});
+
+map.addControl(new ResetControl());
+
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, m =>
@@ -536,7 +683,8 @@ function getNotes(r) {
 }
 
 function getTurbidity(r) {
-  return getField(r,
+  // First try the known FreshWater Watch headings.
+  const direct = getField(r,
     "Water quality - Secchi Tube (Turbidity)",
     "Water quality - Secchi Tube (Turbidity):",
     "Water Turbidity",
@@ -548,6 +696,25 @@ function getTurbidity(r) {
     "Secchi Turbidity",
     "Optical Secchi Turbidity"
   );
+
+  if (direct) return direct;
+
+  // Fallback: tolerate small wording, spacing or punctuation changes in exports.
+  for (const key of Object.keys(r)) {
+    const normalised = key.toLowerCase().replace(/\s+/g, " ").trim();
+
+    if (
+      normalised.includes("secchi tube") ||
+      normalised.includes("turbidity")
+    ) {
+      const value = r[key];
+      if (value !== undefined && value !== null && String(value).trim() !== "") {
+        return String(value).trim();
+      }
+    }
+  }
+
+  return "";
 }
 
 function getWaterColour(r) {
@@ -599,6 +766,20 @@ function assessmentStatusHTML(r) {
   </div>`;
 }
 
+function historyAssessmentSymbol(r) {
+  const [, colour, shape] = assessment(r);
+
+  let symbolStyle = `background:${colour};`;
+  if (shape === "triangle") {
+    symbolStyle = `background:transparent;border-bottom-color:${colour};`;
+  }
+
+  return `<span class="history-symbol assessment-symbol ${esc(shape)}"
+    style="${symbolStyle}"
+    aria-label="${esc(assessment(r)[0])}"
+    title="${esc(assessment(r)[0])}"></span>`;
+}
+
 function markerIcon(r) {
   const [label, colour] = assessment(r);
 
@@ -615,6 +796,67 @@ function markerIcon(r) {
     iconAnchor: [15, 40],
     popupAnchor: [0, -36]
   });
+}
+
+function turbidityAssessment(rawValue) {
+  if (!rawValue) return "";
+
+  const value = String(rawValue).replaceAll("_", " ").trim().toUpperCase();
+
+  // FreshWater Watch explicitly describes <14 NTU as "very clear".
+  if (value.includes("<14")) return "Very clear";
+
+  // For other readings, do not assign an unsupported ecological status.
+  return "Turbidity measured";
+}
+
+function turbidityAssessmentClass(label) {
+  if (label === "Very clear") return "turbidity-clear";
+  return "turbidity-measured";
+}
+
+function nutrientLevel(type, midpoint) {
+  const value = parseFloat(midpoint);
+  if (!Number.isFinite(value)) return "";
+
+  if (type === "nitrate") {
+    if (value > 2.0) return "Poor";
+    if (value > 1.0) return "Moderate";
+    return "Good";
+  }
+
+  if (type === "phosphate") {
+    if (value > 0.2) return "Poor";
+    if (value > 0.1) return "Moderate";
+    return "Good";
+  }
+
+  return "";
+}
+
+function nutrientLevelClass(level) {
+  if (level === "Good") return "nutrient-good";
+  if (level === "Moderate") return "nutrient-moderate";
+  if (level === "Poor") return "nutrient-poor";
+  return "";
+}
+
+function nutrientResultRow(label, type, range, midpoint) {
+  if (!range) return "";
+
+  const level = nutrientLevel(type, midpoint);
+  const mid = midpoint
+    ? ` <span style="font-weight:400;color:#435248;">(midpoint ${esc(midpoint)})</span>`
+    : "";
+
+  const levelHTML = level
+    ? ` <span class="nutrient-level ${nutrientLevelClass(level)}">${esc(level)}</span>`
+    : "";
+
+  return `<tr>
+    <td>${esc(label)}</td>
+    <td class="result">${esc(range)}${mid}${levelHTML}</td>
+  </tr>`;
 }
 
 function resultRow(label, range, midpoint) {
@@ -699,11 +941,24 @@ function popup(rows) {
 
     const historyTurbidity = getTurbidity(x);
 
+    const nitrateLevel = nutrientLevel("nitrate", getNitrateMid(x));
+    const phosphateLevel = nutrientLevel("phosphate", getPhosphateMid(x));
+
     return `<tr>
       <td>${esc(historyDateTime || "—")}</td>
-      <td>${esc(getNitrate(x) || "—")}</td>
-      <td>${esc(getPhosphate(x) || "—")}</td>
-      <td>${historyTurbidity ? esc(historyTurbidity.replaceAll("_"," ")) : "Not taken"}</td>
+      <td class="assessment-col">${historyAssessmentSymbol(x)}</td>
+      <td>
+        ${esc(getNitrate(x) || "—")}
+        ${nitrateLevel ? `<span class="history-level">${esc(nitrateLevel)}</span>` : ""}
+      </td>
+      <td>
+        ${esc(getPhosphate(x) || "—")}
+        ${phosphateLevel ? `<span class="history-level">${esc(phosphateLevel)}</span>` : ""}
+      </td>
+      <td class="history-turbidity">
+        ${historyTurbidity ? esc(historyTurbidity.replaceAll("_"," ")) : "Not taken"}
+        ${historyTurbidity ? `<span class="history-level">${esc(turbidityAssessment(historyTurbidity))}</span>` : ""}
+      </td>
     </tr>`;
   }).join("");
 
@@ -715,10 +970,17 @@ function popup(rows) {
 
     ${assessmentStatusHTML(r)}
 
+    <div class="current-results-heading">Latest sample results</div>
     <table>
-      ${resultRow("Nitrate result", nitrate, nitrateMid)}
-      ${resultRow("Phosphate result", phosphate, phosphateMid)}
-      <tr><td>Turbidity result</td><td class="result">${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}</td></tr>
+      ${nutrientResultRow("Nitrate result", "nitrate", nitrate, nitrateMid)}
+      ${nutrientResultRow("Phosphate result", "phosphate", phosphate, phosphateMid)}
+      <tr class="turbidity-row">
+        <td>Turbidity result</td>
+        <td class="result turbidity-result">
+          ${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}
+          ${turbidity ? `<span class="turbidity-level ${turbidityAssessmentClass(turbidityAssessment(turbidity))}">${esc(turbidityAssessment(turbidity))}</span>` : ""}
+        </td>
+      </tr>
       ${waterColour ? `<tr><td>Water colour</td><td>${esc(waterColour)}</td></tr>` : ""}
     </table>
 
@@ -731,7 +993,7 @@ function popup(rows) {
       </div>
       <table>
         <thead>
-          <tr><th scope="col">Date &amp; time</th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity</th></tr>
+          <tr><th scope="col">Date &amp; time</th><th scope="col" class="assessment-col"><span class="sr-only">Assessment</span></th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity result</th></tr>
         </thead>
         <tbody>${history}</tbody>
       </table>
@@ -849,7 +1111,8 @@ async function loadData() {
     }
 
     if (bounds.length) {
-      map.fitBounds(bounds, {padding:[25,25]});
+      defaultResultBounds = L.latLngBounds(bounds);
+      map.fitBounds(defaultResultBounds, {padding:[25,25]});
     }
 
     sel.addEventListener("change", () => {
@@ -869,8 +1132,8 @@ async function loadData() {
           map.setView(marker.getLatLng(), 16);
           marker.openPopup();
         }
-      } else if (bounds.length) {
-        map.fitBounds(bounds, {padding:[25,25]});
+      } else if (defaultResultBounds && defaultResultBounds.isValid()) {
+        map.fitBounds(defaultResultBounds, {padding:[25,25]});
       }
     });
 
