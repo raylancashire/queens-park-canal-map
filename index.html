@@ -58,22 +58,22 @@ select {
 .bottom-stats {
   display:grid;
   grid-template-columns:1fr 1fr 1.6fr;
-  gap:24px;
-  margin:0 4px 22px;
+  gap:16px;
+  margin:0 4px 14px;
 }
 .bottom-stat {
   background:#fff;
   border:2px solid #dce5df;
   border-radius:16px;
-  padding:16px 22px 14px;
-  min-height:96px;
+  padding:10px 16px 9px;
+  min-height:72px;
   display:flex;
   flex-direction:column;
   justify-content:center;
 }
 .bottom-stat strong {
   display:block;
-  font-size:30px;
+  font-size:24px;
   line-height:1.05;
   color:#143823;
   font-weight:750;
@@ -81,8 +81,8 @@ select {
 }
 .bottom-stat span {
   display:block;
-  margin-top:8px;
-  font-size:16px;
+  margin-top:4px;
+  font-size:13px;
   line-height:1.1;
   color:#617065;
 }
@@ -100,7 +100,7 @@ select {
   }
   .bottom-stat span {
     margin-top:6px;
-    font-size:16px;
+    font-size:13px;
   }
 }
 
@@ -489,37 +489,43 @@ function toDateValue(text) {
   return 0;
 }
 
-function formatUKDateTime(text) {
+function formatUKDate(text) {
   if (!text) return "";
 
-  // Handles US-style FreshWater Watch values such as:
-  // 8/8/2026 11:00:00 AM
   const m = String(text).trim().match(
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
   );
 
   if (m) {
     const month = Number(m[1]);
     const day = Number(m[2]);
     const year = m[3];
-
-    let result = `${String(day).padStart(2,"0")}/${String(month).padStart(2,"0")}/${year}`;
-
-    if (m[4]) {
-      let hour = Number(m[4]);
-      const minute = m[5];
-      const ampm = (m[7] || "").toUpperCase();
-
-      if (ampm === "PM" && hour < 12) hour += 12;
-      if (ampm === "AM" && hour === 12) hour = 0;
-
-      result += ` ${String(hour).padStart(2,"0")}:${minute}`;
-    }
-
-    return result;
+    return `${String(day).padStart(2,"0")}/${String(month).padStart(2,"0")}/${year}`;
   }
 
   return text;
+}
+
+function formatSampleTime(text) {
+  if (!text) return "";
+
+  const m = String(text).trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return text;
+
+  let hour = Number(m[1]);
+  const minute = m[2];
+  const ampm = hour >= 12 ? "PM" : "AM";
+
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+
+  return `${hour}:${minute} ${ampm}`;
+}
+
+function sampleDateTime(r) {
+  const d = formatUKDate(getDate(r));
+  const t = formatSampleTime(getTime(r));
+  return [d, t].filter(Boolean).join(" ");
 }
 
 function popup(rows) {
@@ -536,18 +542,25 @@ function popup(rows) {
   const feedback = getFeedback(r);
 
   const history = rows.map(x => {
+    const historyDateTime = [
+      formatUKDate(getDate(x)),
+      formatSampleTime(getTime(x))
+    ].filter(Boolean).join(" ");
+
+    const historyTurbidity = getTurbidity(x);
+
     return `<tr>
-      <td>${esc(formatUKDateTime(getDate(x)) || "—")}</td>
+      <td>${esc(historyDateTime || "—")}</td>
       <td>${esc(getNitrate(x) || "—")}</td>
       <td>${esc(getPhosphate(x) || "—")}</td>
+      <td>${historyTurbidity ? esc(historyTurbidity.replaceAll("_"," ")) : "Not taken"}</td>
     </tr>`;
   }).join("");
 
   return `<div class="popup">
     <h3>${esc(getSite(r))}</h3>
     <div class="date">
-      ${getDate(r) ? "Latest sample: " + esc(formatUKDateTime(getDate(r))) : ""}
-      ${getTime(r) && !/\b\d{1,2}:\d{2}/.test(getDate(r)) ? " at " + esc(getTime(r)) : ""}
+      ${getDate(r) ? "Latest sample: " + esc(sampleDateTime(r)) : ""}
     </div>
 
     <div style="margin-bottom:8px">
@@ -572,7 +585,7 @@ function popup(rows) {
       </div>
       <table>
         <thead>
-          <tr><th>Date</th><th>Nitrate</th><th>Phosphate</th></tr>
+          <tr><th>Date &amp; time</th><th>Nitrate</th><th>Phosphate</th><th>Turbidity</th></tr>
         </thead>
         <tbody>${history}</tbody>
       </table>
@@ -643,7 +656,17 @@ async function loadData() {
     }
 
     Object.values(groups).forEach(rows => {
-      rows.sort((a,b) => toDateValue(getDate(b)) - toDateValue(getDate(a)));
+      rows.sort((a,b) => {
+        const dateDiff = toDateValue(getDate(b)) - toDateValue(getDate(a));
+        if (dateDiff !== 0) return dateDiff;
+
+        const timeToMinutes = t => {
+          const m = String(getTime(t) || "").match(/^(\d{1,2}):(\d{2})$/);
+          return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
+        };
+
+        return timeToMinutes(b) - timeToMinutes(a);
+      });
     });
 
     const siteNames = Object.keys(groups).sort();
@@ -712,31 +735,18 @@ async function loadData() {
 
     const dated = data
       .map(r => ({
-        date:getDate(r),
-        time:getTime(r),
-        value:toDateValue(getDate(r))
+        row:r,
+        dateValue:toDateValue(getDate(r)),
+        timeValue:(() => {
+          const m = String(getTime(r) || "").match(/^(\d{1,2}):(\d{2})$/);
+          return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
+        })()
       }))
-      .filter(d => d.value > 0)
-      .sort((a,b) => a.value - b.value);
+      .filter(d => d.dateValue > 0)
+      .sort((a,b) => (a.dateValue - b.dateValue) || (a.timeValue - b.timeValue));
 
-    if (dated.length) {
-      const latest = dated[dated.length - 1];
-
-      // Sample Date may already contain a time (e.g. 8/8/2026 11:00:00 AM).
-      // Display that value once rather than appending Sample Time as a second time.
-      let displayDate = latest.date || "—";
-
-      const dateAlreadyHasTime =
-        /\b\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/i.test(displayDate);
-
-      if (!dateAlreadyHasTime && latest.time) {
-        displayDate += ` ${latest.time}`;
-      }
-
-      document.getElementById("latestDate").textContent = formatUKDateTime(displayDate);
-    } else {
-      document.getElementById("latestDate").textContent = "—";
-    }
+    document.getElementById("latestDate").textContent =
+      dated.length ? sampleDateTime(dated[dated.length - 1].row) : "—";
 
   } catch (err) {
     console.error(err);
