@@ -263,10 +263,48 @@ const CSV_SOURCES = [
 
 const map = L.map("map").setView([51.5250, -0.2085], 14);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom:19,
-  attribution:"&copy; OpenStreetMap contributors"
-}).addTo(map);
+// Basemap choices
+const lightMap = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  {
+    maxZoom:20,
+    subdomains:"abcd",
+    attribution:"&copy; OpenStreetMap contributors &copy; CARTO"
+  }
+);
+
+const streetMap = L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom:19,
+    attribution:"&copy; OpenStreetMap contributors"
+  }
+);
+
+const satelliteMap = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxZoom:19,
+    attribution:"Tiles &copy; Esri"
+  }
+);
+
+// Use the clean light map by default.
+lightMap.addTo(map);
+
+// Map type selector in the top-right corner.
+L.control.layers(
+  {
+    "Light": lightMap,
+    "Street": streetMap,
+    "Satellite": satelliteMap
+  },
+  null,
+  {
+    position:"topright",
+    collapsed:true
+  }
+).addTo(map);
 
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, m =>
