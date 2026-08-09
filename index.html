@@ -972,10 +972,10 @@ function popup(rows) {
 
     <div class="current-results-heading">Latest sample results</div>
     <table>
-      ${nutrientResultRow("Nitrate result", "nitrate", nitrate, nitrateMid)}
-      ${nutrientResultRow("Phosphate result", "phosphate", phosphate, phosphateMid)}
+      ${nutrientResultRow("Nitrate", "nitrate", nitrate, nitrateMid)}
+      ${nutrientResultRow("Phosphate", "phosphate", phosphate, phosphateMid)}
       <tr class="turbidity-row">
-        <td>Turbidity result</td>
+        <td>Turbidity</td>
         <td class="result turbidity-result">
           ${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}
           ${turbidity ? `<span class="turbidity-level ${turbidityAssessmentClass(turbidityAssessment(turbidity))}">${esc(turbidityAssessment(turbidity))}</span>` : ""}
@@ -989,11 +989,11 @@ function popup(rows) {
 
     <div class="history">
       <div style="margin-bottom:5px;font-weight:700;font-size:12px;">
-        Previous sample results (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
+        Previous samples (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
       </div>
       <table>
         <thead>
-          <tr><th scope="col">Date &amp; time</th><th scope="col" class="assessment-col"><span class="sr-only">Assessment</span></th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity result</th></tr>
+          <tr><th scope="col">Date &amp; time</th><th scope="col" class="assessment-col"><span class="sr-only">Assessment</span></th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity</th></tr>
         </thead>
         <tbody>${history}</tbody>
       </table>
