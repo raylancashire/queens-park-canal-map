@@ -314,10 +314,16 @@ select {
   color:#111;
   background:#fff;
 }
-.turbidity-clear::before {
+.turbidity-excellent::before {
   content:"● ";
 }
-.turbidity-measured::before {
+.turbidity-fair::before {
+  content:"▲ ";
+}
+.turbidity-poor::before {
+  content:"■ ";
+}
+.turbidity-not-assessed::before {
   content:"○ ";
 }
 
@@ -440,6 +446,24 @@ select {
 .reset-map-control a.reset-map-button:focus {
   background:#f2f5f2;
   color:#000;
+}
+
+
+.turbidity-excellent::before {
+  content:"● ";
+  color:#006400;
+}
+.turbidity-fair::before {
+  content:"▲ ";
+  color:#b38f00;
+}
+.turbidity-poor::before {
+  content:"■ ";
+  color:#c00000;
+}
+.turbidity-not-assessed::before {
+  content:"● ";
+  color:#777777;
 }
 
 </style>
@@ -812,21 +836,68 @@ function markerIcon(r) {
   });
 }
 
-function turbidityAssessment(rawValue) {
-  if (!rawValue) return "";
+function getTurbiditySortOrder(r) {
+  return getField(r,
+    "sort_order_turbidity",
+    "Sort Order Turbidity",
+    "sort order turbidity"
+  );
+}
 
-  const value = String(rawValue).replaceAll("_", " ").trim().toUpperCase();
+function turbidityAssessment(rawValue, sortOrder="") {
+  const value = String(rawValue || "").replaceAll("_", " ").trim().toUpperCase();
+  const rank = parseInt(sortOrder, 10);
 
-  // FreshWater Watch explicitly describes <14 NTU as "very clear".
-  if (value.includes("<14")) return "Very clear";
+  // FreshWater Watch turbidity ranking used by this project:
+  // <14 NTU  = Excellent / Very clear
+  // 14–40 NTU = Fair / Moderately turbid
+  // >40 NTU   = Poor / Highly turbid
+  // Not tested = Not assessed
 
-  // For other readings, do not assign an unsupported ecological status.
-  return "Turbidity measured";
+  if (!value && !Number.isFinite(rank)) {
+    return "Not assessed";
+  }
+
+  // Prefer FreshWater Watch's sort order when it is present.
+  if (rank === 1) return "Excellent / Very clear";
+  if (rank === 2) return "Fair / Moderately turbid";
+  if (rank >= 3) return "Poor / Highly turbid";
+
+  // Fallback to the turbidity text itself.
+  if (value.includes("<14")) return "Excellent / Very clear";
+
+  if (
+    value.includes("14-40") ||
+    value.includes("14–40") ||
+    value.includes("14 TO 40")
+  ) {
+    return "Fair / Moderately turbid";
+  }
+
+  if (value.includes(">40")) return "Poor / Highly turbid";
+
+  const numbers = value.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+
+  if (
+    numbers.length >= 2 &&
+    Math.min(...numbers) >= 14 &&
+    Math.max(...numbers) <= 40
+  ) {
+    return "Fair / Moderately turbid";
+  }
+
+  if (numbers.length && Math.max(...numbers) > 40) {
+    return "Poor / Highly turbid";
+  }
+
+  return "Not assessed";
 }
 
 function turbidityAssessmentClass(label) {
-  if (label === "Very clear") return "turbidity-clear";
-  return "turbidity-measured";
+  if (label.startsWith("Excellent")) return "turbidity-excellent";
+  if (label.startsWith("Fair")) return "turbidity-fair";
+  if (label.startsWith("Poor")) return "turbidity-poor";
+  return "turbidity-not-assessed";
 }
 
 function nutrientLevel(type, midpoint) {
@@ -998,7 +1069,7 @@ function popup(rows) {
       </td>
       <td class="history-turbidity">
         ${historyTurbidity ? esc(historyTurbidity.replaceAll("_"," ")) : "Not taken"}
-        ${historyTurbidity ? `<span class="history-level">${esc(turbidityAssessment(historyTurbidity))}</span>` : ""}
+        <span class="history-level">${esc(turbidityAssessment(historyTurbidity, getTurbiditySortOrder(x)))}</span>
       </td>
     </tr>`;
   }).join("");
@@ -1020,7 +1091,7 @@ function popup(rows) {
         <td>Turbidity</td>
         <td class="result turbidity-result">
           ${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}
-          ${turbidity ? `<span class="turbidity-level ${turbidityAssessmentClass(turbidityAssessment(turbidity))}">${esc(turbidityAssessment(turbidity))}</span>` : ""}
+          <span class="turbidity-level ${turbidityAssessmentClass(turbidityAssessment(turbidity, getTurbiditySortOrder(r)))}">${esc(turbidityAssessment(turbidity, getTurbiditySortOrder(r)))}</span>
         </td>
       </tr>
       ${waterColour ? `<tr><td>Water colour</td><td>${esc(waterColour)}</td></tr>` : ""}
