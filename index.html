@@ -926,9 +926,38 @@ function nutrientLevelClass(level) {
   return "";
 }
 
+function normaliseNutrientRange(rawValue) {
+  if (rawValue === undefined || rawValue === null) return "";
+
+  const value = String(rawValue).trim();
+  if (!value) return "";
+
+  // Spreadsheet software can automatically turn ranges such as
+  // 1-2 and 5-10 into dates such as 01-Feb and 05-Oct.
+  // Convert those accidental date-looking values back to nutrient ranges.
+  const monthNumbers = {
+    jan:1, feb:2, mar:3, apr:4, may:5, jun:6,
+    jul:7, aug:8, sep:9, oct:10, nov:11, dec:12
+  };
+
+  const m = value.match(/^0?(\d{1,2})[-\s]([A-Za-z]{3,9})$/);
+  if (m) {
+    const first = parseInt(m[1], 10);
+    const monthKey = m[2].slice(0,3).toLowerCase();
+    const second = monthNumbers[monthKey];
+
+    if (Number.isFinite(first) && second) {
+      return `${first}-${second}`;
+    }
+  }
+
+  return value;
+}
+
 function nutrientResultRow(label, type, range, midpoint) {
   if (!range) return "";
 
+  range = normaliseNutrientRange(range);
   const level = nutrientLevel(type, midpoint);
   const mid = midpoint
     ? ` <span style="font-weight:400;color:#435248;">(midpoint ${esc(midpoint)})</span>`
@@ -1060,11 +1089,11 @@ function popup(rows) {
       <td>${esc(historyDateTime || "—")}</td>
       <td class="assessment-col">${historyAssessmentSymbol(x)}</td>
       <td>
-        ${esc(getNitrate(x) || "—")}
+        ${esc(normaliseNutrientRange(getNitrate(x)) || "—")}
         ${nitrateLevel ? `<span class="history-level">${esc(nitrateLevel)}</span>` : ""}
       </td>
       <td>
-        ${esc(getPhosphate(x) || "—")}
+        ${esc(normaliseNutrientRange(getPhosphate(x)) || "—")}
         ${phosphateLevel ? `<span class="history-level">${esc(phosphateLevel)}</span>` : ""}
       </td>
       <td class="history-turbidity">
