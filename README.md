@@ -13,6 +13,7 @@ The GitHub repository contains:
 - `index.html` — the interactive Leaflet map
 - `freshwater.csv` — the water-quality sampling data
 - `README.md` — project documentation
+- `images/` — optional sampling-site photographs
 
 Repository:
 
@@ -40,14 +41,17 @@ Current features include:
 - Turbidity clarity description where available
 - Previous samples listed in each popup
 - Number of samples shown in the popup history
+- Sample counts shown beside each site in the sampling-site dropdown
 - Assessment symbols shown alongside historical results
 - UK date format
 - AM / PM time display
 - Site-selection dropdown
 - Reset map button
+- Reset returns to the default view containing all sampling results
 - Automatic zoom to all sampling results
 - Light, Street and Satellite basemap options
 - Responsive layout for desktop, tablet and mobile
+- Sampling-site photographs loaded automatically from the `images` folder
 - Summary panels showing:
   - Sampling sites
   - Samples in dataset
@@ -147,6 +151,12 @@ For example:
 
 Each popup displays the latest reading first, followed by previous samples.
 
+The sampling-site dropdown also displays the number of records available at each location, for example:
+
+`Meanwhile Gardens (3 samples)`
+
+The dropdown is sized to its content where supported, while remaining constrained to the available page width on smaller screens.
+
 ---
 
 ## Popup layout
@@ -161,10 +171,10 @@ Each sampling popup includes:
 6. Turbidity
 7. Previous samples
 
-The previous-sample table includes:
+The **Previous samples** table includes:
 
 - Date and time
-- Assessment symbol
+- Assessment symbol positioned immediately before the nitrate column
 - Nitrate
 - Phosphate
 - Turbidity
@@ -174,6 +184,30 @@ If turbidity was not recorded, the map displays:
 `Not taken`
 
 ---
+
+
+## Sampling-site photographs
+
+A photograph can be displayed automatically near the top of each sampling-site popup.
+
+Photographs are stored in:
+
+`images/`
+
+The image filename is generated from the sampling-site name. Site names are converted to lower case, spaces and punctuation become hyphens, and the prefix **Grand Union Canal -** is removed automatically.
+
+Examples:
+
+| CSV site name | Photograph filename |
+|---|---|
+| Half Penny Steps Group | `images/half-penny-steps-group.jpg` |
+| Grand Union Canal - Meanwhile Gardens | `images/meanwhile-gardens.jpg` |
+| Grand Union Canal - Ladbroke Grove Bridge | `images/ladbroke-grove-bridge.jpg` |
+
+If a matching photograph is not available, the popup hides the image area rather than displaying a broken-image symbol.
+
+To add a photograph for a new site, upload a suitably named `.jpg` file to the `images` folder. No CSV change is required.
+
 
 ## Accessibility
 
@@ -210,15 +244,15 @@ Other accessibility measures include:
 
 ## Water-quality interpretation
 
-Nitrate and phosphate results are displayed with a plain-language interpretation such as:
+Nitrate and phosphate measurements can be displayed with a plain-language interpretation such as:
 
 - Good
 - Moderate
 - Poor
 
-The assessment is calculated automatically from the midpoint values supplied in the CSV.
+The interpretation is calculated automatically from the midpoint values supplied in the CSV.
 
-Turbidity is displayed separately as a clarity result. Where appropriate, a descriptive label such as **Very clear** is shown.
+Turbidity is displayed separately as a clarity measurement. Where an applicable FreshWater Watch description is available, a descriptive label such as **Very clear** can be shown rather than presenting turbidity as an unsupported ecological-status classification.
 
 ---
 
