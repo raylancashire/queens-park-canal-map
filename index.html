@@ -936,6 +936,7 @@ function sampleDateTime(r) {
 
 function sitePhotoSlug(siteName) {
   return String(siteName || "")
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
     .toLowerCase()
     .trim()
     .replace(/['’]/g, "")
