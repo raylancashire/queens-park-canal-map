@@ -555,6 +555,20 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   color:#C00000;
 }
 
+
+.result-stat-button{
+  font:inherit;
+  color:inherit;
+  text-align:inherit;
+  cursor:pointer;
+  appearance:none;
+  width:100%;
+}
+.result-stat-button:focus-visible{
+  outline:2px solid #7b8f81;
+  outline-offset:2px;
+}
+
 </style>
 </head>
 <body>
@@ -581,9 +595,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
       <section class="summary">
         <div class="stat"><strong id="totalSamples">0</strong><span>Total samples</span></div>
-        <div id="nitrateResultStat" class="stat result-active"><strong id="nitrateResults">0</strong><span>Nitrate results</span></div>
-        <div id="phosphateResultStat" class="stat"><strong id="phosphateResults">0</strong><span>Phosphate results</span></div>
-        <div id="turbidityResultStat" class="stat"><strong id="turbidityResults">0</strong><span>Turbidity results</span></div>
+        <button id="nitrateResultStat" class="stat result-active result-stat-button" type="button" aria-label="Show Nitrate occurrences chart"><strong id="nitrateResults">0</strong><span>Nitrate results</span></button>
+        <button id="phosphateResultStat" class="stat result-stat-button" type="button" aria-label="Show Phosphate occurrences chart"><strong id="phosphateResults">0</strong><span>Phosphate results</span></button>
+        <button id="turbidityResultStat" class="stat result-stat-button" type="button" aria-label="Show Turbidity occurrences chart"><strong id="turbidityResults">0</strong><span>Turbidity results</span></button>
       </section>
 
       
@@ -1578,6 +1592,10 @@ function setChartTab(which){
 
   requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,40));
 }
+
+document.getElementById("nitrateResultStat").addEventListener("click",()=>setChartTab("nitrate"));
+document.getElementById("phosphateResultStat").addEventListener("click",()=>setChartTab("phosphate"));
+document.getElementById("turbidityResultStat").addEventListener("click",()=>setChartTab("turbidity"));
 
 document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
 document.getElementById("phosphateTab").addEventListener("click",()=>setChartTab("phosphate"));
