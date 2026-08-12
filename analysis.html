@@ -7,7 +7,7 @@
 <style>
 :root{--ink:#17321f;--muted:#5f6f64;--line:#dfe7e1;--bg:#f4f7f4;--bar:#2f6b45}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
 .wrap{width:100%;max-width:1200px;margin:0 auto;padding:20px 20px 8px}
 .header,.chart-card,.stat{background:#fff;border:1px solid var(--line);border-radius:12px}
 .outer-analysis-panel{
@@ -474,7 +474,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       type="button"
       aria-expanded="true"
       aria-controls="occurrencesContent">
-      <span>Result occurrences</span>
+      <span>Sample analysis</span>
       <span id="occurrencesIcon" aria-hidden="true">−</span>
     </button>
 
@@ -1356,16 +1356,33 @@ async function load(){try{
 
 
 function notifyParentOfHeight(){
-  const height = Math.ceil(document.documentElement.scrollHeight);
+  const wrap=document.querySelector(".wrap");
+  const height=Math.ceil(
+    Math.max(
+      wrap ? wrap.getBoundingClientRect().bottom : 0,
+      document.body.scrollHeight,
+      document.body.offsetHeight
+    )
+  );
+
   window.parent.postMessage({
     type:"canal-chart-resize",
     height:height
   },"*");
 }
 
-// Send size after initial render and whenever the viewport changes.
-window.addEventListener("load",()=>setTimeout(notifyParentOfHeight,50));
-window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
+// Keep the Webador iframe informed whenever accordion/chart content changes.
+window.addEventListener("load",()=>setTimeout(notifyParentOfHeight,80));
+window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,80));
+
+if("ResizeObserver" in window){
+  const resizeObserver=new ResizeObserver(()=>{
+    requestAnimationFrame(notifyParentOfHeight);
+  });
+  resizeObserver.observe(document.body);
+  const wrap=document.querySelector(".wrap");
+  if(wrap) resizeObserver.observe(wrap);
+}
 
 function setChartTab(which){
   const tabs={
