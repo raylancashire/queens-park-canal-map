@@ -132,7 +132,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </p>
 </div>
 <script>
-const CSV_SOURCES=["freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
+const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
@@ -245,8 +245,6 @@ function notifyParentOfHeight(){
 // Send size after initial render and whenever the viewport changes.
 window.addEventListener("load",()=>setTimeout(notifyParentOfHeight,50));
 window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
-
-});
 
 function setChartTab(which){
   const nitrateTab=document.getElementById("nitrateTab");
