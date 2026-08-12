@@ -600,6 +600,32 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 }
 
+
+/* Highlight all Sample Analysis buttons on mouse-over / keyboard focus. */
+.chart-toggle button,
+.result-stat-button{
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease;
+}
+
+.chart-toggle button:not(.active):hover,
+.chart-toggle button:not(.active):focus-visible{
+  background:#eef7f0;
+  border-color:#7fa38a;
+  color:#143823;
+  box-shadow:0 3px 8px rgba(30,70,42,.16);
+  transform:translateY(-1px);
+}
+
+.result-stat-button:hover,
+.result-stat-button:focus-visible{
+  border-color:#7fa38a;
+}
+
 </style>
 </head>
 <body>
@@ -685,7 +711,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <h2>Turbidity occurrences</h2>
     <p class="sub">Number and percentage of samples across the full FreshWater Watch turbidity scale. The left-hand scale shows the number of samples; colours follow the existing turbidity assessment scale.</p>
     <div id="turbidityChart" class="bar-list turbidity-bar-list" aria-label="Turbidity occurrences across the full NTU scale"></div>
-    <p class="turbidity-axis-note">Turbidity (NTU) — formatted to match the Nitrate and Phosphate charts; scroll horizontally on smaller screens.</p>
   </article>
 
   <article id="temperaturePanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="temperatureTab" hidden>
