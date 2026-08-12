@@ -10,6 +10,41 @@
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
 .wrap{width:100%;max-width:1200px;margin:0 auto;padding:20px 20px 8px}
 .header,.chart-card,.stat{background:#fff;border:1px solid var(--line);border-radius:12px}
+.outer-analysis-panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+.outer-analysis-panel + .outer-analysis-panel{
+  margin-top:16px;
+}
+.outer-analysis-toggle{
+  width:100%;
+  border:0;
+  background:#fff;
+  color:var(--ink);
+  padding:14px 16px;
+  font-size:16px;
+  font-weight:800;
+  text-align:left;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.outer-analysis-toggle:hover,
+.outer-analysis-toggle:focus{
+  background:#f7f9f7;
+}
+.outer-analysis-content{
+  padding:16px;
+  border-top:1px solid var(--line);
+}
+.outer-analysis-content[hidden]{
+  display:none!important;
+}
+
 
 .collapse-toggle{
   width:100%;
@@ -167,6 +202,200 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans
 .chart-card h2{margin:0 0 4px;font-size:18px}
 .sub{margin:0 0 14px;color:var(--muted);font-size:12px}
 .chart-panel[hidden]{display:none!important}
+
+
+
+.site-change-section{
+  margin-top:16px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+
+
+
+.site-change-controls{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.site-change-controls label{
+  font-size:13px;
+  font-weight:700;
+}
+.site-change-controls select{
+  max-width:100%;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:#fff;
+  color:var(--ink);
+  font-size:13px;
+}
+.change-metric-tabs{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin:0 0 12px;
+}
+.change-metric-tabs button{
+  appearance:none;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  border-radius:7px;
+  padding:7px 11px;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+}
+.change-metric-tabs button.active{
+  background:var(--ink);
+  color:#fff;
+  border-color:var(--ink);
+}
+
+.change-metric-section{
+  margin-top:14px;
+}
+.change-metric-section:first-child{
+  margin-top:0;
+}
+.change-metric-title{
+  margin:0 0 7px;
+  font-size:13px;
+  font-weight:800;
+  color:var(--ink);
+}
+
+.site-change-chart{
+  display:grid;
+  gap:8px;
+}
+.change-row{
+  display:grid;
+  grid-template-columns:125px minmax(120px,1fr) 82px;
+  gap:9px;
+  align-items:center;
+  font-size:12px;
+}
+.change-date{
+  color:var(--muted);
+  white-space:nowrap;
+}
+.change-track{
+  position:relative;
+  height:14px;
+  background:#eef2ef;
+  border-radius:7px;
+  overflow:hidden;
+}
+.change-zero{
+  position:absolute;
+  left:50%;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:#7d8b81;
+}
+.change-bar{
+  position:absolute;
+  top:2px;
+  height:10px;
+  border-radius:5px;
+}
+.change-bar.increase{
+  left:50%;
+  background:#C00000;
+}
+.change-bar.decrease{
+  right:50%;
+  background:#006400;
+}
+.change-value{
+  text-align:right;
+  font-weight:800;
+  white-space:nowrap;
+}
+.change-value.increase{color:#9b0000}
+.change-value.decrease{color:#006400}
+.change-value.same{color:#526158}
+
+.change-line-wrap{
+  width:100%;
+  overflow-x:auto;
+  padding:4px 0 2px;
+}
+.change-line-svg{
+  display:block;
+  width:100%;
+  min-width:520px;
+  height:235px;
+}
+.change-grid{
+  stroke:#dfe6e1;
+  stroke-width:1;
+}
+.change-zero-line{
+  stroke:#7d8b81;
+  stroke-width:1.25;
+}
+.change-line{
+  fill:none;
+  stroke:#2f6b45;
+  stroke-width:2.5;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+}
+.change-point{
+  fill:#fff;
+  stroke:#2f6b45;
+  stroke-width:2.5;
+}
+
+.change-axis-title{
+  fill:#526158;
+  font-size:10px;
+  font-weight:700;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.change-axis-text{
+  fill:#66736b;
+  font-size:10px;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.change-value-text{
+  fill:#26372d;
+  font-size:10px;
+  font-weight:700;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.change-empty{
+  padding:18px 0;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+.change-note{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+}
+@media(max-width:600px){
+  .change-row{
+    grid-template-columns:92px 1fr 70px;
+    gap:6px;
+  }
+  .change-date{font-size:10px}
+}
+
 .turbidity-scale{
   display:flex;
   align-items:flex-end;
@@ -237,6 +466,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 </head>
 <body>
 <div class="wrap">
+
+  <section class="outer-analysis-panel">
+    <button
+      id="occurrencesToggle"
+      class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="true"
+      aria-controls="occurrencesContent">
+      <span>Result occurrences</span>
+      <span id="occurrencesIcon" aria-hidden="true">−</span>
+    </button>
+
+    <div id="occurrencesContent" class="outer-analysis-content">
 <section class="header">
         <h1>Nitrate and Phosphate Result Occurrences</h1>
         <p>Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
@@ -338,6 +580,49 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div id="doChart"></div>
   </article>
 </section>
+    </div>
+  </section>
+
+  <section class="outer-analysis-panel">
+    <button
+      id="resultsTimeToggle"
+      class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="resultsTimeContent">
+      <span>Results over time by site</span>
+      <span id="resultsTimeIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="resultsTimeContent" class="outer-analysis-content" hidden>
+<div class="site-change-controls">
+      <label for="changeSiteSelect">Sampling site:</label>
+      <select id="changeSiteSelect"></select>
+    </div>
+
+    <div class="change-metric-section">
+      <h3 class="change-metric-title">Nitrate results over time</h3>
+      <div id="siteChangeNitrate" class="site-change-chart"></div>
+    </div>
+
+    <div class="change-metric-section">
+      <h3 class="change-metric-title">Phosphate results over time</h3>
+      <div id="siteChangePhosphate" class="site-change-chart"></div>
+    </div>
+
+    <div class="change-metric-section">
+      <h3 class="change-metric-title">Turbidity results over time</h3>
+      <div id="siteChangeTurbidity" class="site-change-chart"></div>
+    </div>
+
+    <p class="change-note">
+      Each point represents the recorded result for that survey date at the selected site.
+      Nitrate and phosphate are plotted using the midpoint of the FreshWater Watch result range.
+      Turbidity is plotted in NTU using the recorded test value.
+    </p>
+    </div>
+  </section>
+
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
@@ -856,6 +1141,189 @@ async function loadAdditionalData(){
 }
 
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
+
+let freshwaterDataForChanges=[];
+
+function sampleDateValue(row){
+  const raw=String(getField(row,"Sample Date","sample_date")||"").trim();
+  if(!raw) return 0;
+
+  // FreshWater Watch usually stores M/D/YYYY with optional time.
+  let m=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?$/i);
+  if(m){
+    let hour=Number(m[4]||0);
+    const minute=Number(m[5]||0);
+    const second=Number(m[6]||0);
+    const ap=(m[7]||"").toUpperCase();
+    if(ap==="PM" && hour<12) hour+=12;
+    if(ap==="AM" && hour===12) hour=0;
+    return new Date(Number(m[3]),Number(m[1])-1,Number(m[2]),hour,minute,second).getTime();
+  }
+
+  // Also accept UK DD/MM/YYYY.
+  m=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return new Date(Number(m[3]),Number(m[2])-1,Number(m[1])).getTime();
+
+  const d=new Date(raw);
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function sampleDateLabel(row){
+  const ts=sampleDateValue(row);
+  if(!ts) return String(getField(row,"Sample Date","sample_date")||"—");
+  const d=new Date(ts);
+  return d.toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+function siteName(row){
+  return getField(row,"Site Name","site_name") || "Unnamed site";
+}
+
+function midpointFromRange(raw){
+  const clean=normaliseRange(raw);
+  const nums=String(clean||"").match(/\d+(?:\.\d+)?/g)?.map(Number)||[];
+  if(!nums.length) return null;
+  return nums.length===1 ? nums[0] : (nums[0]+nums[1])/2;
+}
+
+function comparisonMetricValue(row,metric){
+  if(metric==="nitrate"){
+    const explicit=parseFloat(getField(row,"nitrate_mid"));
+    if(Number.isFinite(explicit)) return explicit;
+    return midpointFromRange(getNitrate(row));
+  }
+
+  if(metric==="phosphate"){
+    const explicit=parseFloat(getField(row,"phosphate_mid"));
+    if(Number.isFinite(explicit)) return explicit;
+    return midpointFromRange(getPhosphate(row));
+  }
+
+  if(metric==="turbidity"){
+    const raw=getTurbidity(row);
+    if(!raw) return null;
+    if(String(raw).includes("<14")) return 14;
+    if(String(raw).includes(">240")) return 240;
+    const m=String(raw).match(/\d+(?:\.\d+)?/);
+    return m ? Number(m[0]) : null;
+  }
+
+  return null;
+}
+
+function siteSurveyResults(site,metric){
+  return freshwaterDataForChanges
+    .filter(r=>siteName(r)===site)
+    .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
+    .map(row=>({
+      date:sampleDateLabel(row),
+      value:comparisonMetricValue(row,metric)
+    }))
+    .filter(p=>Number.isFinite(p.value));
+}
+
+function metricChartInfo(metric){
+  if(metric==="nitrate") return {unit:"mg/L",decimals:2};
+  if(metric==="phosphate") return {unit:"mg/L",decimals:3};
+  if(metric==="turbidity") return {unit:"NTU",decimals:0};
+  return {unit:"",decimals:2};
+}
+
+function renderMetricChangeChart(containerId,site,metric){
+  const chart=document.getElementById(containerId);
+  if(!chart) return;
+
+  const points=siteSurveyResults(site,metric);
+  const info=metricChartInfo(metric);
+
+  if(!points.length){
+    chart.innerHTML='<div class="change-empty">No recorded results for this measure at this site yet.</div>';
+    return;
+  }
+
+  const W=Math.max(520,points.length*100);
+  const H=245;
+  const left=58, right=22, top=28, bottom=50;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  const values=points.map(p=>p.value);
+  let minValue=Math.min(...values);
+  let maxValue=Math.max(...values);
+
+  // Keep zero visible where it makes sense for these water-quality measures.
+  minValue=Math.min(0,minValue);
+
+  if(maxValue===minValue){
+    maxValue=minValue+1;
+  }
+
+  // Add a little headroom above the highest result.
+  const range=maxValue-minValue;
+  maxValue+=range*0.15;
+
+  const x=i=>points.length===1 ? left+plotW/2 : left+(i/(points.length-1))*plotW;
+  const y=v=>top+((maxValue-v)/(maxValue-minValue))*plotH;
+
+  const tickCount=4;
+  const ticks=Array.from({length:tickCount+1},(_,i)=>
+    minValue+((maxValue-minValue)*(i/tickCount))
+  );
+
+  const grid=ticks.map(v=>`
+    <line x1="${left}" y1="${y(v)}" x2="${W-right}" y2="${y(v)}" class="change-grid"></line>
+    <text x="${left-7}" y="${y(v)+3}" text-anchor="end" class="change-axis-text">
+      ${v.toFixed(info.decimals)}
+    </text>
+  `).join("");
+
+  const path=points.map((p,i)=>
+    `${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`
+  ).join(" ");
+
+  const marks=points.map((p,i)=>`
+    <circle cx="${x(i)}" cy="${y(p.value)}" r="4.5" class="change-point"></circle>
+    <text x="${x(i)}" y="${y(p.value)-9}" text-anchor="middle" class="change-value-text">
+      ${p.value.toFixed(info.decimals)}
+    </text>
+    <text x="${x(i)}" y="${H-22}" text-anchor="middle" class="change-axis-text">
+      ${esc(p.date)}
+    </text>
+  `).join("");
+
+  chart.innerHTML=`<div class="change-line-wrap">
+    <svg class="change-line-svg" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="${esc(metric)} results over time">
+      ${grid}
+      <text x="14" y="${top+plotH/2}" text-anchor="middle"
+        transform="rotate(-90 14 ${top+plotH/2})" class="change-axis-title">
+        ${esc(info.unit)}
+      </text>
+      <path d="${path}" class="change-line"></path>
+      ${marks}
+    </svg>
+  </div>`;
+}
+
+function renderSiteChangeCharts(){
+  const select=document.getElementById("changeSiteSelect");
+  if(!select) return;
+
+  const site=select.value;
+  renderMetricChangeChart("siteChangeNitrate",site,"nitrate");
+  renderMetricChangeChart("siteChangePhosphate",site,"phosphate");
+  renderMetricChangeChart("siteChangeTurbidity",site,"turbidity");
+}
+
+function initialiseSiteChanges(){
+  const select=document.getElementById("changeSiteSelect");
+  if(!select) return;
+
+  const sites=[...new Set(freshwaterDataForChanges.map(siteName))].sort((a,b)=>a.localeCompare(b));
+  select.innerHTML=sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
+  renderSiteChangeCharts();
+}
+
 async function load(){try{
  const data=parseCSV(await fetchCSV()),
        nVals=data.map(getNitrate).filter(Boolean),
@@ -865,6 +1333,9 @@ async function load(){try{
        n=occurrences(nVals),
        p=occurrences(pVals),
        t=turbidityOccurrences(tVals);
+
+ freshwaterDataForChanges=data;
+ initialiseSiteChanges();
 
  document.getElementById("totalSamples").textContent=data.length;
  document.getElementById("nitrateResults").textContent=nVals.length;
@@ -943,6 +1414,59 @@ document.getElementById("bodTab").addEventListener("click",()=>setChartTab("bod"
 document.getElementById("doTab").addEventListener("click",()=>setChartTab("dissolvedOxygen"));
 
 
+
+
+document.getElementById("changeSiteSelect").addEventListener("change",()=>{
+  renderSiteChangeCharts();
+  setTimeout(notifyParentOfHeight,40);
+});
+
+
+
+const accordionPanels=[
+  {
+    button:document.getElementById("occurrencesToggle"),
+    content:document.getElementById("occurrencesContent"),
+    icon:document.getElementById("occurrencesIcon")
+  },
+  {
+    button:document.getElementById("resultsTimeToggle"),
+    content:document.getElementById("resultsTimeContent"),
+    icon:document.getElementById("resultsTimeIcon")
+  }
+];
+
+function setAccordionPanel(index,open){
+  accordionPanels.forEach((panel,i)=>{
+    const isOpen=open && i===index;
+    panel.button.setAttribute("aria-expanded",String(isOpen));
+    panel.content.hidden=!isOpen;
+    panel.icon.textContent=isOpen?"−":"＋";
+  });
+
+  if(open && index===1){
+    renderSiteChangeCharts();
+  }
+
+  setTimeout(notifyParentOfHeight,60);
+}
+
+accordionPanels.forEach((panel,index)=>{
+  panel.button.addEventListener("click",()=>{
+    const currentlyOpen=panel.button.getAttribute("aria-expanded")==="true";
+
+    // Allow the currently open panel to be collapsed.
+    // Opening either panel automatically closes the other.
+    if(currentlyOpen){
+      panel.button.setAttribute("aria-expanded","false");
+      panel.content.hidden=true;
+      panel.icon.textContent="＋";
+      setTimeout(notifyParentOfHeight,60);
+    }else{
+      setAccordionPanel(index,true);
+    }
+  });
+});
 
 load();
 loadAdditionalData();
