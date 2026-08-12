@@ -270,6 +270,36 @@ Coliform results display the recorded **total coliform colonies per 100 mL**, to
 
 Dissolved Oxygen results use the supplied **0, 4 and 8 ppm** test-kit colours. Percent oxygen saturation is calculated using the recorded water temperature and the supplied temperature/oxygen table.
 
+### Sample-analysis chart refinements
+
+The Nitrate and Phosphate occurrence charts in **Sample analysis** have been refined to make the distribution easier to read:
+
+- The left-hand vertical scale now represents the **number of samples**, rather than a percentage scale.
+- The initial sample-count scale runs from **0 to 10** in single-sample increments.
+- The scale is designed to expand automatically as more surveys are added; above 10 samples it can extend to higher values as required.
+- Faint horizontal guide lines align with each sample-count value, making individual column heights easier to compare.
+- Column heights are plotted against the same sample-count scale, so a column representing one sample aligns with the **1** guide line, two samples with **2**, and so on.
+- The separate sample-count label above each column has been removed because it duplicated the information already provided by the vertical scale and guide lines.
+- The **percentage of samples** in each result band is retained and displayed immediately above its coloured column.
+- FreshWater Watch result-band colours and the result-range labels beneath each column remain unchanged.
+
+This means each chart now communicates three things without duplicating labels: **column height = number of samples**, **percentage above the column = share of samples**, and **column colour/result label = FreshWater Watch result band**.
+
+### Turbidity chart formatting
+
+The **Turbidity** occurrence chart now follows the same visual format as the Nitrate and Phosphate occurrence charts:
+
+- The left-hand vertical scale shows the **number of samples**.
+- The scale starts at **0–10 samples** and can expand automatically as more survey results are added.
+- Faint horizontal guide lines correspond to individual sample-count values.
+- Column height represents the number of samples recorded in each turbidity result band.
+- The **percentage of samples** is displayed immediately above each coloured column.
+- The existing FreshWater Watch turbidity colours and the complete NTU result scale are retained.
+- On larger screens the full turbidity scale is fitted across the available panel width.
+- On smaller devices the chart becomes **horizontally scrollable**, preventing the full NTU scale and labels from becoming cramped or unreadable.
+
+This gives the Nitrate, Phosphate and Turbidity occurrence charts a consistent visual language while preserving the larger number of categories in the turbidity scale.
+
 ### Results over time by site
 
 The second accordion panel is **Results over time by site**. It provides a sampling-site selector and three line charts showing the recorded results through time for:
@@ -401,3 +431,12 @@ Grand Union Canal
 - Added total coliform colony results and interpretation.
 - Added Dissolved Oxygen test-kit colours and percent-saturation calculation based on water temperature.
 - Changed the survey-map reset control from a circular reset arrow to a **Home (house) icon**, retaining the same return-to-all-results behaviour.
+- Changed the Nitrate and Phosphate occurrence-chart vertical axis to **number of samples**.
+- Set the initial chart scale to **0–10 samples** in one-sample increments, with automatic expansion for future surveys.
+- Added faint horizontal sample-count guide lines and aligned column heights precisely with them.
+- Removed duplicate sample-count labels from above the columns.
+- Positioned each result-band percentage immediately above its coloured column.
+- Reformatted the Turbidity occurrence chart to match the Nitrate and Phosphate charts.
+- Added the same sample-count axis, faint guide lines and percentage-above-column presentation to Turbidity.
+- Retained the full FreshWater Watch turbidity/NTU scale and existing result colours.
+- Made the Turbidity chart fit the available width on larger screens and scroll horizontally on smaller devices.
