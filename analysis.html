@@ -113,6 +113,17 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans
   line-height:1;
   margin-bottom:8px;
 }
+
+.result-assessment{
+  display:inline-block;
+  margin-top:10px;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  border:1px solid rgba(0,0,0,.12);
+}
+
 .single-result span{
   display:block;
   color:var(--muted);
@@ -305,13 +316,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="phPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="phTab" hidden>
     <h2>pH</h2>
-    <p class="sub">Recorded pH results over time.</p>
+    <p class="sub">Recorded pH results over time. Result colours follow the supplied pH 4–10 test-kit colour card, with each reading identified as acidic, neutral or alkaline; the water-quality assessment is shown separately.</p>
     <div id="phChart"></div>
   </article>
 
   <article id="coliformPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="coliformTab" hidden>
     <h2>Coliform</h2>
-    <p class="sub">Recorded coliform results over time.</p>
+    <p class="sub">Total coliform colony results per 100 mL. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
     <div id="coliformChart"></div>
   </article>
 
@@ -323,7 +334,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="doPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="doTab" hidden>
     <h2>Dissolved Oxygen</h2>
-    <p class="sub">Recorded dissolved oxygen results over time.</p>
+    <p class="sub">Recorded dissolved oxygen results over time. Result colours follow the supplied 0, 4 and 8 ppm test-kit colour card; percent saturation is calculated from the supplied temperature/oxygen table.</p>
     <div id="doChart"></div>
   </article>
 </section>
@@ -542,12 +553,163 @@ function additionalDateLabel(row){
   return [date,time].filter(Boolean).join(" ");
 }
 
+
+function phAssessment(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+  if(n>=6.5 && n<=8.5) return {label:"Good / suitable range",colour:"#006400",text:"#ffffff"};
+  if((n>=6.0 && n<6.5) || (n>8.5 && n<=9.0)) return {label:"Fair / outside preferred range",colour:"#FFD966",text:"#17321f"};
+  return {label:"Poor / outside suitable range",colour:"#C00000",text:"#ffffff"};
+}
+
+
+
+
+function phNature(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+
+  if(n<7){
+    if(n<6) return "Acidic";
+    return "Slightly acidic";
+  }
+
+  if(n===7) return "Neutral";
+
+  if(n<=8.5) return "Slightly alkaline";
+  return "Alkaline";
+}
+
+function phTestKit(value){
+  const n=Math.round(Number(value));
+  if(!Number.isFinite(n)) return null;
+
+  // Colours approximate the supplied pH test-kit card.
+  const scale={
+    4:{colour:"#D85F69",text:"#ffffff"},
+    5:{colour:"#E68B70",text:"#17321f"},
+    6:{colour:"#E5D83D",text:"#17321f"},
+    7:{colour:"#A9C34E",text:"#17321f"},
+    8:{colour:"#9AB34B",text:"#17321f"},
+    9:{colour:"#5D6D78",text:"#ffffff"},
+    10:{colour:"#8A285E",text:"#ffffff"}
+  };
+
+  return scale[n] ? {reading:`pH ${n}`,...scale[n]} : null;
+}
+
+function coliformTestKit(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+
+  // The supplied kit card shows a red/pink negative result and
+  // a brown/orange positive result.
+  if(n===0){
+    return {reading:"Negative",colour:"#A93E49",text:"#ffffff"};
+  }
+  return {reading:"Positive",colour:"#A66A32",text:"#ffffff"};
+}
+
+function dissolvedOxygenTestKit(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+
+  // Colours approximate the user's supplied dissolved-oxygen test-kit card.
+  if(n<=2) return {reading:"0 ppm",colour:"#F2F0EA",text:"#17321f"};
+  if(n<6) return {reading:"4 ppm",colour:"#D69A7B",text:"#17321f"};
+  return {reading:"8 ppm",colour:"#B95C50",text:"#ffffff"};
+}
+
+function dissolvedOxygenAssessment(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+  if(n>=8) return {label:"Excellent",colour:"#006400",text:"#ffffff"};
+  if(n>=6) return {label:"Good",colour:"#39A96B",text:"#17321f"};
+  if(n>=4) return {label:"Fair",colour:"#FFD966",text:"#17321f"};
+  if(n>=2) return {label:"Poor",colour:"#F4B183",text:"#17321f"};
+  return {label:"Very Poor",colour:"#C00000",text:"#ffffff"};
+}
+
+
+const DO_SATURATION_TABLE = {
+  0:  {2:0,4:0,6:0,8:0,10:0,12:0,14:0,16:0,18:0,20:0,22:0,24:0,26:0,28:0,30:0},
+  4:  {2:29,4:31,6:32,8:34,10:35,12:37,14:39,16:41,18:42,20:44,22:46,24:48,26:49,28:51,30:53},
+  8:  {2:58,4:61,6:64,8:68,10:71,12:74,14:78,16:81,18:84,20:88,22:92,24:95,26:99,28:102,30:106}
+};
+
+function interpolateTableValue(table,temp){
+  const temps=Object.keys(table).map(Number).sort((a,b)=>a-b);
+  if(!temps.length || !Number.isFinite(temp)) return null;
+
+  if(temp<=temps[0]) return table[temps[0]];
+  if(temp>=temps[temps.length-1]) return table[temps[temps.length-1]];
+
+  for(let i=0;i<temps.length-1;i++){
+    const t1=temps[i], t2=temps[i+1];
+    if(temp===t1) return table[t1];
+    if(temp>t1 && temp<t2){
+      const v1=table[t1], v2=table[t2];
+      return v1 + (v2-v1) * ((temp-t1)/(t2-t1));
+    }
+  }
+  return null;
+}
+
+function dissolvedOxygenPercentSaturation(doMgL,tempC){
+  const doValue=Number(doMgL);
+  const temp=Number(tempC);
+
+  if(!Number.isFinite(doValue) || !Number.isFinite(temp)) return null;
+
+  // The supplied reference table contains 0, 4 and 8 ppm columns.
+  // Interpolate between those columns when the measured DO lies between them.
+  const p0=interpolateTableValue(DO_SATURATION_TABLE[0],temp);
+  const p4=interpolateTableValue(DO_SATURATION_TABLE[4],temp);
+  const p8=interpolateTableValue(DO_SATURATION_TABLE[8],temp);
+
+  if(doValue<=0) return p0;
+  if(doValue<=4){
+    return p0 + (p4-p0) * (doValue/4);
+  }
+  if(doValue<=8){
+    return p4 + (p8-p4) * ((doValue-4)/4);
+  }
+
+  // Do not extrapolate beyond the supplied table.
+  return null;
+}
+
+function coliformAssessment(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return null;
+  if(n===0) return {
+    label:"No total coliform colonies detected",
+    colour:"#006400",
+    text:"#ffffff",
+    symbol:"●"
+  };
+  return {
+    label:"Total coliforms detected",
+    colour:"#FFD966",
+    text:"#17321f",
+    symbol:"▲"
+  };
+}
+
+function additionalAssessment(column,value){
+  if(column==="pH") return phAssessment(value);
+  if(column==="Coliform") return coliformAssessment(value);
+  if(column==="Dissolved Oxygen mg/L") return dissolvedOxygenAssessment(value);
+  return null;
+}
+
 function renderAdditionalSeries(containerId,data,column,unit){
   const el=document.getElementById(containerId);
 
   const points=data
     .map(row=>({
       value:parseAdditionalNumber(row[column]),
+      temperature:parseAdditionalNumber(row["Temperature °C"]),
       date:parseUKDate(row["Date"],row["Time"]),
       label:additionalDateLabel(row),
       location:String(row["Location"]||"").trim()
@@ -564,10 +726,65 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
   if(points.length===1){
     const p=points[0];
+    const assessment=additionalAssessment(column,p.value);
+    const assessmentHtml=assessment
+      ? `<span class="result-assessment" style="background:${assessment.colour};color:${assessment.text}">${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}</span>`
+      : "";
+
+    let extraHtml="";
+
+    if(column==="pH"){
+      const kit=phTestKit(p.value);
+      const nature=phNature(p.value);
+
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit reading: ${esc(kit.reading)}
+        </span>`;
+      }
+
+      if(nature){
+        extraHtml+=`<span><strong style="font-size:20px;margin:8px 0 0">${esc(nature)}</strong></span>`;
+      }
+    }
+
+    if(column==="Coliform"){
+      const kit=coliformTestKit(p.value);
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit result: ${esc(kit.reading)}
+        </span>`;
+      }
+      extraHtml+=`<span>Total coliform is a general microbial indicator. This result is not an official bathing-water classification; UK bathing-water classifications use E. coli and intestinal enterococci.</span>`;
+    }
+
+    if(column==="Dissolved Oxygen mg/L"){
+      const saturation=dissolvedOxygenPercentSaturation(p.value,p.temperature);
+      const kit=dissolvedOxygenTestKit(p.value);
+
+      extraHtml=`<span style="margin-top:8px">${esc(p.value)} mg/L ≈ ${esc(p.value)} ppm</span>`;
+
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit reading: ${esc(kit.reading)}
+        </span>`;
+      }
+
+      if(Number.isFinite(saturation)){
+        extraHtml+=`<span><strong style="font-size:20px;margin:8px 0 0">${Math.round(saturation)}% saturation</strong></span>`;
+        if(Number.isFinite(p.temperature)){
+          extraHtml+=`<span>Based on ${esc(p.temperature)} °C water temperature</span>`;
+        }
+      }
+    }
+
     el.innerHTML=`<div class="single-result">
       <div>
         <strong>${esc(p.value)}${esc(unitText)}</strong>
         <span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span>
+        ${extraHtml}
+        ${assessmentHtml}
       </div>
     </div>`;
     return;
@@ -577,10 +794,30 @@ function renderAdditionalSeries(containerId,data,column,unit){
   el.innerHTML=`<div class="series-chart">`+
     points.map(p=>{
       const height=Math.max(3,(p.value/max)*100);
+      const assessment=additionalAssessment(column,p.value);
+      let kit=null;
+      let phNatureText="";
+      if(column==="pH"){
+        kit=phTestKit(p.value);
+        const nature=phNature(p.value);
+        if(nature) phNatureText=`<br><span style="font-weight:700">${esc(nature)}</span>`;
+      }
+      if(column==="Coliform") kit=coliformTestKit(p.value);
+      if(column==="Dissolved Oxygen mg/L") kit=dissolvedOxygenTestKit(p.value);
+      const displayColour=kit ? kit.colour : (assessment ? assessment.colour : null);
+      const barStyle=displayColour ? `height:${height}%;background:${displayColour}` : `height:${height}%`;
+      const assessmentText=assessment ? `<br><span style="font-weight:700">${esc(assessment.label)}</span>` : "";
+      let saturationText="";
+      if(column==="Dissolved Oxygen mg/L"){
+        const saturation=dissolvedOxygenPercentSaturation(p.value,p.temperature);
+        if(Number.isFinite(saturation)){
+          saturationText=`<br><span style="font-weight:700">${Math.round(saturation)}% saturation</span>`;
+        }
+      }
       return `<div class="series-row">
         <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
-        <div class="series-track"><div class="series-fill" style="height:${height}%"></div></div>
-        <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}</div>
+        <div class="series-track"><div class="series-fill" style="${barStyle}"></div></div>
+        <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}${phNatureText}${saturationText}${assessmentText}</div>
       </div>`;
     }).join("")+
     `</div>`;
@@ -661,7 +898,42 @@ window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
 
 function setChartTab(which){
   const tabs={
-    document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
+    nitrate:"nitrateTab",
+    phosphate:"phosphateTab",
+    turbidity:"turbidityTab",
+    temperature:"temperatureTab",
+    ph:"phTab",
+    coliform:"coliformTab",
+    bod:"bodTab",
+    dissolvedOxygen:"doTab"
+  };
+
+  const panels={
+    nitrate:"nitratePanel",
+    phosphate:"phosphatePanel",
+    turbidity:"turbidityPanel",
+    temperature:"temperaturePanel",
+    ph:"phPanel",
+    coliform:"coliformPanel",
+    bod:"bodPanel",
+    dissolvedOxygen:"doPanel"
+  };
+
+  Object.keys(tabs).forEach(key=>{
+    const active=key===which;
+    const tab=document.getElementById(tabs[key]);
+    const panel=document.getElementById(panels[key]);
+    if(tab){
+      tab.classList.toggle("active",active);
+      tab.setAttribute("aria-selected",String(active));
+    }
+    if(panel) panel.hidden=!active;
+  });
+
+  requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,40));
+}
+
+document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
 document.getElementById("phosphateTab").addEventListener("click",()=>setChartTab("phosphate"));
 document.getElementById("turbidityTab").addEventListener("click",()=>setChartTab("turbidity"));
 document.getElementById("temperatureTab").addEventListener("click",()=>setChartTab("temperature"));
