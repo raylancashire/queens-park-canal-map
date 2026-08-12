@@ -1470,7 +1470,9 @@ function setAccordionPanel(index,open){
     renderSiteChangeCharts();
   }
 
-  setTimeout(notifyParentOfHeight,40);\n  setTimeout(notifyParentOfHeight,140);\n  setTimeout(notifyParentOfHeight,300);
+  setTimeout(notifyParentOfHeight,40);
+  setTimeout(notifyParentOfHeight,140);
+  setTimeout(notifyParentOfHeight,300);
 }
 
 accordionPanels.forEach((panel,index)=>{
@@ -1483,7 +1485,9 @@ accordionPanels.forEach((panel,index)=>{
       panel.button.setAttribute("aria-expanded","false");
       panel.content.hidden=true;
       panel.icon.textContent="＋";
-      setTimeout(notifyParentOfHeight,40);\n  setTimeout(notifyParentOfHeight,140);\n  setTimeout(notifyParentOfHeight,300);
+      setTimeout(notifyParentOfHeight,40);
+  setTimeout(notifyParentOfHeight,140);
+  setTimeout(notifyParentOfHeight,300);
     }else{
       setAccordionPanel(index,true);
     }
