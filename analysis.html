@@ -571,32 +571,20 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
 
 /* Brief pulse when a result summary panel is clicked. */
-@keyframes resultPanelPulse{
-  0%,100%{
-    background:#ffffff;
-    border-color:#b8c4bc;
-    box-shadow:0 3px 7px rgba(30,50,38,.18);
-  }
-  50%{
-    background:#fff0f0;
-    border-color:#c00000;
-    box-shadow:
-      0 0 0 7px rgba(192,0,0,.18),
-      0 6px 18px rgba(192,0,0,.30);
-  }
-}
 .summary .stat.result-stat-button:hover,
 .summary .stat.result-stat-button:focus-visible{
-  animation:resultPanelPulse 1.35s ease-in-out infinite;
+  background:#fff0f0;
+  border-color:#c00000;
+  box-shadow:0 0 0 4px rgba(192,0,0,.12), 0 4px 10px rgba(192,0,0,.18);
 }
 @media (prefers-reduced-motion:reduce){
   .summary .stat.result-stat-button:hover,
   .summary .stat.result-stat-button:focus-visible{
-    animation:none;
     background:#fff0f0;
     border-color:#c00000;
-    box-shadow:0 0 0 6px rgba(192,0,0,.16);
+    box-shadow:0 0 0 4px rgba(192,0,0,.12);
   }
+}
 }
 }
 
