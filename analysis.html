@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Quality Result Occurrences</title>
+<style>
+:root{--ink:#17321f;--muted:#5f6f64;--line:#dfe7e1;--bg:#f4f7f4;--bar:#2f6b45}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:20px}
+.header,.chart-card,.stat{background:#fff;border:1px solid var(--line);border-radius:12px}
+.collapse-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.collapse-toggle{
+  width:100%;
+  border:0;
+  background:#fff;
+  color:var(--ink);
+  padding:14px 16px;
+  font-size:16px;
+  font-weight:700;
+  text-align:left;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.collapse-toggle:hover,.collapse-toggle:focus{background:#f7f9f7}
+.collapse-icon{font-size:18px;line-height:1}
+.collapse-content{padding:16px;border-top:1px solid var(--line)}
+.collapse-content[hidden]{display:none!important}
+.header{padding:18px 20px;margin-bottom:16px}
+.header h1{margin:0 0 5px;font-size:24px}.header p{margin:0;color:var(--muted);font-size:14px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat{padding:12px 14px}.stat strong{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}
+.chart-toggle{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+.chart-toggle button{
+  appearance:none;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  border-radius:8px;
+  padding:9px 14px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.chart-toggle button.active{
+  background:var(--ink);
+  color:#fff;
+  border-color:var(--ink);
+}
+.charts{display:block}
+.chart-card{padding:16px}
+.chart-card h2{margin:0 0 4px;font-size:18px}
+.sub{margin:0 0 14px;color:var(--muted);font-size:12px}
+.chart-panel[hidden]{display:none!important}
+.bar-list{display:flex;align-items:flex-end;gap:14px;height:260px;padding:18px 8px 0;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+.bar-row{flex:1;min-width:54px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.bar-label{font-size:12px;font-weight:600;text-align:center;order:3;margin-top:7px;min-height:30px}
+.bar-track{width:min(58px,72%);height:185px;background:transparent;display:flex;align-items:flex-end;order:2}
+.bar-fill{width:100%;min-height:2px;border-radius:5px 5px 0 0}
+.bar-fill.unassessed{background:#777777}
+.bar-value{font-size:12px;font-weight:700;white-space:nowrap;order:1;margin-bottom:5px}
+.table-wrap{margin-top:18px;overflow-x:auto}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f7f9f7}
+.error{display:none;margin-bottom:16px;padding:12px 14px;border-radius:8px;background:#fff1f1;color:#8b1e1e}
+.note{margin-top:14px;color:var(--muted);font-size:11px}
+@media(max-width:760px){.summary{grid-template-columns:1fr}.wrap{padding:10px}.bar-list{gap:7px;height:240px;overflow-x:auto}.bar-row{min-width:58px}.bar-track{height:165px}.chart-toggle button{flex:1 1 160px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="collapse-wrap">
+    <button
+      id="chartCollapseButton"
+      class="collapse-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="chartCollapseContent">
+      <span>View nitrate and phosphate occurrence charts</span>
+      <span id="collapseIcon" class="collapse-icon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="chartCollapseContent" class="collapse-content" hidden>
+      <section class="header">
+        <h1>Nitrate and Phosphate Result Occurrences</h1>
+        <p>Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
+      </section>
+
+      <div id="error" class="error"></div>
+
+      <section class="summary">
+        <div class="stat"><strong id="totalSamples">0</strong><span>Total samples</span></div>
+        <div class="stat"><strong id="nitrateResults">0</strong><span>Nitrate results</span></div>
+        <div class="stat"><strong id="phosphateResults">0</strong><span>Phosphate results</span></div>
+      </section>
+
+      <div class="chart-toggle" role="tablist" aria-label="Choose result chart">
+        <button id="nitrateTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="nitratePanel">
+          Nitrate occurrences
+        </button>
+        <button id="phosphateTab" type="button" role="tab" aria-selected="false" aria-controls="phosphatePanel">
+          Phosphate occurrences
+        </button>
+      </div>
+
+      <section class="charts">
+        <article id="nitratePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="nitrateTab">
+          <h2>Nitrate occurrences</h2>
+          <p class="sub">Number and percentage of samples in each nitrate result band. Colours follow the FreshWater Watch nitrate scale.</p>
+          <div id="nitrateChart" class="bar-list"></div>
+        </article>
+
+        <article id="phosphatePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="phosphateTab" hidden>
+          <h2>Phosphate occurrences</h2>
+          <p class="sub">Number and percentage of samples in each phosphate result band. Colours follow the FreshWater Watch phosphate scale.</p>
+          <div id="phosphateChart" class="bar-list"></div>
+        </article>
+      </section>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Measure</th>
+              <th>Result band</th>
+              <th>Occurrences</th>
+              <th>Share of measured samples</th>
+            </tr>
+          </thead>
+          <tbody id="occurrenceTable"></tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        Result ranges are treated as categories. Spreadsheet conversions such as
+        01-Feb → 1-2 and 05-Oct → 5-10 are corrected automatically.
+      </p>
+    </div>
+  </div>
+</div>
+<script>
+const CSV_SOURCES=["freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function parseCSV(text){
+ const rows=[];let row=[],field="",quoted=false;
+ for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
+  if(quoted){if(ch=='"'&&next=='"'){field+='"';i++}else if(ch=='"'){quoted=false}else field+=ch}
+  else{if(ch=='"')quoted=true;else if(ch==','){row.push(field);field=""}else if(ch=='\r'||ch=='\n'){if(ch=='\r'&&next=='\n')i++;row.push(field);field="";if(row.some(v=>String(v).trim()!==""))rows.push(row);row=[]}else field+=ch}
+ }
+ row.push(field);if(row.some(v=>String(v).trim()!==""))rows.push(row);if(!rows.length)return[];
+ const headers=rows[0].map(h=>String(h).trim().replace(/^\uFEFF/,""));
+ return rows.slice(1).map(r=>{const o={};headers.forEach((h,i)=>o[h]=(r[i]??"").trim());return o});
+}
+function getField(r,...names){for(const n of names){if(Object.prototype.hasOwnProperty.call(r,n)){const v=r[n];if(v!==undefined&&v!==null&&String(v).trim()!=="")return String(v).trim()}}return""}
+function getNitrate(r){return getField(r,"Nitrate (mg/L)","chemical_nitrate","Nitrate","nitrate")}
+function getPhosphate(r){return getField(r,"Phosphate (mg/L)","chemical_phosphate","Phosphate","phosphate")}
+function normaliseRange(raw){
+ if(raw===undefined||raw===null)return"";const value=String(raw).trim();if(!value)return"";
+ const months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+ const m=value.match(/^0?(\d{1,2})[-\s]([A-Za-z]{3,9})$/);
+ if(m){const a=parseInt(m[1],10),b=months[m[2].slice(0,3).toLowerCase()];if(Number.isFinite(a)&&b)return`${a}-${b}`}
+ return value.replace(/_/g," ").replace(/\s*-\s*/g,"-").trim();
+}
+function sortBands(a,b){const n=s=>{const m=String(s).match(/\d+(?:\.\d+)?/);return m?Number(m[0]):Infinity};return n(a)-n(b)||String(a).localeCompare(String(b))}
+function nutrientBandColour(measure,band){
+  const clean=normaliseRange(band);
+
+  const nitrateColours={
+    "0-0.2":"#FBDFEB",
+    "0.2-0.5":"#F8CBDF",
+    "0.5-1":"#F6ACCD",
+    "1-2":"#F286B7",
+    "2-5":"#F05AA1",
+    "5-10":"#D40D8C",
+    "<0.2":"#FBDFEB",
+    "0.2":"#FBDFEB",
+    "0.5":"#F8CBDF",
+    "1":"#F6ACCD",
+    "2":"#F286B7",
+    "5":"#F05AA1",
+    "10":"#D40D8C"
+  };
+
+  const phosphateColours={
+    "0-0.02":"#FEF4F5",
+    "0.02-0.05":"#FEEBEF",
+    "0.05-0.1":"#FBDDE7",
+    "0.1-0.2":"#F7CDDB",
+    "0.2-0.5":"#F398C1",
+    "0.5-1":"#CC79AF",
+    "<0.02":"#FEF4F5",
+    "0.02":"#FEF4F5",
+    "0.05":"#FEEBEF",
+    "0.1":"#FBDDE7",
+    "0.2":"#F7CDDB",
+    "0.5":"#F398C1",
+    "1":"#CC79AF"
+  };
+
+  const lookup=measure==="Nitrate"?nitrateColours:phosphateColours;
+
+  if(lookup[clean]) return lookup[clean];
+
+  // Fallback: choose colour from the midpoint of an unfamiliar range.
+  const nums=String(clean||"").match(/\d+(?:\.\d+)?/g)?.map(Number)||[];
+  if(!nums.length) return "#777777";
+  const mid=nums.length===1?nums[0]:(nums[0]+nums[1])/2;
+
+  if(measure==="Nitrate"){
+    if(mid<=0.2)return"#FBDFEB";
+    if(mid<=0.5)return"#F8CBDF";
+    if(mid<=1)return"#F6ACCD";
+    if(mid<=2)return"#F286B7";
+    if(mid<=5)return"#F05AA1";
+    return"#D40D8C";
+  }
+
+  if(mid<=0.02)return"#FEF4F5";
+  if(mid<=0.05)return"#FEEBEF";
+  if(mid<=0.1)return"#FBDDE7";
+  if(mid<=0.2)return"#F7CDDB";
+  if(mid<=0.5)return"#F398C1";
+  return"#CC79AF";
+}
+function occurrences(vals){const c={};for(const r of vals){const v=normaliseRange(r);if(v)c[v]=(c[v]||0)+1}return c}
+function renderChart(id,counts,total,measure){
+ const el=document.getElementById(id),entries=Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])),max=Math.max(...entries.map(([,c])=>c),1);
+ if(!entries.length){el.innerHTML='<div style="color:#5f6f64;font-size:13px">No measured results.</div>';return}
+ el.innerHTML=entries.map(([band,count])=>{
+   const height=count/max*100,pct=total?count/total*100:0,colour=nutrientBandColour(measure,band);
+   return`<div class="bar-row"><div class="bar-label">${esc(band)}</div><div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${colour}"></div></div><div class="bar-value">${count} · ${pct.toFixed(1)}%</div></div>`
+ }).join("");
+}
+function rows(measure,counts,total){return Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])).map(([band,count])=>`<tr><td>${esc(measure)}</td><td>${esc(band)}</td><td>${count}</td><td>${(total?count/total*100:0).toFixed(1)}%</td></tr>`).join("")}
+async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
+async function load(){try{const data=parseCSV(await fetchCSV()),nVals=data.map(getNitrate).filter(Boolean),pVals=data.map(getPhosphate).filter(Boolean),n=occurrences(nVals),p=occurrences(pVals);
+ document.getElementById("totalSamples").textContent=data.length;document.getElementById("nitrateResults").textContent=nVals.length;document.getElementById("phosphateResults").textContent=pVals.length;
+ renderChart("nitrateChart",n,nVals.length,"Nitrate");renderChart("phosphateChart",p,pVals.length,"Phosphate");document.getElementById("occurrenceTable").innerHTML=rows("Nitrate",n,nVals.length)+rows("Phosphate",p,pVals.length);
+ setTimeout(notifyParentOfHeight,80);
+ }catch(e){const el=document.getElementById("error");el.textContent="Unable to load the water-quality CSV: "+e.message;el.style.display="block"}}
+
+
+
+function notifyParentOfHeight(){
+  const height = Math.ceil(document.documentElement.scrollHeight);
+  window.parent.postMessage({
+    type:"canal-chart-resize",
+    height:height
+  },"*");
+}
+
+// Send size after initial render and whenever the viewport changes.
+window.addEventListener("load",()=>setTimeout(notifyParentOfHeight,50));
+window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
+
+const chartCollapseButton=document.getElementById("chartCollapseButton");
+const chartCollapseContent=document.getElementById("chartCollapseContent");
+const collapseIcon=document.getElementById("collapseIcon");
+
+chartCollapseButton.addEventListener("click",()=>{
+  const isOpen=chartCollapseButton.getAttribute("aria-expanded")==="true";
+  chartCollapseButton.setAttribute("aria-expanded",String(!isOpen));
+  chartCollapseContent.hidden=isOpen;
+  collapseIcon.textContent=isOpen?"＋":"−";
+
+  // Allow the layout to update before reporting the new height.
+  requestAnimationFrame(()=>{
+    setTimeout(notifyParentOfHeight,40);
+  });
+});
+
+function setChartTab(which){
+  const nitrateTab=document.getElementById("nitrateTab");
+  const phosphateTab=document.getElementById("phosphateTab");
+  const nitratePanel=document.getElementById("nitratePanel");
+  const phosphatePanel=document.getElementById("phosphatePanel");
+
+  const nitrateActive=which==="nitrate";
+
+  nitrateTab.classList.toggle("active",nitrateActive);
+  phosphateTab.classList.toggle("active",!nitrateActive);
+
+  nitrateTab.setAttribute("aria-selected",String(nitrateActive));
+  phosphateTab.setAttribute("aria-selected",String(!nitrateActive));
+
+  nitratePanel.hidden=!nitrateActive;
+  phosphatePanel.hidden=nitrateActive;
+
+  requestAnimationFrame(()=>{
+    setTimeout(notifyParentOfHeight,40);
+  });
+}
+
+document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
+document.getElementById("phosphateTab").addEventListener("click",()=>setChartTab("phosphate"));
+
+
+load();
+</script>
+</body>
+</html>
