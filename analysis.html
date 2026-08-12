@@ -396,54 +396,6 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   .change-date{font-size:10px}
 }
 
-.turbidity-scale{
-  display:flex;
-  align-items:flex-end;
-  gap:10px;
-  height:280px;
-  padding:18px 10px 0;
-  border-left:1px solid var(--line);
-  border-bottom:1px solid var(--line);
-  overflow-x:auto;
-  overflow-y:hidden;
-}
-.turbidity-scale .scale-row{
-  flex:0 0 58px;
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
-  align-items:center;
-}
-.turbidity-scale .scale-value{
-  order:1;
-  min-height:18px;
-  margin-bottom:5px;
-  font-size:12px;
-  font-weight:700;
-  white-space:nowrap;
-}
-.turbidity-scale .scale-track{
-  order:2;
-  width:42px;
-  height:190px;
-  display:flex;
-  align-items:flex-end;
-}
-.turbidity-scale .scale-fill{
-  width:100%;
-  min-height:2px;
-  border-radius:5px 5px 0 0;
-}
-.turbidity-scale .scale-label{
-  order:3;
-  margin-top:7px;
-  min-height:30px;
-  font-size:11px;
-  font-weight:600;
-  text-align:center;
-  white-space:nowrap;
-}
 .turbidity-axis-note{
   margin:8px 0 0;
   color:var(--muted);
@@ -456,6 +408,38 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   height:260px;
   padding:18px 8px 0 0;
 }
+.turbidity-bar-list{
+  grid-template-columns:46px minmax(0,1fr);
+}
+.turbidity-bar-list .bar-columns{
+  gap:6px;
+}
+.turbidity-bar-list .bar-row{
+  min-width:0;
+}
+.turbidity-bar-list .bar-track{
+  width:min(42px,72%);
+}
+.turbidity-bar-list .bar-label{
+  font-size:11px;
+}
+@media(max-width:900px){
+  .turbidity-bar-list{
+    grid-template-columns:42px minmax(900px,1fr);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .turbidity-bar-list .bar-columns{
+    gap:8px;
+  }
+  .turbidity-bar-list .bar-row{
+    min-width:50px;
+  }
+  .turbidity-bar-list .bar-track{
+    width:40px;
+  }
+}
+
 .bar-axis{
   height:185px;
   margin-top:18px;
@@ -468,7 +452,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   top:50%;
   transform:translateY(-50%) rotate(-90deg);
   transform-origin:center;
-  font-size:10px;
+  font-size:11px;
   font-weight:700;
   color:var(--muted);
   white-space:nowrap;
@@ -477,7 +461,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   position:absolute;
   right:5px;
   transform:translateY(50%);
-  font-size:10px;
+  font-size:11px;
   color:var(--muted);
   line-height:1;
 }
@@ -518,7 +502,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   z-index:1;
 }
 .bar-row{flex:1;min-width:54px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
-.bar-label{font-size:12px;font-weight:600;text-align:center;order:3;margin-top:7px;min-height:30px}
+.bar-label{font-size:13px;font-weight:600;text-align:center;order:3;margin-top:7px;min-height:30px}
 .bar-track{width:min(58px,72%);height:185px;background:transparent;display:flex;align-items:flex-end;order:2}
 .bar-fill{
   width:100%;
@@ -531,7 +515,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   left:50%;
   bottom:calc(100% + 3px);
   transform:translateX(-50%);
-  font-size:10px;
+  font-size:11px;
   font-weight:800;
   line-height:1;
   white-space:nowrap;
@@ -628,9 +612,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
     <h2>Turbidity occurrences</h2>
-    <p class="sub">Occurrences across the full FreshWater Watch turbidity scale. The complete test scale remains visible.</p>
-    <div id="turbidityChart" class="turbidity-scale" aria-label="Turbidity occurrences across the full NTU scale"></div>
-    <p class="turbidity-axis-note">Turbidity (NTU) — scroll horizontally on smaller screens to view the full scale.</p>
+    <p class="sub">Number and percentage of samples across the full FreshWater Watch turbidity scale. The left-hand scale shows the number of samples; colours follow the existing turbidity assessment scale.</p>
+    <div id="turbidityChart" class="bar-list turbidity-bar-list" aria-label="Turbidity occurrences across the full NTU scale"></div>
+    <p class="turbidity-axis-note">Turbidity (NTU) — formatted to match the Nitrate and Phosphate charts; scroll horizontally on smaller screens.</p>
   </article>
 
   <article id="temperaturePanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="temperatureTab" hidden>
@@ -858,23 +842,42 @@ function turbidityOccurrences(vals){
 
 function renderTurbidityChart(counts,total){
   const el=document.getElementById("turbidityChart");
-  const max=Math.max(...TURBIDITY_SCALE.map(x=>counts[x.key]||0),1);
 
-  el.innerHTML=TURBIDITY_SCALE.map(item=>{
+  // Match the nitrate/phosphate chart scale: 0–10 initially, then expand
+  // automatically in steps of 5 when the dataset grows.
+  const axisMax=total<=10 ? 10 : Math.ceil(total/5)*5;
+
+  const axisTicks=Array.from({length:axisMax+1},(_,value)=>
+    `<span class="bar-axis-tick" style="bottom:${(value/axisMax)*100}%">${value}</span>`
+  ).join("");
+
+  const gridLines=Array.from({length:axisMax+1},(_,value)=>
+    `<span class="bar-grid-line" style="bottom:${(value/axisMax)*100}%"></span>`
+  ).join("");
+
+  const axis=`<div class="bar-axis" aria-hidden="true">
+    <span class="bar-axis-title">Number of samples</span>
+    ${axisTicks}
+  </div>`;
+
+  const bars=TURBIDITY_SCALE.map(item=>{
     const count=counts[item.key]||0;
-    const height=count?Math.max(4,count/max*100):0;
     const pct=total?count/total*100:0;
+    const height=count ? Math.max((count/axisMax)*100,1) : 0;
     const colour=turbidityBandColour(item.key);
-    const value=count ? `${count} · ${pct.toFixed(1)}%` : "";
+    const pctLabel=count ? `${pct.toFixed(1)}%` : "";
 
-    return `<div class="scale-row">
-      <div class="scale-value">${value}</div>
-      <div class="scale-track">
-        <div class="scale-fill" style="height:${height}%;background:${colour}"></div>
+    return `<div class="bar-row">
+      <div class="bar-label">${esc(item.label)}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="height:${height}%;background:${colour}">
+          ${pctLabel ? `<span class="bar-percent">${pctLabel}</span>` : ""}
+        </div>
       </div>
-      <div class="scale-label">${esc(item.label)}</div>
     </div>`;
   }).join("");
+
+  el.innerHTML=axis+`<div class="bar-columns"><div class="bar-grid">${gridLines}</div>${bars}</div>`;
 }
 
 function occurrences(vals){const c={};for(const r of vals){const v=normaliseRange(r);if(v)c[v]=(c[v]||0)+1}return c}
