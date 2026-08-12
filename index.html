@@ -469,6 +469,17 @@ select {
   color:#777777;
 }
 
+
+/* Slide the Assessment panel out of the way only when a popup overlaps it. */
+.leaflet-control.legend{
+  transition:transform .25s ease, opacity .25s ease;
+  will-change:transform;
+}
+.leaflet-control.legend.assessment-shifted{
+  transform:translateX(calc(100% + 18px));
+  opacity:.18;
+}
+
 </style>
 </head>
 <body>
@@ -1315,9 +1326,12 @@ async function loadData() {
   }
 }
 
+let assessmentLegendEl = null;
+
 const legend = L.control({position:"bottomright"});
 legend.onAdd = () => {
   const d = L.DomUtil.create("div","legend");
+  assessmentLegendEl = d;
   d.innerHTML =
     "<strong>Assessment</strong><br>" +
     '<span class="key"><span class="legend-symbol circle" style="background:#006400"></span>Excellent</span><br>' +
@@ -1328,6 +1342,57 @@ legend.onAdd = () => {
   return d;
 };
 legend.addTo(map);
+
+function rectanglesOverlap(a,b){
+  return !(
+    a.right <= b.left ||
+    a.left >= b.right ||
+    a.bottom <= b.top ||
+    a.top >= b.bottom
+  );
+}
+
+function updateAssessmentLegendForPopup(){
+  if(!assessmentLegendEl) return;
+
+  const popupEl = map.getContainer().querySelector(".leaflet-popup");
+  if(!popupEl){
+    assessmentLegendEl.classList.remove("assessment-shifted");
+    return;
+  }
+
+  // Measure both elements in their normal positions.
+  assessmentLegendEl.classList.remove("assessment-shifted");
+
+  requestAnimationFrame(()=>{
+    if(!assessmentLegendEl || !popupEl.isConnected) return;
+
+    const popupRect = popupEl.getBoundingClientRect();
+    const legendRect = assessmentLegendEl.getBoundingClientRect();
+
+    if(rectanglesOverlap(popupRect, legendRect)){
+      assessmentLegendEl.classList.add("assessment-shifted");
+    }
+  });
+}
+
+map.on("popupopen", ()=>{
+  // Leaflet may still be finishing its auto-pan when popupopen fires.
+  setTimeout(updateAssessmentLegendForPopup, 40);
+  setTimeout(updateAssessmentLegendForPopup, 180);
+});
+
+map.on("popupclose", ()=>{
+  if(assessmentLegendEl){
+    assessmentLegendEl.classList.remove("assessment-shifted");
+  }
+});
+
+map.on("moveend zoomend resize", ()=>{
+  if(map.getContainer().querySelector(".leaflet-popup")){
+    updateAssessmentLegendForPopup();
+  }
+});
 
 loadData();
 </script>
