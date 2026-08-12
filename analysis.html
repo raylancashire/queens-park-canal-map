@@ -31,7 +31,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans
 
 .header{padding:18px 20px;margin-bottom:16px}
 .header h1{margin:0 0 5px;font-size:24px}.header p{margin:0;color:var(--muted);font-size:14px}
-.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat{padding:12px 14px}.stat strong{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}
 .chart-toggle{
   display:flex;
@@ -60,6 +60,60 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans
 .chart-card h2{margin:0 0 4px;font-size:18px}
 .sub{margin:0 0 14px;color:var(--muted);font-size:12px}
 .chart-panel[hidden]{display:none!important}
+.turbidity-scale{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  height:280px;
+  padding:18px 10px 0;
+  border-left:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.turbidity-scale .scale-row{
+  flex:0 0 58px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:center;
+}
+.turbidity-scale .scale-value{
+  order:1;
+  min-height:18px;
+  margin-bottom:5px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.turbidity-scale .scale-track{
+  order:2;
+  width:42px;
+  height:190px;
+  display:flex;
+  align-items:flex-end;
+}
+.turbidity-scale .scale-fill{
+  width:100%;
+  min-height:2px;
+  border-radius:5px 5px 0 0;
+}
+.turbidity-scale .scale-label{
+  order:3;
+  margin-top:7px;
+  min-height:30px;
+  font-size:11px;
+  font-weight:600;
+  text-align:center;
+  white-space:nowrap;
+}
+.turbidity-axis-note{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:12px;
+}
+
 .bar-list{display:flex;align-items:flex-end;gap:14px;height:260px;padding:18px 8px 0;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
 .bar-row{flex:1;min-width:54px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
 .bar-label{font-size:12px;font-weight:600;text-align:center;order:3;margin-top:7px;min-height:30px}
@@ -87,6 +141,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <div class="stat"><strong id="totalSamples">0</strong><span>Total samples</span></div>
         <div class="stat"><strong id="nitrateResults">0</strong><span>Nitrate results</span></div>
         <div class="stat"><strong id="phosphateResults">0</strong><span>Phosphate results</span></div>
+        <div class="stat"><strong id="turbidityResults">0</strong><span>Turbidity results</span></div>
       </section>
 
       <div class="chart-toggle" role="tablist" aria-label="Choose result chart">
@@ -95,6 +150,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         </button>
         <button id="phosphateTab" type="button" role="tab" aria-selected="false" aria-controls="phosphatePanel">
           Phosphate occurrences
+        </button>
+        <button id="turbidityTab" type="button" role="tab" aria-selected="false" aria-controls="turbidityPanel">
+          Turbidity occurrences
         </button>
       </div>
 
@@ -109,6 +167,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
           <h2>Phosphate occurrences</h2>
           <p class="sub">Number and percentage of samples in each phosphate result band. Colours follow the FreshWater Watch phosphate scale.</p>
           <div id="phosphateChart" class="bar-list"></div>
+        </article>
+
+        <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
+          <h2>Turbidity occurrences</h2>
+          <p class="sub">Occurrences across the full FreshWater Watch turbidity scale. Zero-result readings are retained so the complete test scale remains visible.</p>
+          <div id="turbidityChart" class="turbidity-scale" aria-label="Turbidity occurrences across the full NTU scale"></div>
+          <p class="turbidity-axis-note">Turbidity (NTU) — scroll horizontally on smaller screens to view the full scale.</p>
         </article>
       </section>
 
@@ -144,6 +209,14 @@ function parseCSV(text){
 function getField(r,...names){for(const n of names){if(Object.prototype.hasOwnProperty.call(r,n)){const v=r[n];if(v!==undefined&&v!==null&&String(v).trim()!=="")return String(v).trim()}}return""}
 function getNitrate(r){return getField(r,"Nitrate (mg/L)","chemical_nitrate","Nitrate","nitrate")}
 function getPhosphate(r){return getField(r,"Phosphate (mg/L)","chemical_phosphate","Phosphate","phosphate")}
+function getTurbidity(r){return getField(
+  r,
+  "Water quality - Secchi Tube (Turbidity)",
+  "Water quality - Secchi Tube (Turbidity):",
+  "optical_secchi_turbidity",
+  "Turbidity",
+  "turbidity"
+)}
 function normaliseRange(raw){
  if(raw===undefined||raw===null)return"";const value=String(raw).trim();if(!value)return"";
  const months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
@@ -212,22 +285,120 @@ function nutrientBandColour(measure,band){
   if(mid<=0.5)return"#F398C1";
   return"#CC79AF";
 }
+
+const TURBIDITY_SCALE=[
+  {key:"<14",label:"<14"},
+  {key:"15",label:"15"},
+  {key:"17",label:"17"},
+  {key:"19",label:"19"},
+  {key:"21",label:"21"},
+  {key:"25",label:"25"},
+  {key:"30",label:"30"},
+  {key:"35",label:"35"},
+  {key:"40",label:"40"},
+  {key:"50",label:"50"},
+  {key:"75",label:"75"},
+  {key:"100",label:"100"},
+  {key:"150",label:"150"},
+  {key:"200",label:"200"},
+  {key:">240",label:">240"}
+];
+
+function turbidityScaleKey(value){
+  const s=String(value??"").trim().toUpperCase().replace(/\s+/g," ");
+  if(!s || /NOT\s*(TAKEN|TESTED|ASSESSED)|N\/A|^NA$/.test(s)) return "";
+
+  if(s.includes("<14")) return "<14";
+  if(s.includes(">240")) return ">240";
+
+  const m=s.match(/(?:^|[^\d])(\d+(?:\.\d+)?)(?:\s*NTU)?(?:$|[^\d])/);
+  if(!m) return "";
+
+  const n=Number(m[1]);
+  const exact=["15","17","19","21","25","30","35","40","50","75","100","150","200"];
+  const key=String(n);
+  return exact.includes(key)?key:"";
+}
+
+function turbidityBandColour(key){
+  if(key==="<14") return "#006400";
+  if(["15","17","19","21","25","30","35","40"].includes(key)) return "#FFD966";
+  if(["50","75","100","150","200",">240"].includes(key)) return "#C00000";
+  return "#777777";
+}
+
+function turbidityOccurrences(vals){
+  const counts=Object.fromEntries(TURBIDITY_SCALE.map(x=>[x.key,0]));
+  vals.forEach(v=>{
+    const key=turbidityScaleKey(v);
+    if(key && Object.prototype.hasOwnProperty.call(counts,key)) counts[key]++;
+  });
+  return counts;
+}
+
+function renderTurbidityChart(counts,total){
+  const el=document.getElementById("turbidityChart");
+  const max=Math.max(...TURBIDITY_SCALE.map(x=>counts[x.key]||0),1);
+
+  el.innerHTML=TURBIDITY_SCALE.map(item=>{
+    const count=counts[item.key]||0;
+    const height=count?Math.max(4,count/max*100):0;
+    const pct=total?count/total*100:0;
+    const colour=turbidityBandColour(item.key);
+    const value=count ? `${count} · ${pct.toFixed(1)}%` : "";
+
+    return `<div class="scale-row">
+      <div class="scale-value">${value}</div>
+      <div class="scale-track">
+        <div class="scale-fill" style="height:${height}%;background:${colour}"></div>
+      </div>
+      <div class="scale-label">${esc(item.label)}</div>
+    </div>`;
+  }).join("");
+}
+
 function occurrences(vals){const c={};for(const r of vals){const v=normaliseRange(r);if(v)c[v]=(c[v]||0)+1}return c}
 function renderChart(id,counts,total,measure){
  const el=document.getElementById(id),entries=Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])),max=Math.max(...entries.map(([,c])=>c),1);
  if(!entries.length){el.innerHTML='<div style="color:#5f6f64;font-size:13px">No measured results.</div>';return}
  el.innerHTML=entries.map(([band,count])=>{
-   const height=count/max*100,pct=total?count/total*100:0,colour=nutrientBandColour(measure,band);
+   const height=count/max*100,pct=total?count/total*100:0,
+         colour=measure==="Turbidity" ? turbidityBandColour(band) : nutrientBandColour(measure,band);
    return`<div class="bar-row"><div class="bar-label">${esc(band)}</div><div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${colour}"></div></div><div class="bar-value">${count} · ${pct.toFixed(1)}%</div></div>`
  }).join("");
 }
 function rows(measure,counts,total){return Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])).map(([band,count])=>`<tr><td>${esc(measure)}</td><td>${esc(band)}</td><td>${count}</td><td>${(total?count/total*100:0).toFixed(1)}%</td></tr>`).join("")}
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
-async function load(){try{const data=parseCSV(await fetchCSV()),nVals=data.map(getNitrate).filter(Boolean),pVals=data.map(getPhosphate).filter(Boolean),n=occurrences(nVals),p=occurrences(pVals);
- document.getElementById("totalSamples").textContent=data.length;document.getElementById("nitrateResults").textContent=nVals.length;document.getElementById("phosphateResults").textContent=pVals.length;
- renderChart("nitrateChart",n,nVals.length,"Nitrate");renderChart("phosphateChart",p,pVals.length,"Phosphate");document.getElementById("occurrenceTable").innerHTML=rows("Nitrate",n,nVals.length)+rows("Phosphate",p,pVals.length);
+async function load(){try{
+ const data=parseCSV(await fetchCSV()),
+       nVals=data.map(getNitrate).filter(Boolean),
+       pVals=data.map(getPhosphate).filter(Boolean),
+       tRaw=data.map(getTurbidity).filter(Boolean),
+       tVals=tRaw.filter(v=>turbidityScaleKey(v)),
+       n=occurrences(nVals),
+       p=occurrences(pVals),
+       t=turbidityOccurrences(tVals);
+
+ document.getElementById("totalSamples").textContent=data.length;
+ document.getElementById("nitrateResults").textContent=nVals.length;
+ document.getElementById("phosphateResults").textContent=pVals.length;
+ document.getElementById("turbidityResults").textContent=tVals.length;
+
+ renderChart("nitrateChart",n,nVals.length,"Nitrate");
+ renderChart("phosphateChart",p,pVals.length,"Phosphate");
+ renderTurbidityChart(t,tVals.length);
+
+ document.getElementById("occurrenceTable").innerHTML=
+   rows("Nitrate",n,nVals.length)+
+   rows("Phosphate",p,pVals.length)+
+   rows("Turbidity",t,tVals.length);
+
  setTimeout(notifyParentOfHeight,80);
- }catch(e){const el=document.getElementById("error");el.textContent="Unable to load the water-quality CSV: "+e.message;el.style.display="block"}}
+ }catch(e){
+   const el=document.getElementById("error");
+   el.textContent="Unable to load the water-quality CSV: "+e.message;
+   el.style.display="block";
+ }}
 
 
 
@@ -246,19 +417,27 @@ window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
 function setChartTab(which){
   const nitrateTab=document.getElementById("nitrateTab");
   const phosphateTab=document.getElementById("phosphateTab");
+  const turbidityTab=document.getElementById("turbidityTab");
+
   const nitratePanel=document.getElementById("nitratePanel");
   const phosphatePanel=document.getElementById("phosphatePanel");
+  const turbidityPanel=document.getElementById("turbidityPanel");
 
   const nitrateActive=which==="nitrate";
+  const phosphateActive=which==="phosphate";
+  const turbidityActive=which==="turbidity";
 
   nitrateTab.classList.toggle("active",nitrateActive);
-  phosphateTab.classList.toggle("active",!nitrateActive);
+  phosphateTab.classList.toggle("active",phosphateActive);
+  turbidityTab.classList.toggle("active",turbidityActive);
 
   nitrateTab.setAttribute("aria-selected",String(nitrateActive));
-  phosphateTab.setAttribute("aria-selected",String(!nitrateActive));
+  phosphateTab.setAttribute("aria-selected",String(phosphateActive));
+  turbidityTab.setAttribute("aria-selected",String(turbidityActive));
 
   nitratePanel.hidden=!nitrateActive;
-  phosphatePanel.hidden=nitrateActive;
+  phosphatePanel.hidden=!phosphateActive;
+  turbidityPanel.hidden=!turbidityActive;
 
   requestAnimationFrame(()=>{
     setTimeout(notifyParentOfHeight,40);
@@ -267,6 +446,7 @@ function setChartTab(which){
 
 document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
 document.getElementById("phosphateTab").addEventListener("click",()=>setChartTab("phosphate"));
+document.getElementById("turbidityTab").addEventListener("click",()=>setChartTab("turbidity"));
 
 
 load();
