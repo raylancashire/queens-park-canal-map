@@ -472,12 +472,20 @@ select {
 
 /* Slide the Assessment panel out of the way only when a popup overlaps it. */
 .leaflet-control.legend{
-  transition:transform .25s ease, opacity .25s ease;
+  transition:transform .28s ease, opacity .22s ease, visibility 0s linear .22s;
   will-change:transform;
 }
+
+.leaflet-control.legend:not(.assessment-shifted){
+  visibility:visible;
+  transition-delay:0s;
+}
+
 .leaflet-control.legend.assessment-shifted{
-  transform:translateX(calc(100% + 18px));
-  opacity:.18;
+  transform:translateX(calc(100% + 36px));
+  opacity:0;
+  pointer-events:none;
+  visibility:hidden;
 }
 
 </style>
