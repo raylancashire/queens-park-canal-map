@@ -537,13 +537,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   white-space:nowrap;
   color:var(--ink);
 }
-.bar-count{
-  font-size:12px;
-  font-weight:700;
-  white-space:nowrap;
-  order:1;
-  margin-bottom:1px;
-}
+
 .bar-fill.unassessed{background:#777777}
 
 .table-wrap{margin-top:18px;overflow-x:auto}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
@@ -917,7 +911,6 @@ function renderChart(id,counts,total,measure){
          <span class="bar-percent">${pctLabel}</span>
        </div>
      </div>
-     <div class="bar-count">${count} sample${count===1?"":"s"}</div>
    </div>`
  }).join("");
 
