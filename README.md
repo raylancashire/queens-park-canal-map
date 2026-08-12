@@ -440,3 +440,11 @@ Grand Union Canal
 - Added the same sample-count axis, faint guide lines and percentage-above-column presentation to Turbidity.
 - Retained the full FreshWater Watch turbidity/NTU scale and existing result colours.
 - Made the Turbidity chart fit the available width on larger screens and scroll horizontally on smaller devices.
+- Reserved a consistent two-line description area above the Nitrate, Phosphate and Turbidity occurrence charts so the charts remain vertically aligned when explanatory text wraps.
+- Reduced the description-to-chart spacing while retaining the two-line alignment.
+- Made the Nitrate, Phosphate and Turbidity summary result panels clickable; selecting a result panel opens its corresponding occurrence chart.
+- Added a bold red and subtly embossed active state to the selected Nitrate, Phosphate or Turbidity result panel.
+- Added mouse-over highlighting to the Sample Analysis chart buttons; the hover highlight is suppressed for the button that is already selected.
+- Added a stronger mouse-over visual effect to the clickable Nitrate, Phosphate and Turbidity result panels.
+- Removed the redundant explanatory note from beneath the Turbidity occurrence chart.
+- Updated the map Assessment legend so that when a sampling popup overlaps it, the legend slides/fades out of view and returns when the popup closes.
