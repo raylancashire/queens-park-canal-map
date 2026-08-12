@@ -33,6 +33,102 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans
 .header h1{margin:0 0 5px;font-size:24px}.header p{margin:0;color:var(--muted);font-size:14px}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .stat{padding:12px 14px}.stat strong{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}
+
+.analysis-group{
+  margin-top:16px;
+}
+.analysis-group:first-of-type{
+  margin-top:0;
+}
+.analysis-group-title{
+  margin:0 0 8px;
+  font-size:13px;
+  font-weight:800;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.additional-chart{
+  min-height:250px;
+}
+.series-chart{
+  display:flex;
+  align-items:flex-end;
+  gap:14px;
+  height:230px;
+  padding:18px 10px 0;
+  border-left:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  overflow-x:auto;
+}
+.series-row{
+  flex:1 0 72px;
+  max-width:110px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:center;
+}
+.series-value{
+  order:1;
+  min-height:18px;
+  margin-bottom:5px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.series-track{
+  order:2;
+  width:min(58px,72%);
+  height:155px;
+  display:flex;
+  align-items:flex-end;
+}
+.series-fill{
+  width:100%;
+  min-height:3px;
+  background:#2f6b45;
+  border-radius:5px 5px 0 0;
+}
+.series-label{
+  order:3;
+  margin-top:7px;
+  min-height:34px;
+  font-size:10px;
+  line-height:1.25;
+  font-weight:600;
+  text-align:center;
+}
+.single-result{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:190px;
+  text-align:center;
+}
+.single-result strong{
+  display:block;
+  font-size:38px;
+  line-height:1;
+  margin-bottom:8px;
+}
+.single-result span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.no-results{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:190px;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+
 .chart-toggle{
   display:flex;
   gap:8px;
@@ -144,41 +240,100 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <div class="stat"><strong id="turbidityResults">0</strong><span>Turbidity results</span></div>
       </section>
 
-      <div class="chart-toggle" role="tablist" aria-label="Choose result chart">
-        <button id="nitrateTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="nitratePanel">
-          Nitrate occurrences
-        </button>
-        <button id="phosphateTab" type="button" role="tab" aria-selected="false" aria-controls="phosphatePanel">
-          Phosphate occurrences
-        </button>
-        <button id="turbidityTab" type="button" role="tab" aria-selected="false" aria-controls="turbidityPanel">
-          Turbidity occurrences
-        </button>
-      </div>
+      
+<div class="analysis-group">
+  <h2 class="analysis-group-title">FreshWater Watch</h2>
+  <div class="chart-toggle" role="tablist" aria-label="Choose FreshWater Watch result chart">
+    <button id="nitrateTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="nitratePanel">
+      Nitrate occurrences
+    </button>
+    <button id="phosphateTab" type="button" role="tab" aria-selected="false" aria-controls="phosphatePanel">
+      Phosphate occurrences
+    </button>
+    <button id="turbidityTab" type="button" role="tab" aria-selected="false" aria-controls="turbidityPanel">
+      Turbidity occurrences
+    </button>
+  </div>
+</div>
 
-      <section class="charts">
-        <article id="nitratePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="nitrateTab">
-          <h2>Nitrate occurrences</h2>
-          <p class="sub">Number and percentage of samples in each nitrate result band. Colours follow the FreshWater Watch nitrate scale.</p>
-          <div id="nitrateChart" class="bar-list"></div>
-        </article>
+<div class="analysis-group">
+  <h2 class="analysis-group-title">Additional water-quality testing</h2>
+  <div class="chart-toggle" role="tablist" aria-label="Choose additional water-quality result chart">
+    <button id="temperatureTab" type="button" role="tab" aria-selected="false" aria-controls="temperaturePanel">
+      Temperature
+    </button>
+    <button id="phTab" type="button" role="tab" aria-selected="false" aria-controls="phPanel">
+      pH
+    </button>
+    <button id="coliformTab" type="button" role="tab" aria-selected="false" aria-controls="coliformPanel">
+      Coliform
+    </button>
+    <button id="bodTab" type="button" role="tab" aria-selected="false" aria-controls="bodPanel">
+      BOD
+    </button>
+    <button id="doTab" type="button" role="tab" aria-selected="false" aria-controls="doPanel">
+      Dissolved Oxygen
+    </button>
+  </div>
+</div>
 
-        <article id="phosphatePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="phosphateTab" hidden>
-          <h2>Phosphate occurrences</h2>
-          <p class="sub">Number and percentage of samples in each phosphate result band. Colours follow the FreshWater Watch phosphate scale.</p>
-          <div id="phosphateChart" class="bar-list"></div>
-        </article>
+<section class="charts">
+  <article id="nitratePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="nitrateTab">
+    <h2>Nitrate occurrences</h2>
+    <p class="sub">Number and percentage of samples in each nitrate result band. Colours follow the FreshWater Watch nitrate scale.</p>
+    <div id="nitrateChart" class="bar-list"></div>
+  </article>
 
-        <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
-          <h2>Turbidity occurrences</h2>
-          <p class="sub">Occurrences across the full FreshWater Watch turbidity scale. Zero-result readings are retained so the complete test scale remains visible.</p>
-          <div id="turbidityChart" class="turbidity-scale" aria-label="Turbidity occurrences across the full NTU scale"></div>
-          <p class="turbidity-axis-note">Turbidity (NTU) — scroll horizontally on smaller screens to view the full scale.</p>
-        </article>
-      </section>
+  <article id="phosphatePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="phosphateTab" hidden>
+    <h2>Phosphate occurrences</h2>
+    <p class="sub">Number and percentage of samples in each phosphate result band. Colours follow the FreshWater Watch phosphate scale.</p>
+    <div id="phosphateChart" class="bar-list"></div>
+  </article>
+
+  <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
+    <h2>Turbidity occurrences</h2>
+    <p class="sub">Occurrences across the full FreshWater Watch turbidity scale. The complete test scale remains visible.</p>
+    <div id="turbidityChart" class="turbidity-scale" aria-label="Turbidity occurrences across the full NTU scale"></div>
+    <p class="turbidity-axis-note">Turbidity (NTU) — scroll horizontally on smaller screens to view the full scale.</p>
+  </article>
+
+  <article id="temperaturePanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="temperatureTab" hidden>
+    <h2>Temperature</h2>
+    <p class="sub">Recorded water temperature results over time.</p>
+    <div id="temperatureChart"></div>
+  </article>
+
+  <article id="phPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="phTab" hidden>
+    <h2>pH</h2>
+    <p class="sub">Recorded pH results over time.</p>
+    <div id="phChart"></div>
+  </article>
+
+  <article id="coliformPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="coliformTab" hidden>
+    <h2>Coliform</h2>
+    <p class="sub">Recorded coliform results over time.</p>
+    <div id="coliformChart"></div>
+  </article>
+
+  <article id="bodPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="bodTab" hidden>
+    <h2>Biochemical Oxygen Demand (BOD)</h2>
+    <p class="sub">Recorded BOD results over time.</p>
+    <div id="bodChart"></div>
+  </article>
+
+  <article id="doPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="doTab" hidden>
+    <h2>Dissolved Oxygen</h2>
+    <p class="sub">Recorded dissolved oxygen results over time.</p>
+    <div id="doChart"></div>
+  </article>
+</section>
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
+const ADDITIONAL_CSV_SOURCES=[
+  "./additional-water-quality.csv",
+  "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/additional-water-quality.csv"
+];
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
@@ -352,6 +507,117 @@ function renderChart(id,counts,total,measure){
  }).join("");
 }
 function rows(measure,counts,total){return Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])).map(([band,count])=>`<tr><td>${esc(measure)}</td><td>${esc(band)}</td><td>${count}</td><td>${(total?count/total*100:0).toFixed(1)}%</td></tr>`).join("")}
+
+function parseAdditionalNumber(value){
+  if(value===undefined || value===null) return null;
+  const m=String(value).trim().match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : null;
+}
+
+function parseUKDate(dateText,timeText=""){
+  if(!dateText) return null;
+  const m=String(dateText).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(!m) return null;
+
+  const day=Number(m[1]), month=Number(m[2])-1, year=Number(m[3]);
+  let hour=0, minute=0;
+
+  const t=String(timeText||"").trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if(t){
+    hour=Number(t[1]);
+    minute=Number(t[2]);
+    if(t[3]){
+      const ap=t[3].toUpperCase();
+      if(ap==="PM" && hour<12) hour+=12;
+      if(ap==="AM" && hour===12) hour=0;
+    }
+  }
+  const d=new Date(year,month,day,hour,minute);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function additionalDateLabel(row){
+  const date=String(row["Date"]||"").trim();
+  const time=String(row["Time"]||"").trim();
+  return [date,time].filter(Boolean).join(" ");
+}
+
+function renderAdditionalSeries(containerId,data,column,unit){
+  const el=document.getElementById(containerId);
+
+  const points=data
+    .map(row=>({
+      value:parseAdditionalNumber(row[column]),
+      date:parseUKDate(row["Date"],row["Time"]),
+      label:additionalDateLabel(row),
+      location:String(row["Location"]||"").trim()
+    }))
+    .filter(p=>Number.isFinite(p.value))
+    .sort((a,b)=>(a.date?.getTime()||0)-(b.date?.getTime()||0));
+
+  if(!points.length){
+    el.innerHTML='<div class="no-results">No results recorded yet.</div>';
+    return;
+  }
+
+  const unitText=unit ? ` ${unit}` : "";
+
+  if(points.length===1){
+    const p=points[0];
+    el.innerHTML=`<div class="single-result">
+      <div>
+        <strong>${esc(p.value)}${esc(unitText)}</strong>
+        <span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const max=Math.max(...points.map(p=>p.value),1);
+  el.innerHTML=`<div class="series-chart">`+
+    points.map(p=>{
+      const height=Math.max(3,(p.value/max)*100);
+      return `<div class="series-row">
+        <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
+        <div class="series-track"><div class="series-fill" style="height:${height}%"></div></div>
+        <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}</div>
+      </div>`;
+    }).join("")+
+    `</div>`;
+}
+
+async function fetchFromSources(sources){
+  let last;
+  for(const url of sources){
+    try{
+      const r=await fetch(url,{cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return await r.text();
+    }catch(e){ last=e; }
+  }
+  throw last || new Error("Could not load CSV");
+}
+
+async function loadAdditionalData(){
+  try{
+    const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
+    const data=parseCSV(raw);
+
+    renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
+    renderAdditionalSeries("phChart",data,"pH","");
+    renderAdditionalSeries("coliformChart",data,"Coliform","");
+    renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
+    renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
+
+    setTimeout(notifyParentOfHeight,80);
+  }catch(e){
+    ["temperatureChart","phChart","coliformChart","bodChart","doChart"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<div class="no-results">Additional water-quality data could not be loaded.</div>';
+    });
+  }
+}
+
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
 async function load(){try{
  const data=parseCSV(await fetchCSV()),
@@ -394,41 +660,20 @@ window.addEventListener("load",()=>setTimeout(notifyParentOfHeight,50));
 window.addEventListener("resize",()=>setTimeout(notifyParentOfHeight,50));
 
 function setChartTab(which){
-  const nitrateTab=document.getElementById("nitrateTab");
-  const phosphateTab=document.getElementById("phosphateTab");
-  const turbidityTab=document.getElementById("turbidityTab");
-
-  const nitratePanel=document.getElementById("nitratePanel");
-  const phosphatePanel=document.getElementById("phosphatePanel");
-  const turbidityPanel=document.getElementById("turbidityPanel");
-
-  const nitrateActive=which==="nitrate";
-  const phosphateActive=which==="phosphate";
-  const turbidityActive=which==="turbidity";
-
-  nitrateTab.classList.toggle("active",nitrateActive);
-  phosphateTab.classList.toggle("active",phosphateActive);
-  turbidityTab.classList.toggle("active",turbidityActive);
-
-  nitrateTab.setAttribute("aria-selected",String(nitrateActive));
-  phosphateTab.setAttribute("aria-selected",String(phosphateActive));
-  turbidityTab.setAttribute("aria-selected",String(turbidityActive));
-
-  nitratePanel.hidden=!nitrateActive;
-  phosphatePanel.hidden=!phosphateActive;
-  turbidityPanel.hidden=!turbidityActive;
-
-  requestAnimationFrame(()=>{
-    setTimeout(notifyParentOfHeight,40);
-  });
-}
-
-document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
+  const tabs={
+    document.getElementById("nitrateTab").addEventListener("click",()=>setChartTab("nitrate"));
 document.getElementById("phosphateTab").addEventListener("click",()=>setChartTab("phosphate"));
 document.getElementById("turbidityTab").addEventListener("click",()=>setChartTab("turbidity"));
+document.getElementById("temperatureTab").addEventListener("click",()=>setChartTab("temperature"));
+document.getElementById("phTab").addEventListener("click",()=>setChartTab("ph"));
+document.getElementById("coliformTab").addEventListener("click",()=>setChartTab("coliform"));
+document.getElementById("bodTab").addEventListener("click",()=>setChartTab("bod"));
+document.getElementById("doTab").addEventListener("click",()=>setChartTab("dissolvedOxygen"));
+
 
 
 load();
+loadAdditionalData();
 </script>
 </body>
 </html>
