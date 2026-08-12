@@ -176,22 +176,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
           <p class="turbidity-axis-note">Turbidity (NTU) — scroll horizontally on smaller screens to view the full scale.</p>
         </article>
       </section>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Measure</th>
-              <th>Result band</th>
-              <th>Occurrences</th>
-              <th>Share of measured samples</th>
-            </tr>
-          </thead>
-          <tbody id="occurrenceTable"></tbody>
-        </table>
-      </div>
-
-      
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
@@ -387,11 +371,6 @@ async function load(){try{
  renderChart("nitrateChart",n,nVals.length,"Nitrate");
  renderChart("phosphateChart",p,pVals.length,"Phosphate");
  renderTurbidityChart(t,tVals.length);
-
- document.getElementById("occurrenceTable").innerHTML=
-   rows("Nitrate",n,nVals.length)+
-   rows("Phosphate",p,pVals.length)+
-   rows("Turbidity",t,tVals.length);
 
  setTimeout(notifyParentOfHeight,80);
  }catch(e){
