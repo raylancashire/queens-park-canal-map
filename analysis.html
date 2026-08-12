@@ -538,6 +538,23 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   margin-bottom:0.1rem;
 }
 
+
+.summary .stat.result-active{
+  font-weight:700;
+  background:#ffffff;
+  border-color:#b8c4bc;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.95),
+    inset -1px -1px 0 rgba(120,135,125,.18),
+    0 3px 7px rgba(30,50,38,.18);
+  transform:translateY(-1px);
+}
+.summary .stat.result-active strong,
+.summary .stat.result-active span{
+  font-weight:800;
+  color:#C00000;
+}
+
 </style>
 </head>
 <body>
@@ -564,9 +581,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
       <section class="summary">
         <div class="stat"><strong id="totalSamples">0</strong><span>Total samples</span></div>
-        <div class="stat"><strong id="nitrateResults">0</strong><span>Nitrate results</span></div>
-        <div class="stat"><strong id="phosphateResults">0</strong><span>Phosphate results</span></div>
-        <div class="stat"><strong id="turbidityResults">0</strong><span>Turbidity results</span></div>
+        <div id="nitrateResultStat" class="stat result-active"><strong id="nitrateResults">0</strong><span>Nitrate results</span></div>
+        <div id="phosphateResultStat" class="stat"><strong id="phosphateResults">0</strong><span>Phosphate results</span></div>
+        <div id="turbidityResultStat" class="stat"><strong id="turbidityResults">0</strong><span>Turbidity results</span></div>
       </section>
 
       
@@ -1547,6 +1564,16 @@ function setChartTab(which){
       tab.setAttribute("aria-selected",String(active));
     }
     if(panel) panel.hidden=!active;
+  });
+
+  const resultStats={
+    nitrate:"nitrateResultStat",
+    phosphate:"phosphateResultStat",
+    turbidity:"turbidityResultStat"
+  };
+  Object.entries(resultStats).forEach(([key,id])=>{
+    const stat=document.getElementById(id);
+    if(stat) stat.classList.toggle("result-active",key===which);
   });
 
   requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,40));
