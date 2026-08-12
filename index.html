@@ -434,9 +434,12 @@ select {
 .reset-map-control a.reset-map-button {
   width:30px;
   height:30px;
-  line-height:28px;
+  line-height:30px;
   text-align:center;
-  font-size:22px;
+  font-size:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   font-weight:700;
   color:#17251c;
   background:#fff;
@@ -567,10 +570,15 @@ const ResetControl = L.Control.extend({
     const button = L.DomUtil.create("a", "reset-map-button", container);
 
     button.href = "#";
-    button.title = "Reset map to show all sampling results";
+    button.title = "Home – show all sampling results";
     button.setAttribute("role", "button");
-    button.setAttribute("aria-label", "Reset map to show all sampling results");
-    button.innerHTML = "↺";
+    button.setAttribute("aria-label", "Home – show all sampling results");
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" style="vertical-align:middle;">
+        <path d="M3 11.2 12 3l9 8.2v9.3a.5.5 0 0 1-.5.5h-5.7v-6.2H9.2V21H3.5a.5.5 0 0 1-.5-.5z"
+              fill="currentColor"></path>
+      </svg>
+    `;
 
     L.DomEvent.disableClickPropagation(container);
     L.DomEvent.on(button, "click", function(e) {
