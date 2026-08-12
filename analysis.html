@@ -529,6 +529,15 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .error{display:none;margin-bottom:16px;padding:12px 14px;border-radius:8px;background:#fff1f1;color:#8b1e1e}
 .note{margin-top:14px;color:var(--muted);font-size:11px}
 @media(max-width:760px){.summary{grid-template-columns:1fr}.wrap{padding:10px 10px 6px}.bar-list{height:240px;overflow-x:auto;grid-template-columns:42px minmax(430px,1fr)}.bar-columns{gap:7px}.bar-row{min-width:58px}.bar-track,.bar-axis,.bar-grid{height:165px}.chart-toggle button{flex:1 1 160px}}
+
+/* Keep occurrence charts vertically aligned when description text wraps */
+#nitratePanel > .sub,
+#phosphatePanel > .sub,
+#turbidityPanel > .sub{
+  min-height:2.25em;
+  margin-bottom:0.1rem;
+}
+
 </style>
 </head>
 <body>
