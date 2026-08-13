@@ -1847,21 +1847,35 @@ function setComparisonMetric(metric){
 }
 
 
-async function load(){try{
- const data=parseCSV(await fetchCSV());
+async function load(){
+  try{
+    const data=parseCSV(await fetchCSV());
 
- freshwaterDataAll=data;
- freshwaterDataForChanges=data;
- initialiseSiteChanges();
- renderSampleAnalysisForFocusedSite();
- renderSiteComparison();
+    freshwaterDataAll=data;
+    freshwaterDataForChanges=data;
 
- setTimeout(notifyParentOfHeight,80);
- }catch(e){
-   const el=document.getElementById("error");
-   el.textContent="Unable to load the water-quality CSV: "+e.message;
-   el.style.display="block";
- }}
+    /*
+      This split file contains only the Further Analysis panels.
+      Render Site Comparison immediately once the CSV has loaded.
+    */
+    renderSiteComparison();
+
+    setTimeout(notifyParentOfHeight,80);
+
+  }catch(e){
+
+    const chart=document.getElementById("siteComparisonChart");
+
+    if(chart){
+      chart.innerHTML=
+        '<div class="site-comparison-empty">' +
+        'Unable to load the FreshWater Watch data.' +
+        '</div>';
+    }
+
+    setTimeout(notifyParentOfHeight,80);
+  }
+}
 
 
 
