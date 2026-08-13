@@ -1357,7 +1357,10 @@ async function loadData() {
       }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
       marker.site = site;
-      marker.on("click", () => {
+      marker.on("click", (e) => {
+        if (e && e.originalEvent) {
+          L.DomEvent.stopPropagation(e.originalEvent);
+        }
         sel.value = site;
         updateSummary(site);
       });
@@ -1401,6 +1404,15 @@ async function loadData() {
       markers.forEach(marker => marker.addTo(map));
       updateSummary("all");
     };
+
+    map.on("click", () => {
+      map.closePopup();
+      resetMapSummaryToAll();
+
+      if (defaultResultBounds && defaultResultBounds.isValid()) {
+        map.fitBounds(defaultResultBounds, {padding:[25,25]});
+      }
+    });
 
     document.getElementById("recordCount").textContent =
       `${validRows} records loaded across ${siteNames.length} sites`;
