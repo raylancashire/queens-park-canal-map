@@ -2,84 +2,82 @@
 
 Interactive water-quality monitoring map for the **Greener Canalside / FreshWater Watch project** on the Grand Union Canal.
 
-The map is designed to be hosted using **GitHub Pages** and embedded into a **Webador** website. Water-quality data is loaded from a CSV file, so new sampling results can be published without rebuilding the map.
-
----
+The map is designed for **GitHub Pages** and embedding into a **Webador** website. Water-quality data is loaded from CSV files so new sampling results can be published without rebuilding the map.
 
 ## Project files
 
-The GitHub repository contains:
-
-- `index.html` — the interactive Leaflet map
+- `index.html` — interactive Leaflet survey map
 - `freshwater.csv` — FreshWater Watch sampling data
 - `additional-water-quality.csv` — additional water-quality test results
-- `analysis.html` — sample-analysis and results-over-time charts
+- `analysis.html` — Sample analysis and Results over time by site
+- `further-analysis.html` — Site comparison and Relationship between indicators
 - `README.md` — project documentation
 
-Repository:
+Repository: `RayLancashire/queens-park-canal-map`
 
-`RayLancashire/queens-park-canal-map`
+## Analysis structure
 
-GitHub Pages address:
+The analysis is now split into **two separate HTML pages**, each controlled by its own Webador disclosure button.
 
-`https://raylancashire.github.io/queens-park-canal-map/`
+### View Nitrate, Phosphate and Turbidity charts
 
----
+The first Webador disclosure loads `analysis.html`.
 
-## Map features
+It contains:
 
-The map displays sampling locations from the CSV using the latitude and longitude fields.
+- **Sample analysis**
+  - Nitrate occurrence chart
+  - Phosphate occurrence chart
+  - Turbidity occurrence chart
+  - summary result panels
+  - additional water-quality analysis
+- **Results over time by site**
+  - sampling-site selector
+  - Nitrate results through time
+  - Phosphate results through time
+  - Turbidity results through time
 
-Current features include:
+Occurrence-chart height represents the **number of samples**. The percentage of samples in each result band is shown above the corresponding column.
 
-- Interactive sampling-location markers
-- Automatic grouping of repeated samples by sampling site
-- Latest sample date and time
-- Nitrate result
-- Phosphate result
-- Turbidity result
-- Nutrient-level interpretation
-- Turbidity clarity description where available
-- Previous samples listed in each popup
-- Number of samples shown in the popup history
-- Assessment symbols shown alongside historical results
-- UK date format
-- AM / PM time display
-- Site-selection dropdown
-- Reset map button
-- Automatic zoom to all sampling results
-- Light, Street and Satellite basemap options
-- Responsive layout for desktop, tablet and mobile
-- Summary panels showing:
-  - Sampling sites
-  - Samples in dataset
-  - Latest sample
+Nitrate and phosphate results over time use the midpoint of the FreshWater Watch result range. Turbidity uses the recorded NTU result.
 
----
+### Site comparison and relationships
 
-## Map text
+The second Webador disclosure loads `further-analysis.html`.
 
-Current project description:
+It contains:
 
-> Greener Canalside / FreshWater Watch project and citizen-science results from the Grand Union Canal.
+- **Site comparison**
+- **Relationship between indicators**
 
-Suggested Webador page introduction:
+**Site comparison opens automatically** when `further-analysis.html` loads.
 
-> Latest water quality testing results from Urbanwise London’s Greener Canalside Project, collected as part of the Greener Canalside / FreshWater Watch citizen-science programme.
+The Site comparison panel provides Nitrate, Phosphate and Turbidity views and compares the latest available result from each sampling site. Nitrate and phosphate use the midpoint of the FreshWater Watch result range while retaining the original result band for context. Turbidity uses the recorded NTU value.
 
----
+The **Relationship between indicators** panel has been created as a separate area for future relationship/scatter analysis, such as Nitrate vs Phosphate or Phosphate vs Turbidity.
+
+## Webador accordion behaviour
+
+The outer disclosure controls are kept in **Webador** rather than inside the GitHub HTML pages.
+
+There are two outer Webador disclosures:
+
+1. **View Nitrate, Phosphate and Turbidity charts**
+2. **Site comparison and relationships**
+
+Each embed uses unique button, content-area, icon and iframe IDs. This prevents conflicts caused by duplicating Custom HTML containing identical IDs.
+
+The two Webador disclosures behave as a single accordion: opening one closes the other, while either open disclosure can also be closed manually.
+
+Iframe resize listeners check that resize messages come from the correct iframe. Both analysis pages use the `canal-chart-resize` message to report changing content height and reduce unused space.
 
 ## CSV data
 
-The map reads:
+The main map and analysis pages read `freshwater.csv`.
 
-`freshwater.csv`
+Additional water-quality tests are read from `additional-water-quality.csv`.
 
-The CSV can be replaced whenever new FreshWater Watch results are available.
-
-The map has been designed to recognise both original FreshWater Watch field names and simplified field names.
-
-### Main fields used by the map
+Recognised FreshWater Watch fields include:
 
 | Information | Recognised field examples |
 |---|---|
@@ -95,316 +93,67 @@ The map has been designed to recognise both original FreshWater Watch field name
 | Longitude | `x`, `Longitude`, `longitude` |
 | Notes | `notes`, `Notes` |
 
-The turbidity reader also looks for column names containing the words **Secchi Tube** or **Turbidity**, making the import more tolerant of small changes in FreshWater Watch exports.
+The turbidity reader also recognises headings containing **Secchi Tube** or **Turbidity** to tolerate small changes in FreshWater Watch exports.
 
----
+## Updating water-quality data
 
-## Updating the water-quality data
+For routine FreshWater Watch updates:
 
-To publish new sampling results:
+1. Prepare the latest data.
+2. Keep the filename `freshwater.csv`.
+3. Replace the existing file in the GitHub repository.
+4. Commit the change.
+5. Wait for GitHub Pages to refresh.
+6. Refresh the Webador page.
 
-1. Prepare the latest FreshWater Watch CSV.
-2. Keep the filename as:
-
-   `freshwater.csv`
-
-3. Open the GitHub repository.
-4. Replace the existing `freshwater.csv`.
-5. Commit the change.
-6. Wait for GitHub Pages to refresh.
-7. Refresh the live map or Webador page.
-
-The HTML normally does not need to be edited when new records are added.
-
----
-
-## Updating the map
-
-If `index.html` is changed:
-
-1. Open `index.html` in the GitHub repository.
-2. Click the edit icon.
-3. Replace or amend the HTML.
-4. Click **Commit changes**.
-5. Wait for GitHub Pages to rebuild.
-6. Refresh the live page.
-
-On a Mac, a forced browser refresh can be performed using:
-
-`Command + Shift + R`
-
----
-
-## Sampling-site grouping
-
-Samples are grouped by **site name**.
-
-This means that repeat visits to the same sampling location appear as one map marker with a history of previous samples inside the popup.
-
-For example:
-
-- Ladbroke Grove Bridge
-- Meanwhile Gardens
-- Half Penny Steps Group
-
-Each popup displays the latest reading first, followed by previous samples.
-
----
-
-## Popup layout
-
-Each sampling popup includes:
-
-1. Sampling-site name
-2. Latest sample date and actual sample time
-3. Water-quality assessment
-4. Nitrate
-5. Phosphate
-6. Turbidity
-7. Previous samples
-
-The previous-sample table includes:
-
-- Date and time
-- Assessment symbol
-- Nitrate
-- Phosphate
-- Turbidity
-
-If turbidity was not recorded, the map displays:
-
-`Not taken`
-
----
+The HTML should not normally need changing simply because new sampling records have been added.
 
 ## Accessibility
 
-The map has been designed so that water-quality status is not communicated by colour alone.
+Water-quality status is not communicated by colour alone. Assessment displays use combinations of text, colour and shape.
 
-Assessment categories use a combination of:
-
-- Text
-- Colour
-- Shape
-
-Current symbols:
-
-| Assessment | Symbol |
-|---|---|
-| Excellent | Dark green circle |
-| Good | Emerald diamond |
-| Fair | Yellow triangle |
-| Poor | Red square |
-| Not yet assessed | Grey circle |
-
-The legend uses the same symbols and colours as the map and popup.
-
-Other accessibility measures include:
-
-- Clear written assessment labels
-- High-contrast popup text
-- Larger popup text
-- Table headings
-- Screen-reader labels for assessment symbols
-- Responsive mobile layout
-
----
-
-## Water-quality interpretation
-
-Nitrate and phosphate results are displayed with a plain-language interpretation such as:
-
-- Good
-- Moderate
-- Poor
-
-The assessment is calculated automatically from the midpoint values supplied in the CSV.
-
-Turbidity is displayed separately as a clarity result. Where appropriate, a descriptive label such as **Very clear** is shown.
-
----
-
-## Map types
-
-Visitors can switch between:
-
-- **Light** — clean map designed to make sampling markers stand out
-- **Street** — OpenStreetMap
-- **Satellite** — aerial imagery
-
-The Light map is used as the default view.
-
----
-
-## Home map control
-
-The map reset control now uses a **Home (house) icon**. Selecting it returns the map to a view containing all current sampling results.
-
-The Home view is calculated from the sampling-point coordinates in the CSV rather than from a fixed location.
-
-This means the Home function will continue to work if new sampling sites are added later.
-
----
-
-## Sample analysis and results over time
-
-`analysis.html` provides the chart-based analysis for the project and is designed to sit below the survey map on the Webador page.
-
-The analysis interface now uses two accordion panels.
-
-### Sample analysis
-
-**Sample analysis** is open by default. It contains:
-
-- FreshWater Watch occurrence charts for Nitrate, Phosphate and Turbidity
-- Summary counts for total samples and available Nitrate, Phosphate and Turbidity results
-- FreshWater Watch result-band colours
-- The complete turbidity test scale, with zero-occurrence result labels suppressed
-- Additional water-quality testing for Temperature, pH, Coliform, Biochemical Oxygen Demand (BOD) and Dissolved Oxygen
-
-The additional tests are loaded from `additional-water-quality.csv`.
-
-pH results use the supplied test-kit colour scale and identify readings as **acidic, neutral or alkaline**.
-
-Coliform results display the recorded **total coliform colonies per 100 mL**, together with the test-kit positive/negative indication and the project assessment.
-
-Dissolved Oxygen results use the supplied **0, 4 and 8 ppm** test-kit colours. Percent oxygen saturation is calculated using the recorded water temperature and the supplied temperature/oxygen table.
-
-### Sample-analysis chart refinements
-
-The Nitrate and Phosphate occurrence charts in **Sample analysis** have been refined to make the distribution easier to read:
-
-- The left-hand vertical scale now represents the **number of samples**, rather than a percentage scale.
-- The initial sample-count scale runs from **0 to 10** in single-sample increments.
-- The scale is designed to expand automatically as more surveys are added; above 10 samples it can extend to higher values as required.
-- Faint horizontal guide lines align with each sample-count value, making individual column heights easier to compare.
-- Column heights are plotted against the same sample-count scale, so a column representing one sample aligns with the **1** guide line, two samples with **2**, and so on.
-- The separate sample-count label above each column has been removed because it duplicated the information already provided by the vertical scale and guide lines.
-- The **percentage of samples** in each result band is retained and displayed immediately above its coloured column.
-- FreshWater Watch result-band colours and the result-range labels beneath each column remain unchanged.
-
-This means each chart now communicates three things without duplicating labels: **column height = number of samples**, **percentage above the column = share of samples**, and **column colour/result label = FreshWater Watch result band**.
-
-### Turbidity chart formatting
-
-The **Turbidity** occurrence chart now follows the same visual format as the Nitrate and Phosphate occurrence charts:
-
-- The left-hand vertical scale shows the **number of samples**.
-- The scale starts at **0–10 samples** and can expand automatically as more survey results are added.
-- Faint horizontal guide lines correspond to individual sample-count values.
-- Column height represents the number of samples recorded in each turbidity result band.
-- The **percentage of samples** is displayed immediately above each coloured column.
-- The existing FreshWater Watch turbidity colours and the complete NTU result scale are retained.
-- On larger screens the full turbidity scale is fitted across the available panel width.
-- On smaller devices the chart becomes **horizontally scrollable**, preventing the full NTU scale and labels from becoming cramped or unreadable.
-
-This gives the Nitrate, Phosphate and Turbidity occurrence charts a consistent visual language while preserving the larger number of categories in the turbidity scale.
-
-### Results over time by site
-
-The second accordion panel is **Results over time by site**. It provides a sampling-site selector and three line charts showing the recorded results through time for:
-
-- Nitrate — mg/L
-- Phosphate — mg/L
-- Turbidity — NTU
-
-Nitrate and phosphate are plotted using the midpoint of the FreshWater Watch result range. Turbidity uses the recorded NTU test value.
-
-The explanatory note for these charts is positioned directly below the **Sampling site** selector so visitors can understand the charts before viewing them.
-
-### Accordion behaviour
-
-Only one main analysis panel is displayed at a time:
-
-- **Sample analysis** opens automatically when the page loads.
-- Opening **Results over time by site** closes **Sample analysis**.
-- Reopening **Sample analysis** closes **Results over time by site**.
-- The currently open panel can also be collapsed.
-
-The analysis page reports its content height to the parent Webador iframe when accordion or chart content changes, helping the embed resize to the displayed content instead of retaining unnecessary grey space.
-
-The outer analysis spacing has also been made symmetrical so the top and bottom margins match.
-
----
-
-## Webador embedding
-
-Example Webador embed code:
-
-```html
-<div class="canal-map-embed">
-  <iframe
-    src="https://raylancashire.github.io/queens-park-canal-map/"
-    title="Queen's Park Canal Water Quality Monitoring Map"
-    loading="lazy">
-  </iframe>
-</div>
-
-<style>
-.canal-map-embed {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.canal-map-embed iframe {
-  display: block;
-  width: 100%;
-  height: 950px;
-  border: 0;
-  border-radius: 8px;
-}
-
-@media (max-width: 900px) {
-  .canal-map-embed iframe {
-    height: 1000px;
-  }
-}
-
-@media (max-width: 600px) {
-  .canal-map-embed iframe {
-    height: 1200px;
-    border-radius: 0;
-  }
-}
-</style>
-```
-
-The iframe height may need small adjustments depending on the Webador page layout and screen size.
-
----
+Other measures include written assessment labels, high-contrast text, table headings, screen-reader labels where applicable, responsive layouts, and distinct active/hover states for interactive controls.
 
 ## Technology
 
-The map uses:
-
-- HTML
-- CSS
-- JavaScript
-- Leaflet
-- OpenStreetMap
-- CARTO basemap tiles
-- Esri satellite imagery
-- GitHub Pages
-- Webador
-
----
+HTML, CSS, JavaScript, Leaflet, OpenStreetMap, CARTO basemap tiles, Esri satellite imagery, GitHub Pages and Webador.
 
 ## Data source
 
 Water-quality results are collected through the **Greener Canalside / FreshWater Watch citizen-science project**.
 
-The map is intended to provide an accessible public view of sampling results over time and should be read as citizen-science monitoring data rather than as a statutory water-quality classification.
+The map and analysis pages provide an accessible public view of citizen-science monitoring data and should not be read as a statutory water-quality classification.
 
----
+## Change log
 
-## Maintenance
+### 13 August 2026
 
-For routine updates, only `freshwater.csv` should normally need replacing.
+- Split analysis into `analysis.html` and `further-analysis.html`.
+- Retained **Sample analysis** and **Results over time by site** in `analysis.html`.
+- Moved **Site comparison** to `further-analysis.html`.
+- Added a separate **Relationship between indicators** panel.
+- Added a second Webador outer disclosure for **Site comparison and relationships**.
+- Renamed the first Webador disclosure **View Nitrate, Phosphate and Turbidity charts**.
+- Gave the two Webador embeds unique IDs to prevent duplicated-code conflicts.
+- Restricted resize handling to messages from the corresponding iframe.
+- Made the two Webador outer disclosures mutually exclusive: opening one closes the other.
+- Set **Site comparison** to open automatically when the second analysis embed loads.
+- Corrected first-load behaviour so the Site comparison chart renders immediately after `freshwater.csv` loads.
+- Site comparison now provides Nitrate, Phosphate and Turbidity views comparing the latest available result at each site.
+- Retained dynamic iframe-height reporting when analysis content expands or collapses.
 
-If the FreshWater Watch export format changes substantially, the field-name mappings in `index.html` may need to be updated.
+### 12 August 2026
 
----
+- Renamed the main analysis panel **Sample analysis**.
+- Added **Results over time by site** for Nitrate, Phosphate and Turbidity.
+- Added/refined Temperature, pH, Coliform, BOD and Dissolved Oxygen displays.
+- Changed occurrence-chart vertical axes to number of samples.
+- Added sample-count guide lines and percentage-above-column labels.
+- Reformatted Turbidity to match the Nitrate and Phosphate occurrence charts.
+- Made result summary panels clickable.
+- Improved chart hover/active states.
+- Changed the map reset control to a Home icon.
+- Improved iframe height reporting and analysis spacing.
 
 ## Project
 
@@ -412,39 +161,3 @@ If the FreshWater Watch export format changes substantially, the field-name mapp
 
 Greener Canalside / FreshWater Watch project  
 Grand Union Canal
-
----
-
-## Change log
-
-### 12 August 2026
-
-- Renamed the main analysis panel from **Result occurrences** to **Sample analysis**.
-- Split the analysis into **Sample analysis** and **Results over time by site** accordion panels.
-- Set **Sample analysis** to open by default; opening either main panel closes the other.
-- Added line charts showing Nitrate, Phosphate and Turbidity results over time for each sampling site.
-- Moved the results-over-time explanatory note directly below the sampling-site selector.
-- Improved iframe height reporting when accordion content expands or collapses.
-- Equalised the top and bottom spacing around the analysis panels.
-- Added and refined displays for Temperature, pH, Coliform, BOD and Dissolved Oxygen.
-- Added pH test-kit colours and acidic / neutral / alkaline descriptions.
-- Added total coliform colony results and interpretation.
-- Added Dissolved Oxygen test-kit colours and percent-saturation calculation based on water temperature.
-- Changed the survey-map reset control from a circular reset arrow to a **Home (house) icon**, retaining the same return-to-all-results behaviour.
-- Changed the Nitrate and Phosphate occurrence-chart vertical axis to **number of samples**.
-- Set the initial chart scale to **0–10 samples** in one-sample increments, with automatic expansion for future surveys.
-- Added faint horizontal sample-count guide lines and aligned column heights precisely with them.
-- Removed duplicate sample-count labels from above the columns.
-- Positioned each result-band percentage immediately above its coloured column.
-- Reformatted the Turbidity occurrence chart to match the Nitrate and Phosphate charts.
-- Added the same sample-count axis, faint guide lines and percentage-above-column presentation to Turbidity.
-- Retained the full FreshWater Watch turbidity/NTU scale and existing result colours.
-- Made the Turbidity chart fit the available width on larger screens and scroll horizontally on smaller devices.
-- Reserved a consistent two-line description area above the Nitrate, Phosphate and Turbidity occurrence charts so the charts remain vertically aligned when explanatory text wraps.
-- Reduced the description-to-chart spacing while retaining the two-line alignment.
-- Made the Nitrate, Phosphate and Turbidity summary result panels clickable; selecting a result panel opens its corresponding occurrence chart.
-- Added a bold red and subtly embossed active state to the selected Nitrate, Phosphate or Turbidity result panel.
-- Added mouse-over highlighting to the Sample Analysis chart buttons; the hover highlight is suppressed for the button that is already selected.
-- Added a stronger mouse-over visual effect to the clickable Nitrate, Phosphate and Turbidity result panels.
-- Removed the redundant explanatory note from beneath the Turbidity occurrence chart.
-- Updated the map Assessment legend so that when a sampling popup overlaps it, the legend slides/fades out of view and returns when the popup closes.

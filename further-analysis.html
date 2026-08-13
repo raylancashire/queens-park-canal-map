@@ -771,6 +771,91 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .primary-analysis-content{
   padding:0;
 }
+
+
+.project-trend-chart{
+  overflow-x:auto;
+}
+.project-trend-svg{
+  width:100%;
+  min-width:560px;
+  height:auto;
+  display:block;
+}
+.project-trend-grid{
+  stroke:#e6ece8;
+  stroke-width:1;
+}
+.project-trend-line{
+  fill:none;
+  stroke:#2f6b45;
+  stroke-width:3;
+}
+.project-trend-point{
+  fill:#2f6b45;
+}
+.project-trend-axis{
+  fill:#5f6f64;
+  font-size:11px;
+}
+.project-trend-value{
+  fill:#17321f;
+  font-size:11px;
+  font-weight:700;
+}
+.project-trend-sites{
+  fill:#5f6f64;
+  font-size:10px;
+}
+.project-trend-summary{
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#f8faf8;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.5;
+}
+
+
+.relationship-chart{
+  overflow-x:auto;
+}
+.relationship-svg{
+  width:100%;
+  min-width:560px;
+  height:auto;
+  display:block;
+}
+.relationship-grid{
+  stroke:#e6ece8;
+  stroke-width:1;
+}
+.relationship-axis{
+  fill:#5f6f64;
+  font-size:11px;
+}
+.relationship-point{
+  fill:#2f6b45;
+  opacity:.82;
+  stroke:#ffffff;
+  stroke-width:1.5;
+}
+.relationship-summary{
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#f8faf8;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.5;
+}
+.relationship-summary strong{
+  color:#17321f;
+}
+
 </style>
 </head>
 <body>
@@ -806,6 +891,33 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   </section>
 <section class="outer-analysis-panel">
     <button
+      id="projectTrendsToggle"
+      class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="projectTrendsContent">
+      <span>Project-wide trends</span>
+      <span id="projectTrendsIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="projectTrendsContent" class="outer-analysis-content" hidden>
+      <p class="site-comparison-intro">
+        Shows the overall direction of results across the project by survey date.
+        Each point combines all sites sampled on that date.
+      </p>
+
+      <div class="site-comparison-tabs" role="tablist" aria-label="Choose project-wide trend measure">
+        <button id="trendNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+        <button id="trendPhosphate" type="button" aria-pressed="false">Phosphate</button>
+        <button id="trendTurbidity" type="button" aria-pressed="false">Turbidity</button>
+      </div>
+
+      <div id="projectTrendChart" class="project-trend-chart"></div>
+      <div id="projectTrendSummary" class="project-trend-summary"></div>
+    </div>
+  </section>
+<section class="outer-analysis-panel">
+    <button
       id="relationshipToggle"
       class="outer-analysis-toggle"
       type="button"
@@ -817,13 +929,24 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
     <div id="relationshipContent" class="outer-analysis-content" hidden>
       <p class="relationship-intro">
-        Explore whether two indicators appear to move together across paired samples.
-        This section is ready for relationship charts such as Nitrate vs Phosphate,
-        Phosphate vs Turbidity, and Temperature vs Dissolved Oxygen.
+        Explore whether two FreshWater Watch indicators appear to move together.
+        Each point represents one sample where both selected indicators were recorded.
       </p>
-      <div class="relationship-placeholder">
-        Relationship analysis will appear here.
+
+      <div class="site-comparison-tabs" role="tablist" aria-label="Choose indicator relationship">
+        <button id="relationNitratePhosphate" class="active" type="button" aria-pressed="true">
+          Nitrate vs Phosphate
+        </button>
+        <button id="relationPhosphateTurbidity" type="button" aria-pressed="false">
+          Phosphate vs Turbidity
+        </button>
+        <button id="relationNitrateTurbidity" type="button" aria-pressed="false">
+          Nitrate vs Turbidity
+        </button>
       </div>
+
+      <div id="relationshipChart" class="relationship-chart"></div>
+      <div id="relationshipSummary" class="relationship-summary"></div>
     </div>
   </section>
 </div>
@@ -1415,6 +1538,377 @@ async function loadAdditionalData(){
   }
 }
 
+
+
+let currentRelationship="nitrate-phosphate";
+
+function relationshipDefinition(key){
+  const defs={
+    "nitrate-phosphate":{
+      xMetric:"nitrate",
+      yMetric:"phosphate",
+      xLabel:"Nitrate",
+      yLabel:"Phosphate",
+      xUnit:"mg/L",
+      yUnit:"mg/L",
+      xDecimals:2,
+      yDecimals:3
+    },
+    "phosphate-turbidity":{
+      xMetric:"phosphate",
+      yMetric:"turbidity",
+      xLabel:"Phosphate",
+      yLabel:"Turbidity",
+      xUnit:"mg/L",
+      yUnit:"NTU",
+      xDecimals:3,
+      yDecimals:0
+    },
+    "nitrate-turbidity":{
+      xMetric:"nitrate",
+      yMetric:"turbidity",
+      xLabel:"Nitrate",
+      yLabel:"Turbidity",
+      xUnit:"mg/L",
+      yUnit:"NTU",
+      xDecimals:2,
+      yDecimals:0
+    }
+  };
+  return defs[key];
+}
+
+function relationshipPoints(key){
+  const def=relationshipDefinition(key);
+  if(!def) return [];
+
+  return freshwaterDataForChanges
+    .map(row=>{
+      const x=comparisonMetricValue(row,def.xMetric);
+      const y=comparisonMetricValue(row,def.yMetric);
+
+      if(!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+      return {
+        x,
+        y,
+        site:siteName(row),
+        date:sampleDateLabel(row)
+      };
+    })
+    .filter(Boolean);
+}
+
+function pearsonCorrelation(points){
+  const n=points.length;
+  if(n<2) return null;
+
+  const meanX=points.reduce((s,p)=>s+p.x,0)/n;
+  const meanY=points.reduce((s,p)=>s+p.y,0)/n;
+
+  let num=0,denX=0,denY=0;
+
+  points.forEach(p=>{
+    const dx=p.x-meanX;
+    const dy=p.y-meanY;
+    num+=dx*dy;
+    denX+=dx*dx;
+    denY+=dy*dy;
+  });
+
+  const den=Math.sqrt(denX*denY);
+  if(!den) return null;
+
+  return num/den;
+}
+
+function correlationDescription(r,n){
+  if(n<4 || !Number.isFinite(r)){
+    return "Not enough paired samples yet to assess the relationship reliably.";
+  }
+
+  const a=Math.abs(r);
+  let strength="very weak";
+
+  if(a>=0.70) strength="strong";
+  else if(a>=0.50) strength="moderate";
+  else if(a>=0.30) strength="weak";
+
+  const direction=r>0 ? "positive" : r<0 ? "negative" : "no";
+
+  if(a<0.10){
+    return "The paired samples currently show little or no linear relationship.";
+  }
+
+  return `The paired samples show a ${strength} ${direction} association.`;
+}
+
+function renderRelationship(){
+  const chart=document.getElementById("relationshipChart");
+  const summary=document.getElementById("relationshipSummary");
+  if(!chart || !summary) return;
+
+  const def=relationshipDefinition(currentRelationship);
+  const points=relationshipPoints(currentRelationship);
+
+  if(!points.length){
+    chart.innerHTML='<div class="site-comparison-empty">No paired samples are available for this relationship yet.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const W=660;
+  const H=360;
+  const left=68,right=30,top=28,bottom=66;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  let maxX=Math.max(...points.map(p=>p.x));
+  let maxY=Math.max(...points.map(p=>p.y));
+
+  if(maxX<=0) maxX=1;
+  if(maxY<=0) maxY=1;
+
+  maxX*=1.12;
+  maxY*=1.12;
+
+  const x=v=>left+(v/maxX)*plotW;
+  const y=v=>top+plotH-(v/maxY)*plotH;
+
+  const xTicks=Array.from({length:5},(_,i)=>maxX*(i/4));
+  const yTicks=Array.from({length:5},(_,i)=>maxY*(i/4));
+
+  const xGrid=xTicks.map(v=>`
+    <line x1="${x(v)}" y1="${top}" x2="${x(v)}" y2="${top+plotH}" class="relationship-grid"></line>
+    <text x="${x(v)}" y="${H-39}" text-anchor="middle" class="relationship-axis">
+      ${v.toFixed(def.xDecimals)}
+    </text>
+  `).join("");
+
+  const yGrid=yTicks.map(v=>`
+    <line x1="${left}" y1="${y(v)}" x2="${left+plotW}" y2="${y(v)}" class="relationship-grid"></line>
+    <text x="${left-9}" y="${y(v)+4}" text-anchor="end" class="relationship-axis">
+      ${v.toFixed(def.yDecimals)}
+    </text>
+  `).join("");
+
+  const marks=points.map(p=>`
+    <circle cx="${x(p.x)}" cy="${y(p.y)}" r="6" class="relationship-point">
+      <title>${esc(p.site)} — ${esc(p.date)}; ${def.xLabel}: ${p.x.toFixed(def.xDecimals)} ${def.xUnit}; ${def.yLabel}: ${p.y.toFixed(def.yDecimals)} ${def.yUnit}</title>
+    </circle>
+  `).join("");
+
+  chart.innerHTML=`<svg class="relationship-svg" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="${esc(def.xLabel)} compared with ${esc(def.yLabel)} across paired samples">
+      ${xGrid}
+      ${yGrid}
+      <line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}" stroke="#809086"></line>
+      <line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}" stroke="#809086"></line>
+      ${marks}
+      <text x="${left+plotW/2}" y="${H-8}" text-anchor="middle" class="relationship-axis">
+        ${esc(def.xLabel)} (${esc(def.xUnit)})
+      </text>
+      <text x="16" y="${top+plotH/2}" text-anchor="middle"
+        transform="rotate(-90 16 ${top+plotH/2})" class="relationship-axis">
+        ${esc(def.yLabel)} (${esc(def.yUnit)})
+      </text>
+    </svg>`;
+
+  const r=pearsonCorrelation(points);
+  const rText=Number.isFinite(r) ? r.toFixed(2) : "—";
+
+  summary.innerHTML=
+    `<strong>${points.length} paired ${points.length===1?"sample":"samples"}</strong>. ` +
+    `Correlation (r): <strong>${rText}</strong>. ` +
+    `${esc(correlationDescription(r,points.length))} ` +
+    `This describes association only and does not show that one indicator causes the other.`;
+}
+
+function setRelationship(key){
+  currentRelationship=key;
+
+  const buttons={
+    "nitrate-phosphate":document.getElementById("relationNitratePhosphate"),
+    "phosphate-turbidity":document.getElementById("relationPhosphateTurbidity"),
+    "nitrate-turbidity":document.getElementById("relationNitrateTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([buttonKey,button])=>{
+    if(!button) return;
+    const active=buttonKey===key;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderRelationship();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
+let currentTrendMetric="nitrate";
+
+function projectTrendPoints(metric){
+  const groups={};
+
+  freshwaterDataForChanges.forEach(row=>{
+    const ts=sampleDateValue(row);
+    if(!ts) return;
+
+    const value=comparisonMetricValue(row,metric);
+    if(!Number.isFinite(value)) return;
+
+    const d=new Date(ts);
+    const dateKey=[
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,"0"),
+      String(d.getDate()).padStart(2,"0")
+    ].join("-");
+
+    if(!groups[dateKey]){
+      groups[dateKey]={
+        timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),
+        values:[],
+        sites:new Set()
+      };
+    }
+
+    groups[dateKey].values.push(value);
+    groups[dateKey].sites.add(siteName(row));
+  });
+
+  return Object.entries(groups)
+    .map(([dateKey,group])=>({
+      dateKey,
+      timestamp:group.timestamp,
+      value:group.values.reduce((a,b)=>a+b,0)/group.values.length,
+      siteCount:group.sites.size
+    }))
+    .sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+function trendMetricInfo(metric){
+  if(metric==="nitrate") return {label:"Average nitrate",unit:"mg/L",decimals:2};
+  if(metric==="phosphate") return {label:"Average phosphate",unit:"mg/L",decimals:3};
+  return {label:"Average turbidity",unit:"NTU",decimals:0};
+}
+
+function trendDirection(points){
+  if(points.length<2){
+    return "Not enough survey dates yet to identify a project-wide direction.";
+  }
+
+  const first=points[0].value;
+  const last=points[points.length-1].value;
+
+  if(first===0){
+    return "The project-wide trend is still developing as more survey rounds are added.";
+  }
+
+  const pct=((last-first)/Math.abs(first))*100;
+  const abs=Math.abs(pct);
+
+  if(abs<10){
+    return `Overall direction: broadly stable across ${points.length} survey dates.`;
+  }
+
+  return `Overall direction: ${pct<0?"decreasing":"increasing"} by approximately ${abs.toFixed(0)}% from the first to the latest survey date.`;
+}
+
+function renderProjectTrend(){
+  const chart=document.getElementById("projectTrendChart");
+  const summary=document.getElementById("projectTrendSummary");
+  if(!chart || !summary) return;
+
+  const points=projectTrendPoints(currentTrendMetric);
+  const info=trendMetricInfo(currentTrendMetric);
+
+  if(!points.length){
+    chart.innerHTML='<div class="site-comparison-empty">No project-wide trend data available for this measure.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const W=Math.max(560,points.length*110);
+  const H=280;
+  const left=58,right=28,top=28,bottom=70;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  let min=Math.min(...points.map(p=>p.value));
+  let max=Math.max(...points.map(p=>p.value));
+  min=Math.min(0,min);
+  if(max===min) max=min+1;
+  const range=max-min;
+  max+=range*0.15;
+
+  const x=i=>points.length===1 ? left+plotW/2 : left+(i/(points.length-1))*plotW;
+  const y=v=>top+((max-v)/(max-min))*plotH;
+
+  const ticks=Array.from({length:5},(_,i)=>min+((max-min)*(i/4)));
+
+  const grid=ticks.map(v=>`
+    <line x1="${left}" y1="${y(v)}" x2="${W-right}" y2="${y(v)}" class="project-trend-grid"></line>
+    <text x="${left-8}" y="${y(v)+4}" text-anchor="end" class="project-trend-axis">
+      ${v.toFixed(info.decimals)}
+    </text>
+  `).join("");
+
+  const path=points.map((p,i)=>
+    `${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`
+  ).join(" ");
+
+  const marks=points.map((p,i)=>{
+    const d=new Date(p.timestamp);
+    const label=d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+    return `
+      <circle cx="${x(i)}" cy="${y(p.value)}" r="4.5" class="project-trend-point"></circle>
+      <text x="${x(i)}" y="${y(p.value)-10}" text-anchor="middle" class="project-trend-value">
+        ${p.value.toFixed(info.decimals)}
+      </text>
+      <text x="${x(i)}" y="${H-36}" text-anchor="middle" class="project-trend-axis">
+        ${esc(label)}
+      </text>
+      <text x="${x(i)}" y="${H-19}" text-anchor="middle" class="project-trend-sites">
+        ${p.siteCount} ${p.siteCount===1?"site":"sites"}
+      </text>
+    `;
+  }).join("");
+
+  chart.innerHTML=`<svg class="project-trend-svg" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="${esc(info.label)} across all sampling sites by survey date">
+    ${grid}
+    <text x="16" y="${top+plotH/2}" text-anchor="middle"
+      transform="rotate(-90 16 ${top+plotH/2})" class="project-trend-axis">
+      ${esc(info.unit)}
+    </text>
+    <path d="${path}" class="project-trend-line"></path>
+    ${marks}
+  </svg>`;
+
+  summary.textContent=trendDirection(points);
+}
+
+function setTrendMetric(metric){
+  currentTrendMetric=metric;
+
+  const buttons={
+    nitrate:document.getElementById("trendNitrate"),
+    phosphate:document.getElementById("trendPhosphate"),
+    turbidity:document.getElementById("trendTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([key,button])=>{
+    if(!button) return;
+    const active=key===metric;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderProjectTrend();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
 
 let freshwaterDataForChanges=[];
@@ -1859,6 +2353,8 @@ async function load(){
       Render Site Comparison immediately once the CSV has loaded.
     */
     renderSiteComparison();
+    renderProjectTrend();
+    renderRelationship();
 
     setTimeout(notifyParentOfHeight,80);
 
@@ -1978,6 +2474,11 @@ const furtherPanels = [
     icon:document.getElementById("siteComparisonIcon")
   },
   {
+    button:document.getElementById("projectTrendsToggle"),
+    content:document.getElementById("projectTrendsContent"),
+    icon:document.getElementById("projectTrendsIcon")
+  },
+  {
     button:document.getElementById("relationshipToggle"),
     content:document.getElementById("relationshipContent"),
     icon:document.getElementById("relationshipIcon")
@@ -1996,6 +2497,14 @@ function setFurtherPanel(index,open){
     renderSiteComparison();
   }
 
+  if(open && index===1 && typeof renderProjectTrend==="function"){
+    renderProjectTrend();
+  }
+
+  if(open && index===2 && typeof renderRelationship==="function"){
+    renderRelationship();
+  }
+
   if(typeof notifyParentOfHeight==="function"){
     setTimeout(notifyParentOfHeight,40);
     setTimeout(notifyParentOfHeight,140);
@@ -2008,6 +2517,18 @@ furtherPanels.forEach((panel,index)=>{
     setFurtherPanel(index,!isOpen);
   });
 });
+
+if(document.getElementById("relationNitratePhosphate")){
+  document.getElementById("relationNitratePhosphate").addEventListener("click",()=>setRelationship("nitrate-phosphate"));
+  document.getElementById("relationPhosphateTurbidity").addEventListener("click",()=>setRelationship("phosphate-turbidity"));
+  document.getElementById("relationNitrateTurbidity").addEventListener("click",()=>setRelationship("nitrate-turbidity"));
+}
+
+if(document.getElementById("trendNitrate")){
+  document.getElementById("trendNitrate").addEventListener("click",()=>setTrendMetric("nitrate"));
+  document.getElementById("trendPhosphate").addEventListener("click",()=>setTrendMetric("phosphate"));
+  document.getElementById("trendTurbidity").addEventListener("click",()=>setTrendMetric("turbidity"));
+}
 
 if(document.getElementById("compareNitrate")){
   document.getElementById("compareNitrate").addEventListener("click",()=>setComparisonMetric("nitrate"));
