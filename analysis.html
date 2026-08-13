@@ -778,25 +778,25 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       id="sampleAnalysisGroupToggle"
       class="outer-analysis-toggle"
       type="button"
-      aria-expanded="true"
+      aria-expanded="false"
       aria-controls="sampleAnalysisGroupContent">
-      <span>Sample analysis</span>
-      <span id="sampleAnalysisGroupIcon" aria-hidden="true">−</span>
+      <span>View nitrate, phosphate and turbidity occurrence charts</span>
+      <span id="sampleAnalysisGroupIcon" aria-hidden="true">＋</span>
     </button>
 
-    <div id="sampleAnalysisGroupContent" class="outer-analysis-content">
+    <div id="sampleAnalysisGroupContent" class="outer-analysis-content" hidden>
 <section class="inner-analysis-panel">
     <button
       id="occurrencesToggle"
       class="inner-analysis-toggle"
       type="button"
-      aria-expanded="true"
+      aria-expanded="false"
       aria-controls="occurrencesContent">
       <span>View nitrate, phosphate and turbidity occurrence charts</span>
-      <span id="occurrencesIcon" aria-hidden="true">−</span>
+      <span id="occurrencesIcon" aria-hidden="true">＋</span>
     </button>
 
-    <div id="occurrencesContent" class="inner-analysis-content">
+    <div id="occurrencesContent" class="inner-analysis-content" hidden>
 <section class="header">
         <h1>Nitrate and Phosphate Result Occurrences</h1>
         <p id="analysisScopeText">Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
