@@ -1421,11 +1421,18 @@ function renderSampleAnalysisForFocusedSite(){
   }
 
   const select=document.getElementById("changeSiteSelect");
-  if(select && currentFocusedSite!=="all"){
-    const matching=[...select.options].find(o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite));
-    if(matching){
-      select.value=matching.value;
+  if(select){
+    if(currentFocusedSite==="all"){
+      select.value="all";
       renderSiteChangeCharts();
+    }else{
+      const matching=[...select.options].find(
+        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+      );
+      if(matching){
+        select.value=matching.value;
+        renderSiteChangeCharts();
+      }
     }
   }
 
@@ -1519,12 +1526,16 @@ function comparisonMetricValue(row,metric){
 }
 
 function siteSurveyResults(site,metric){
-  return freshwaterDataForChanges
-    .filter(r=>siteName(r)===site)
+  const rows = (!site || site==="all")
+    ? freshwaterDataForChanges
+    : freshwaterDataForChanges.filter(r=>siteName(r)===site);
+
+  return rows
     .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
     .map(row=>({
       date:sampleDateLabel(row),
-      value:comparisonMetricValue(row,metric)
+      value:comparisonMetricValue(row,metric),
+      site:siteName(row)
     }))
     .filter(p=>Number.isFinite(p.value));
 }
@@ -1544,7 +1555,7 @@ function renderMetricChangeChart(containerId,site,metric){
   const info=metricChartInfo(metric);
 
   if(!points.length){
-    chart.innerHTML='<div class="change-empty">No recorded results for this measure at this site yet.</div>';
+    chart.innerHTML='<div class="change-empty">No recorded results for this measure in the selected view yet.</div>';
     return;
   }
 
@@ -1617,6 +1628,15 @@ function renderSiteChangeCharts(){
   if(!select) return;
 
   const site=select.value;
+
+  if(!site || site==="all"){
+    const message='<div class="change-empty">Select a sampling site to view results over time.</div>';
+    document.getElementById("siteChangeNitrate").innerHTML=message;
+    document.getElementById("siteChangePhosphate").innerHTML=message;
+    document.getElementById("siteChangeTurbidity").innerHTML=message;
+    return;
+  }
+
   renderMetricChangeChart("siteChangeNitrate",site,"nitrate");
   renderMetricChangeChart("siteChangePhosphate",site,"phosphate");
   renderMetricChangeChart("siteChangeTurbidity",site,"turbidity");
@@ -1627,7 +1647,19 @@ function initialiseSiteChanges(){
   if(!select) return;
 
   const sites=[...new Set(freshwaterDataForChanges.map(siteName))].sort((a,b)=>a.localeCompare(b));
-  select.innerHTML=sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
+  select.innerHTML=
+    `<option value="all">All sites</option>` +
+    sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
+
+  select.value=currentFocusedSite==="all" ? "all" : currentFocusedSite;
+
+  if(select.value!==currentFocusedSite && currentFocusedSite!=="all"){
+    const matching=[...select.options].find(
+      o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+    );
+    if(matching) select.value=matching.value;
+  }
+
   renderSiteChangeCharts();
 }
 
