@@ -856,6 +856,54 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   color:#17321f;
 }
 
+
+.seasonal-mode-toggle{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.seasonal-mode-toggle button{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer}
+.seasonal-mode-toggle button:not(.active):hover,.seasonal-mode-toggle button:not(.active):focus-visible{background:#eef7f0;border-color:#7fa38a}
+.seasonal-mode-toggle button.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.seasonal-pattern-chart{overflow-x:auto}
+.seasonal-pattern-svg{width:100%;min-width:660px;height:auto;display:block}
+.seasonal-pattern-grid{stroke:#e6ece8;stroke-width:1}
+.seasonal-pattern-line{fill:none;stroke:#2f6b45;stroke-width:3}
+.seasonal-pattern-point{fill:#2f6b45}
+.seasonal-pattern-axis{fill:#5f6f64;font-size:11px}
+.seasonal-pattern-value{fill:#17321f;font-size:11px;font-weight:700}
+.seasonal-pattern-count{fill:#5f6f64;font-size:10px}
+.seasonal-pattern-summary{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:#f8faf8;color:var(--ink);font-size:13px;line-height:1.5}
+
+
+.seasonal-focus-status{
+  margin:0 0 12px;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#f8faf8;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:700;
+}
+.seasonal-site-control{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:0 0 12px;
+}
+.seasonal-site-control label{
+  font-size:13px;
+  font-weight:700;
+}
+.seasonal-site-control select{
+  min-width:220px;
+  max-width:100%;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  padding:8px 10px;
+  font-size:13px;
+}
+
 </style>
 </head>
 <body>
@@ -914,6 +962,43 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
       <div id="projectTrendChart" class="project-trend-chart"></div>
       <div id="projectTrendSummary" class="project-trend-summary"></div>
+    </div>
+  </section>
+<section class="outer-analysis-panel">
+    <button id="seasonalPatternsToggle" class="outer-analysis-toggle" type="button"
+      aria-expanded="false" aria-controls="seasonalPatternsContent">
+      <span>Seasonal patterns</span>
+      <span id="seasonalPatternsIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="seasonalPatternsContent" class="outer-analysis-content" hidden>
+      <p class="site-comparison-intro">
+        Explore observed patterns by calendar month or season.
+        Values are averages of the available samples in each period.
+      </p>
+
+      <div id="seasonalFocusStatus" class="seasonal-focus-status">
+        Current data: All sites
+      </div>
+
+      <div class="seasonal-mode-toggle">
+        <button id="seasonalMonthlyMode" class="active" type="button" aria-pressed="true">Monthly</button>
+        <button id="seasonalSeasonMode" type="button" aria-pressed="false">Seasonal</button>
+      </div>
+
+      <div class="seasonal-site-control">
+        <label for="seasonalSiteSelect">Sampling site:</label>
+        <select id="seasonalSiteSelect"></select>
+      </div>
+
+      <div class="site-comparison-tabs">
+        <button id="seasonalNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+        <button id="seasonalPhosphate" type="button" aria-pressed="false">Phosphate</button>
+        <button id="seasonalTurbidity" type="button" aria-pressed="false">Turbidity</button>
+      </div>
+
+      <div id="seasonalPatternChart" class="seasonal-pattern-chart"></div>
+      <div id="seasonalPatternSummary" class="seasonal-pattern-summary"></div>
     </div>
   </section>
 <section class="outer-analysis-panel">
@@ -1540,6 +1625,183 @@ async function loadAdditionalData(){
 
 
 
+
+
+function populateSeasonalSiteSelect(){
+  const select=document.getElementById("seasonalSiteSelect");
+  if(!select) return;
+
+  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
+    .filter(Boolean)
+    .sort((a,b)=>a.localeCompare(b));
+
+  select.innerHTML=
+    `<option value="all">All sites</option>`+
+    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+
+  syncSeasonalSiteUI();
+}
+
+function syncSeasonalSiteUI(){
+  const select=document.getElementById("seasonalSiteSelect");
+  if(select){
+    if(currentFocusedSite==="all"){
+      select.value="all";
+    }else{
+      const match=[...select.options].find(
+        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+      );
+      if(match) select.value=match.value;
+    }
+  }
+
+  const status=document.getElementById("seasonalFocusStatus");
+  if(status){
+    status.textContent=currentFocusedSite==="all"
+      ? "Current data: All sites"
+      : `Current data: ${String(currentFocusedSite).replace(/^Grand Union Canal\s*-\s*/i,"")}`;
+  }
+}
+
+function applySeasonalSiteFocus(site,{publish=false}={}){
+  currentFocusedSite=site||"all";
+  syncSeasonalSiteUI();
+
+  if(publish){
+    try{
+      localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+    }catch(e){}
+
+    if(siteSyncChannel){
+      siteSyncChannel.postMessage({
+        type:"site-focus",
+        site:currentFocusedSite
+      });
+    }
+  }
+
+  renderSeasonalPattern();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
+let currentSeasonalMode="monthly";
+let currentSeasonalMetric="nitrate";
+
+function seasonalMetricInfo(metric){
+  if(metric==="nitrate") return {label:"Nitrate",unit:"mg/L",decimals:2};
+  if(metric==="phosphate") return {label:"Phosphate",unit:"mg/L",decimals:3};
+  return {label:"Turbidity",unit:"NTU",decimals:0};
+}
+function seasonName(month){
+  if(month===11||month===0||month===1) return "Winter";
+  if(month>=2&&month<=4) return "Spring";
+  if(month>=5&&month<=7) return "Summer";
+  return "Autumn";
+}
+function seasonalBuckets(metric,mode){
+  const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const seasons=["Winter","Spring","Summer","Autumn"];
+  const groups={};
+  freshwaterDataForChanges.forEach(row=>{
+    if(
+      currentFocusedSite!=="all" &&
+      normaliseSiteForMatch(siteName(row))!==normaliseSiteForMatch(currentFocusedSite)
+    ){
+      return;
+    }
+
+    const ts=sampleDateValue(row);
+    const value=comparisonMetricValue(row,metric);
+    if(!ts||!Number.isFinite(value)) return;
+    const d=new Date(ts);
+    const key=mode==="monthly"?months[d.getMonth()]:seasonName(d.getMonth());
+    if(!groups[key]) groups[key]={values:[],sites:new Set()};
+    groups[key].values.push(value);
+    groups[key].sites.add(siteName(row));
+  });
+  const order=mode==="monthly"?months:seasons;
+  return order.filter(k=>groups[k]&&groups[k].values.length).map(k=>{
+    const vals=groups[k].values;
+    return {
+      label:k,
+      value:vals.reduce((a,b)=>a+b,0)/vals.length,
+      sampleCount:vals.length,
+      siteCount:groups[k].sites.size
+    };
+  });
+}
+function renderSeasonalPattern(){
+  const chart=document.getElementById("seasonalPatternChart");
+  const summary=document.getElementById("seasonalPatternSummary");
+  if(!chart||!summary) return;
+
+  const points=seasonalBuckets(currentSeasonalMetric,currentSeasonalMode);
+  const info=seasonalMetricInfo(currentSeasonalMetric);
+
+  if(!points.length){
+    chart.innerHTML='<div class="site-comparison-empty">No data are available for this seasonal view yet.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const W=Math.max(660,points.length*95),H=300,left=58,right=28,top=28,bottom=76;
+  const plotW=W-left-right,plotH=H-top-bottom;
+  let min=Math.min(...points.map(p=>p.value)),max=Math.max(...points.map(p=>p.value));
+  min=Math.min(0,min);
+  if(max===min) max=min+1;
+  max+=(max-min)*0.15;
+  const x=i=>points.length===1?left+plotW/2:left+(i/(points.length-1))*plotW;
+  const y=v=>top+((max-v)/(max-min))*plotH;
+  const ticks=Array.from({length:5},(_,i)=>min+((max-min)*(i/4)));
+
+  const grid=ticks.map(v=>`
+    <line x1="${left}" y1="${y(v)}" x2="${W-right}" y2="${y(v)}" class="seasonal-pattern-grid"></line>
+    <text x="${left-8}" y="${y(v)+4}" text-anchor="end" class="seasonal-pattern-axis">${v.toFixed(info.decimals)}</text>
+  `).join("");
+
+  const path=points.map((p,i)=>`${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`).join(" ");
+  const marks=points.map((p,i)=>`
+    <circle cx="${x(i)}" cy="${y(p.value)}" r="4.5" class="seasonal-pattern-point"></circle>
+    <text x="${x(i)}" y="${y(p.value)-10}" text-anchor="middle" class="seasonal-pattern-value">${p.value.toFixed(info.decimals)}</text>
+    <text x="${x(i)}" y="${H-43}" text-anchor="middle" class="seasonal-pattern-axis">${esc(p.label)}</text>
+    <text x="${x(i)}" y="${H-26}" text-anchor="middle" class="seasonal-pattern-count">${p.sampleCount} ${p.sampleCount===1?"sample":"samples"}</text>
+    <text x="${x(i)}" y="${H-11}" text-anchor="middle" class="seasonal-pattern-count">${p.siteCount} ${p.siteCount===1?"site":"sites"}</text>
+  `).join("");
+
+  chart.innerHTML=`<svg class="seasonal-pattern-svg" viewBox="0 0 ${W} ${H}" role="img">
+    ${grid}
+    <text x="16" y="${top+plotH/2}" text-anchor="middle" transform="rotate(-90 16 ${top+plotH/2})" class="seasonal-pattern-axis">${esc(info.unit)}</text>
+    <path d="${path}" class="seasonal-pattern-line"></path>
+    ${marks}
+  </svg>`;
+
+  if(points.length<2){
+    summary.textContent="Not enough periods have data yet to identify an observed pattern.";
+    return;
+  }
+  const high=[...points].sort((a,b)=>b.value-a.value)[0];
+  const low=[...points].sort((a,b)=>a.value-b.value)[0];
+  const scopeText=currentFocusedSite==="all"
+    ? "across all sites"
+    : `at ${String(currentFocusedSite).replace(/^Grand Union Canal\s*-\s*/i,"")}`;
+
+  summary.textContent=`Observed pattern ${scopeText}: the highest average ${info.label.toLowerCase()} result is in ${high.label} (${high.value.toFixed(info.decimals)} ${info.unit}), while the lowest is in ${low.label} (${low.value.toFixed(info.decimals)} ${info.unit}). This describes the samples collected so far and should not yet be treated as a long-term seasonal trend.`;
+}
+function setSeasonalMode(mode){
+  currentSeasonalMode=mode;
+  const a=document.getElementById("seasonalMonthlyMode"),b=document.getElementById("seasonalSeasonMode");
+  a.classList.toggle("active",mode==="monthly"); a.setAttribute("aria-pressed",String(mode==="monthly"));
+  b.classList.toggle("active",mode==="seasonal"); b.setAttribute("aria-pressed",String(mode==="seasonal"));
+  renderSeasonalPattern(); setTimeout(notifyParentOfHeight,40);
+}
+function setSeasonalMetric(metric){
+  currentSeasonalMetric=metric;
+  const buttons={nitrate:document.getElementById("seasonalNitrate"),phosphate:document.getElementById("seasonalPhosphate"),turbidity:document.getElementById("seasonalTurbidity")};
+  Object.entries(buttons).forEach(([k,b])=>{const active=k===metric;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));});
+  renderSeasonalPattern(); setTimeout(notifyParentOfHeight,40);
+}
+
 let currentRelationship="nitrate-phosphate";
 
 function relationshipDefinition(key){
@@ -1985,7 +2247,16 @@ function renderSampleAnalysisForFocusedSite(){
 
 function setFocusedSite(site){
   currentFocusedSite=site||"all";
-  renderSampleAnalysisForFocusedSite();
+
+  if(typeof renderSampleAnalysisForFocusedSite==="function"){
+    renderSampleAnalysisForFocusedSite();
+  }
+
+  syncSeasonalSiteUI();
+
+  if(typeof renderSeasonalPattern==="function"){
+    renderSeasonalPattern();
+  }
 }
 
 if(siteSyncChannel){
@@ -2354,6 +2625,8 @@ async function load(){
     */
     renderSiteComparison();
     renderProjectTrend();
+    populateSeasonalSiteSelect();
+    renderSeasonalPattern();
     renderRelationship();
 
     setTimeout(notifyParentOfHeight,80);
@@ -2479,6 +2752,11 @@ const furtherPanels = [
     icon:document.getElementById("projectTrendsIcon")
   },
   {
+    button:document.getElementById("seasonalPatternsToggle"),
+    content:document.getElementById("seasonalPatternsContent"),
+    icon:document.getElementById("seasonalPatternsIcon")
+  },
+  {
     button:document.getElementById("relationshipToggle"),
     content:document.getElementById("relationshipContent"),
     icon:document.getElementById("relationshipIcon")
@@ -2501,7 +2779,11 @@ function setFurtherPanel(index,open){
     renderProjectTrend();
   }
 
-  if(open && index===2 && typeof renderRelationship==="function"){
+  if(open && index===2 && typeof renderSeasonalPattern==="function"){
+    renderSeasonalPattern();
+  }
+
+  if(open && index===3 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
@@ -2517,6 +2799,20 @@ furtherPanels.forEach((panel,index)=>{
     setFurtherPanel(index,!isOpen);
   });
 });
+
+if(document.getElementById("seasonalMonthlyMode")){
+  document.getElementById("seasonalMonthlyMode").addEventListener("click",()=>setSeasonalMode("monthly"));
+  document.getElementById("seasonalSeasonMode").addEventListener("click",()=>setSeasonalMode("seasonal"));
+  document.getElementById("seasonalNitrate").addEventListener("click",()=>setSeasonalMetric("nitrate"));
+  document.getElementById("seasonalPhosphate").addEventListener("click",()=>setSeasonalMetric("phosphate"));
+  document.getElementById("seasonalTurbidity").addEventListener("click",()=>setSeasonalMetric("turbidity"));
+}
+
+if(document.getElementById("seasonalSiteSelect")){
+  document.getElementById("seasonalSiteSelect").addEventListener("change",event=>{
+    applySeasonalSiteFocus(event.target.value,{publish:true});
+  });
+}
 
 if(document.getElementById("relationNitratePhosphate")){
   document.getElementById("relationNitratePhosphate").addEventListener("click",()=>setRelationship("nitrate-phosphate"));
