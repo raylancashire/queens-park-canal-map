@@ -82,6 +82,13 @@ select {
   font-weight:750;
   white-space:nowrap;
 }
+#siteCount.site-name {
+  font-size:18px;
+  line-height:1.15;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
 .bottom-stat span {
   display:block;
   margin-top:4px;
@@ -512,15 +519,15 @@ select {
   <div class="bottom-stats">
     <div class="bottom-stat">
       <strong id="siteCount">0</strong>
-      <span>Sampling sites</span>
+      <span id="siteCountLabel">Sampling sites</span>
     </div>
     <div class="bottom-stat">
       <strong id="sampleCount">0</strong>
-      <span>Samples in dataset</span>
+      <span id="sampleCountLabel">Samples in dataset</span>
     </div>
     <div class="bottom-stat latest">
       <strong id="latestDate">—</strong>
-      <span>Latest sample</span>
+      <span id="latestDateLabel">Latest sample</span>
     </div>
   </div>
 </section>
@@ -536,6 +543,7 @@ const map = L.map("map").setView([51.5250, -0.2085], 14);
 
 // Stores the default view containing all loaded sampling-result markers.
 let defaultResultBounds = null;
+let resetMapSummaryToAll = function() {};
 
 // Basemap choices
 const lightMap = L.tileLayer(
@@ -603,6 +611,7 @@ const ResetControl = L.Control.extend({
     L.DomEvent.on(button, "click", function(e) {
       L.DomEvent.preventDefault(e);
       map.closePopup();
+      resetMapSummaryToAll();
 
       if (defaultResultBounds && defaultResultBounds.isValid()) {
         map.fitBounds(defaultResultBounds, {
@@ -1250,6 +1259,58 @@ async function loadData() {
 
     const sel = document.getElementById("siteFilter");
 
+    const siteCountEl = document.getElementById("siteCount");
+    const siteCountLabelEl = document.getElementById("siteCountLabel");
+    const sampleCountEl = document.getElementById("sampleCount");
+    const sampleCountLabelEl = document.getElementById("sampleCountLabel");
+    const latestDateEl = document.getElementById("latestDate");
+    const latestDateLabelEl = document.getElementById("latestDateLabel");
+
+    function latestRowForRows(rows) {
+      const datedRows = rows
+        .map(r => ({
+          row:r,
+          dateValue:toDateValue(getDate(r)),
+          timeValue:(() => {
+            const m = String(getTime(r) || "").match(/^(\d{1,2}):(\d{2})$/);
+            return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
+          })()
+        }))
+        .filter(d => d.dateValue > 0)
+        .sort((a,b) => (a.dateValue - b.dateValue) || (a.timeValue - b.timeValue));
+
+      return datedRows.length ? datedRows[datedRows.length - 1].row : null;
+    }
+
+    function updateSummary(selectedSite) {
+      if (selectedSite && selectedSite !== "all" && groups[selectedSite]) {
+        const rows = groups[selectedSite];
+        const latest = latestRowForRows(rows);
+
+        siteCountEl.textContent = selectedSite.replace(/^Grand Union Canal\s*-\s*/i, "");
+        siteCountEl.classList.add("site-name");
+        siteCountLabelEl.textContent = "Sampling site";
+
+        sampleCountEl.textContent = rows.length;
+        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
+
+        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
+        latestDateLabelEl.textContent = "Latest sample at site";
+      } else {
+        const latest = latestRowForRows(data);
+
+        siteCountEl.textContent = siteNames.length;
+        siteCountEl.classList.remove("site-name");
+        siteCountLabelEl.textContent = "Sampling sites";
+
+        sampleCountEl.textContent = validRows;
+        sampleCountLabelEl.textContent = "Samples in dataset";
+
+        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
+        latestDateLabelEl.textContent = "Latest sample";
+      }
+    }
+
     siteNames.forEach(site => {
       const opt = document.createElement("option");
       const sampleCount = groups[site].length;
@@ -1274,6 +1335,10 @@ async function loadData() {
       }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
       marker.site = site;
+      marker.on("click", () => {
+        sel.value = site;
+        updateSummary(site);
+      });
       marker.addTo(map);
 
       markers.push(marker);
@@ -1305,27 +1370,20 @@ async function loadData() {
       } else if (defaultResultBounds && defaultResultBounds.isValid()) {
         map.fitBounds(defaultResultBounds, {padding:[25,25]});
       }
+
+      updateSummary(selected);
     });
 
-    document.getElementById("siteCount").textContent = siteNames.length;
-    document.getElementById("sampleCount").textContent = validRows;
+    resetMapSummaryToAll = function() {
+      sel.value = "all";
+      markers.forEach(marker => marker.addTo(map));
+      updateSummary("all");
+    };
+
     document.getElementById("recordCount").textContent =
       `${validRows} records loaded across ${siteNames.length} sites`;
 
-    const dated = data
-      .map(r => ({
-        row:r,
-        dateValue:toDateValue(getDate(r)),
-        timeValue:(() => {
-          const m = String(getTime(r) || "").match(/^(\d{1,2}):(\d{2})$/);
-          return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
-        })()
-      }))
-      .filter(d => d.dateValue > 0)
-      .sort((a,b) => (a.dateValue - b.dateValue) || (a.timeValue - b.timeValue));
-
-    document.getElementById("latestDate").textContent =
-      dated.length ? sampleDateTime(dated[dated.length - 1].row) : "—";
+    updateSummary("all");
 
   } catch (err) {
     console.error(err);
