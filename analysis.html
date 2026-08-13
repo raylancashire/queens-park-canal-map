@@ -633,7 +633,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div id="occurrencesContent" class="outer-analysis-content">
 <section class="header">
         <h1>Nitrate and Phosphate Result Occurrences</h1>
-        <p>Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
+        <p id="analysisScopeText">Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
       </section>
 
       <div id="error" class="error"></div>
@@ -1321,16 +1321,40 @@ async function fetchFromSources(sources){
   throw last || new Error("Could not load CSV");
 }
 
+let additionalWaterQualityData=[];
+
+function normaliseSiteForMatch(value){
+  return String(value||"")
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .trim()
+    .toLowerCase();
+}
+
+function filterAdditionalForSite(data,site){
+  if(!site || site==="all") return data;
+  const target=normaliseSiteForMatch(site);
+  return data.filter(row=>{
+    const location=getField(row,"Location","Site Name","Site","Sampling Site");
+    return normaliseSiteForMatch(location)===target;
+  });
+}
+
+function renderAdditionalForFocusedSite(){
+  const data=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite);
+
+  renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
+  renderAdditionalSeries("phChart",data,"pH","");
+  renderAdditionalSeries("coliformChart",data,"Coliform","");
+  renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
+  renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
+}
+
 async function loadAdditionalData(){
   try{
     const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
     const data=parseCSV(raw);
-
-    renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
-    renderAdditionalSeries("phChart",data,"pH","");
-    renderAdditionalSeries("coliformChart",data,"Coliform","");
-    renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
-    renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
+    additionalWaterQualityData=data;
+    renderAdditionalForFocusedSite();
 
     setTimeout(notifyParentOfHeight,80);
   }catch(e){
@@ -1344,6 +1368,88 @@ async function loadAdditionalData(){
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
 
 let freshwaterDataForChanges=[];
+let freshwaterDataAll=[];
+const SITE_SYNC_KEY="qpt-canal-site-selection";
+let currentFocusedSite="all";
+
+try {
+  currentFocusedSite=localStorage.getItem(SITE_SYNC_KEY)||"all";
+} catch(e) {}
+
+const siteSyncChannel=("BroadcastChannel" in window)
+  ? new BroadcastChannel("qpt-canal-site-focus")
+  : null;
+
+function filterFreshwaterForSite(data,site){
+  if(!site || site==="all") return data;
+  const target=normaliseSiteForMatch(site);
+  return data.filter(row=>normaliseSiteForMatch(siteName(row))===target);
+}
+
+function updateScopeText(site,rows){
+  const el=document.getElementById("analysisScopeText");
+  if(!el) return;
+
+  if(!site || site==="all"){
+    el.textContent="Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.";
+    return;
+  }
+
+  const shortSite=String(site).replace(/^Grand Union Canal\s*-\s*/i,"");
+  el.textContent=`Site-focused analysis for ${shortSite}, based on ${rows.length} ${rows.length===1?"sample":"samples"}.`;
+}
+
+function renderSampleAnalysisForFocusedSite(){
+  const data=filterFreshwaterForSite(freshwaterDataAll,currentFocusedSite);
+  const nVals=data.map(getNitrate).filter(Boolean);
+  const pVals=data.map(getPhosphate).filter(Boolean);
+  const tRaw=data.map(getTurbidity).filter(Boolean);
+  const tVals=tRaw.filter(v=>turbidityScaleKey(v));
+
+  document.getElementById("totalSamples").textContent=data.length;
+  document.getElementById("nitrateResults").textContent=nVals.length;
+  document.getElementById("phosphateResults").textContent=pVals.length;
+  document.getElementById("turbidityResults").textContent=tVals.length;
+
+  renderChart("nitrateChart",occurrences(nVals),nVals.length,"Nitrate");
+  renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate");
+  renderTurbidityChart(turbidityOccurrences(tVals),tVals.length);
+  updateScopeText(currentFocusedSite,data);
+
+  if(additionalWaterQualityData.length){
+    renderAdditionalForFocusedSite();
+  }
+
+  const select=document.getElementById("changeSiteSelect");
+  if(select && currentFocusedSite!=="all"){
+    const matching=[...select.options].find(o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite));
+    if(matching){
+      select.value=matching.value;
+      renderSiteChangeCharts();
+    }
+  }
+
+  requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,50));
+}
+
+function setFocusedSite(site){
+  currentFocusedSite=site||"all";
+  renderSampleAnalysisForFocusedSite();
+}
+
+if(siteSyncChannel){
+  siteSyncChannel.addEventListener("message",event=>{
+    if(event.data && event.data.type==="site-focus"){
+      setFocusedSite(event.data.site);
+    }
+  });
+}
+
+window.addEventListener("storage",event=>{
+  if(event.key===SITE_SYNC_KEY && event.newValue){
+    setFocusedSite(event.newValue);
+  }
+});
 
 function sampleDateValue(row){
   const raw=String(getField(row,"Sample Date","sample_date")||"").trim();
@@ -1526,26 +1632,12 @@ function initialiseSiteChanges(){
 }
 
 async function load(){try{
- const data=parseCSV(await fetchCSV()),
-       nVals=data.map(getNitrate).filter(Boolean),
-       pVals=data.map(getPhosphate).filter(Boolean),
-       tRaw=data.map(getTurbidity).filter(Boolean),
-       tVals=tRaw.filter(v=>turbidityScaleKey(v)),
-       n=occurrences(nVals),
-       p=occurrences(pVals),
-       t=turbidityOccurrences(tVals);
+ const data=parseCSV(await fetchCSV());
 
+ freshwaterDataAll=data;
  freshwaterDataForChanges=data;
  initialiseSiteChanges();
-
- document.getElementById("totalSamples").textContent=data.length;
- document.getElementById("nitrateResults").textContent=nVals.length;
- document.getElementById("phosphateResults").textContent=pVals.length;
- document.getElementById("turbidityResults").textContent=tVals.length;
-
- renderChart("nitrateChart",n,nVals.length,"Nitrate");
- renderChart("phosphateChart",p,pVals.length,"Phosphate");
- renderTurbidityChart(t,tVals.length);
+ renderSampleAnalysisForFocusedSite();
 
  setTimeout(notifyParentOfHeight,80);
  }catch(e){
@@ -1661,6 +1753,18 @@ document.getElementById("doTab").addEventListener("click",()=>setChartTab("disso
 
 
 document.getElementById("changeSiteSelect").addEventListener("change",()=>{
+  const site=document.getElementById("changeSiteSelect").value;
+  currentFocusedSite=site;
+  renderSampleAnalysisForFocusedSite();
+
+  try {
+    localStorage.setItem(SITE_SYNC_KEY,site);
+  } catch(e) {}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({type:"site-focus",site});
+  }
+
   renderSiteChangeCharts();
   setTimeout(notifyParentOfHeight,40);
 });
