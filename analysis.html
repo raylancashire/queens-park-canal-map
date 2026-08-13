@@ -614,6 +614,103 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-color:#7fa38a;
 }
 
+
+/* Site comparison ------------------------------------------------------- */
+.site-comparison-intro{
+  margin:0 0 14px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+}
+.site-comparison-tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:0 0 16px;
+}
+.site-comparison-tabs button{
+  appearance:none;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  border-radius:8px;
+  padding:8px 13px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.site-comparison-tabs button:not(.active):hover,
+.site-comparison-tabs button:not(.active):focus-visible{
+  background:#eef7f0;
+  border-color:#7fa38a;
+}
+.site-comparison-tabs button.active{
+  background:var(--ink);
+  border-color:var(--ink);
+  color:#fff;
+}
+.site-comparison-chart{
+  display:grid;
+  gap:10px;
+}
+.site-comparison-row{
+  display:grid;
+  grid-template-columns:minmax(150px,220px) minmax(180px,1fr) minmax(120px,175px);
+  gap:12px;
+  align-items:center;
+  padding:9px 0;
+  border-bottom:1px solid var(--line);
+}
+.site-comparison-row:last-child{
+  border-bottom:0;
+}
+.site-comparison-site{
+  font-size:13px;
+  font-weight:750;
+  line-height:1.25;
+}
+.site-comparison-track{
+  position:relative;
+  height:22px;
+  background:#f1f4f2;
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+}
+.site-comparison-fill{
+  height:100%;
+  min-width:3px;
+  border-radius:999px;
+}
+.site-comparison-value{
+  text-align:right;
+  font-size:12px;
+  line-height:1.3;
+}
+.site-comparison-value strong{
+  display:block;
+  font-size:13px;
+}
+.site-comparison-date{
+  color:var(--muted);
+  font-size:10px;
+}
+.site-comparison-empty{
+  padding:18px;
+  text-align:center;
+  color:var(--muted);
+  font-size:13px;
+}
+@media(max-width:700px){
+  .site-comparison-row{
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+  .site-comparison-value{
+    text-align:left;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -773,6 +870,35 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     </div>
 
 
+    </div>
+  </section>
+
+
+  <section class="outer-analysis-panel">
+    <button
+      id="siteComparisonToggle"
+      class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="siteComparisonContent">
+      <span>Site comparison</span>
+      <span id="siteComparisonIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="siteComparisonContent" class="outer-analysis-content" hidden>
+      <p class="site-comparison-intro">
+        Compares the latest recorded result from each sampling site. Nitrate and phosphate
+        bars use the midpoint of the FreshWater Watch result range; the original result band
+        is shown beside each site. Turbidity uses the recorded NTU value.
+      </p>
+
+      <div class="site-comparison-tabs" role="tablist" aria-label="Choose site comparison measure">
+        <button id="compareNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+        <button id="comparePhosphate" type="button" aria-pressed="false">Phosphate</button>
+        <button id="compareTurbidity" type="button" aria-pressed="false">Turbidity</button>
+      </div>
+
+      <div id="siteComparisonChart" class="site-comparison-chart"></div>
     </div>
   </section>
 
@@ -1663,6 +1789,140 @@ function initialiseSiteChanges(){
   renderSiteChangeCharts();
 }
 
+
+let currentComparisonMetric="nitrate";
+
+function latestMetricResultForSite(rows,metric){
+  const sorted=[...rows].sort((a,b)=>sampleDateValue(b)-sampleDateValue(a));
+
+  for(const row of sorted){
+    let raw="";
+    let value=null;
+
+    if(metric==="nitrate"){
+      raw=getNitrate(row);
+      if(!raw) continue;
+      const explicit=parseFloat(getField(row,"nitrate_mid"));
+      value=Number.isFinite(explicit) ? explicit : midpointFromRange(raw);
+    }else if(metric==="phosphate"){
+      raw=getPhosphate(row);
+      if(!raw) continue;
+      const explicit=parseFloat(getField(row,"phosphate_mid"));
+      value=Number.isFinite(explicit) ? explicit : midpointFromRange(raw);
+    }else if(metric==="turbidity"){
+      raw=getTurbidity(row);
+      if(!raw) continue;
+      value=comparisonMetricValue(row,"turbidity");
+    }
+
+    if(Number.isFinite(value)){
+      return {
+        row,
+        raw,
+        value,
+        date:sampleDateLabel(row)
+      };
+    }
+  }
+
+  return null;
+}
+
+function comparisonColour(metric,raw){
+  if(metric==="nitrate") return nutrientBandColour("Nitrate",raw);
+  if(metric==="phosphate") return nutrientBandColour("Phosphate",raw);
+  if(metric==="turbidity"){
+    const key=turbidityScaleKey(raw);
+    return turbidityBandColour(key);
+  }
+  return "#2f6b45";
+}
+
+function comparisonDisplay(metric,result){
+  if(metric==="nitrate"){
+    return {
+      main:`${normaliseRange(result.raw)} mg/L`,
+      detail:`Midpoint ${result.value.toFixed(2)} mg/L`
+    };
+  }
+  if(metric==="phosphate"){
+    return {
+      main:`${normaliseRange(result.raw)} mg/L`,
+      detail:`Midpoint ${result.value.toFixed(3)} mg/L`
+    };
+  }
+  return {
+    main:`${result.value.toFixed(0)} NTU`,
+    detail:""
+  };
+}
+
+function renderSiteComparison(){
+  const chart=document.getElementById("siteComparisonChart");
+  if(!chart || !freshwaterDataForChanges.length) return;
+
+  const groups={};
+  freshwaterDataForChanges.forEach(row=>{
+    const site=siteName(row);
+    (groups[site] ||= []).push(row);
+  });
+
+  const results=Object.entries(groups)
+    .map(([site,rows])=>({
+      site,
+      result:latestMetricResultForSite(rows,currentComparisonMetric)
+    }))
+    .filter(item=>item.result)
+    .sort((a,b)=>a.result.value-b.result.value);
+
+  if(!results.length){
+    chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
+    return;
+  }
+
+  const max=Math.max(...results.map(item=>item.result.value),1);
+
+  chart.innerHTML=results.map(item=>{
+    const pct=Math.max(1,(item.result.value/max)*100);
+    const colour=comparisonColour(currentComparisonMetric,item.result.raw);
+    const display=comparisonDisplay(currentComparisonMetric,item.result);
+    const shortSite=item.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+
+    return `<div class="site-comparison-row">
+      <div class="site-comparison-site">${esc(shortSite)}</div>
+      <div class="site-comparison-track" aria-hidden="true">
+        <div class="site-comparison-fill" style="width:${pct}%;background:${colour}"></div>
+      </div>
+      <div class="site-comparison-value">
+        <strong>${esc(display.main)}</strong>
+        ${display.detail ? `<span>${esc(display.detail)}</span><br>` : ""}
+        <span class="site-comparison-date">${esc(item.result.date)}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function setComparisonMetric(metric){
+  currentComparisonMetric=metric;
+
+  const buttons={
+    nitrate:document.getElementById("compareNitrate"),
+    phosphate:document.getElementById("comparePhosphate"),
+    turbidity:document.getElementById("compareTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([key,button])=>{
+    if(!button) return;
+    const active=key===metric;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderSiteComparison();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
 async function load(){try{
  const data=parseCSV(await fetchCSV());
 
@@ -1670,6 +1930,7 @@ async function load(){try{
  freshwaterDataForChanges=data;
  initialiseSiteChanges();
  renderSampleAnalysisForFocusedSite();
+ renderSiteComparison();
 
  setTimeout(notifyParentOfHeight,80);
  }catch(e){
@@ -1803,6 +2064,11 @@ document.getElementById("changeSiteSelect").addEventListener("change",()=>{
 
 
 
+
+document.getElementById("compareNitrate").addEventListener("click",()=>setComparisonMetric("nitrate"));
+document.getElementById("comparePhosphate").addEventListener("click",()=>setComparisonMetric("phosphate"));
+document.getElementById("compareTurbidity").addEventListener("click",()=>setComparisonMetric("turbidity"));
+
 const accordionPanels=[
   {
     button:document.getElementById("occurrencesToggle"),
@@ -1813,6 +2079,11 @@ const accordionPanels=[
     button:document.getElementById("resultsTimeToggle"),
     content:document.getElementById("resultsTimeContent"),
     icon:document.getElementById("resultsTimeIcon")
+  },
+  {
+    button:document.getElementById("siteComparisonToggle"),
+    content:document.getElementById("siteComparisonContent"),
+    icon:document.getElementById("siteComparisonIcon")
   }
 ];
 
@@ -1828,6 +2099,10 @@ function setAccordionPanel(index,open){
     renderSiteChangeCharts();
   }
 
+  if(open && index===2){
+    renderSiteComparison();
+  }
+
   setTimeout(notifyParentOfHeight,40);
   setTimeout(notifyParentOfHeight,140);
   setTimeout(notifyParentOfHeight,300);
@@ -1838,7 +2113,7 @@ accordionPanels.forEach((panel,index)=>{
     const currentlyOpen=panel.button.getAttribute("aria-expanded")==="true";
 
     // Allow the currently open panel to be collapsed.
-    // Opening either panel automatically closes the other.
+    // Opening one panel automatically closes the others.
     if(currentlyOpen){
       panel.button.setAttribute("aria-expanded","false");
       panel.content.hidden=true;
