@@ -768,6 +768,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   margin-top:14px;
 }
 
+.primary-analysis-content{
+  padding:0;
+}
 </style>
 </head>
 <body>
@@ -785,18 +788,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     </button>
 
     <div id="sampleAnalysisGroupContent" class="outer-analysis-content" hidden>
-<section class="inner-analysis-panel">
-    <button
-      id="occurrencesToggle"
-      class="inner-analysis-toggle"
-      type="button"
-      aria-expanded="false"
-      aria-controls="occurrencesContent">
-      <span>View nitrate, phosphate and turbidity occurrence charts</span>
-      <span id="occurrencesIcon" aria-hidden="true">＋</span>
-    </button>
-
-    <div id="occurrencesContent" class="inner-analysis-content" hidden>
+<div id="occurrencesContent" class="primary-analysis-content">
 <section class="header">
         <h1>Nitrate and Phosphate Result Occurrences</h1>
         <p id="analysisScopeText">Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
@@ -898,7 +890,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   </article>
 </section>
     </div>
-  </section>
 
 <section class="inner-analysis-panel">
     <button
@@ -2207,11 +2198,6 @@ function setAccordionPanel(index,open){
 
 const sampleAnalysisPanels=[
   {
-    button:document.getElementById("occurrencesToggle"),
-    content:document.getElementById("occurrencesContent"),
-    icon:document.getElementById("occurrencesIcon")
-  },
-  {
     button:document.getElementById("resultsTimeToggle"),
     content:document.getElementById("resultsTimeContent"),
     icon:document.getElementById("resultsTimeIcon")
@@ -2226,7 +2212,7 @@ function setSampleAnalysisPanel(index,open){
     panel.icon.textContent=shouldOpen ? "−" : "＋";
   });
 
-  if(open && index===1){
+  if(open && index===0){
     renderSiteChangeCharts();
   }
 
