@@ -545,6 +545,26 @@ const map = L.map("map").setView([51.5250, -0.2085], 14);
 let defaultResultBounds = null;
 let resetMapSummaryToAll = function() {};
 
+const SITE_SYNC_KEY = "qpt-canal-site-selection";
+const siteSyncChannel = ("BroadcastChannel" in window)
+  ? new BroadcastChannel("qpt-canal-site-focus")
+  : null;
+
+function publishSiteFocus(site) {
+  const value = site || "all";
+
+  try {
+    localStorage.setItem(SITE_SYNC_KEY, value);
+  } catch (e) {}
+
+  if (siteSyncChannel) {
+    siteSyncChannel.postMessage({
+      type: "site-focus",
+      site: value
+    });
+  }
+}
+
 // Basemap choices
 const lightMap = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -1283,6 +1303,8 @@ async function loadData() {
     }
 
     function updateSummary(selectedSite) {
+      publishSiteFocus(selectedSite || "all");
+
       if (selectedSite && selectedSite !== "all" && groups[selectedSite]) {
         const rows = groups[selectedSite];
         const latest = latestRowForRows(rows);
