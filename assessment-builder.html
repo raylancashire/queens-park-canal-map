@@ -1,0 +1,519 @@
+<!-- Queen's Park Canal Watch Assessment Builder
+     Paste this entire block into a Webador Custom HTML element
+     on a page such as /assessment-builder
+-->
+<div id="qpAssessmentBuilder" class="qp-builder">
+  <div class="qp-builder-card">
+    <h2>Canal Visual Assessment Builder</h2>
+    <p class="qp-builder-intro">
+      Choose the observation that best matches each indicator. The assessment
+      and overall score update automatically.
+    </p>
+
+    <div class="qp-builder-meta">
+      <label>
+        Site
+        <input id="qpBuilderSite" type="text" placeholder="e.g. Half Penny Steps">
+      </label>
+      <label>
+        Date
+        <input id="qpBuilderDate" type="date">
+      </label>
+      <label>
+        Time
+        <input id="qpBuilderTime" type="time">
+      </label>
+    </div>
+
+    <div class="qp-builder-table-wrap">
+      <table class="qp-builder-table">
+        <thead>
+          <tr>
+            <th>Indicator</th>
+            <th>Observation</th>
+            <th>Assessment</th>
+          </tr>
+        </thead>
+        <tbody id="qpBuilderRows"></tbody>
+      </table>
+    </div>
+
+    <div id="qpBuilderOverall" class="qp-builder-overall good">
+      <div class="qp-builder-overall-label">Overall Visual Assessment</div>
+      <div id="qpBuilderOverallResult" class="qp-builder-overall-result">◆ Good</div>
+      <div id="qpBuilderOverallScore" class="qp-builder-overall-score">Overall score: 4.00 / 5</div>
+      <p id="qpBuilderOverallText"></p>
+    </div>
+
+    <div class="qp-builder-actions">
+      <button id="qpBuilderReset" type="button">Reset</button>
+      <button id="qpBuilderCopy" class="primary" type="button">Refresh Generated HTML</button>
+    </div>
+
+    <div id="qpBuilderMessage" class="qp-builder-message" aria-live="polite"></div>
+
+    <div id="qpBuilderOutputWrap" class="qp-builder-output">
+      <label for="qpBuilderOutput"><strong>Generated blog HTML</strong></label>
+      <p>The finished blog HTML appears here automatically. Click “Select Generated HTML”, then copy it with Command+C (Mac) or Ctrl+C (Windows).</p>
+      <textarea id="qpBuilderOutput" readonly></textarea>
+      <button id="qpBuilderSelect" type="button">Select Generated HTML</button>
+    </div>
+  </div>
+</div>
+
+<style>
+#qpAssessmentBuilder,
+#qpAssessmentBuilder * {
+  box-sizing:border-box;
+}
+
+.qp-builder {
+  width:100%;
+  max-width:1100px;
+  margin:0 auto;
+  color:#17321f;
+  font-family:inherit;
+}
+
+.qp-builder-card {
+  background:#fff;
+  border:1px solid #dfe7e1;
+  border-radius:12px;
+  padding:20px;
+}
+
+.qp-builder-card h2 {
+  margin:0 0 6px;
+  font-size:24px;
+}
+
+.qp-builder-intro {
+  margin:0 0 18px;
+  color:#66746b;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.qp-builder-meta {
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.qp-builder-meta label {
+  display:grid;
+  gap:5px;
+  font-size:12px;
+  font-weight:700;
+  color:#526158;
+}
+
+.qp-builder-meta input {
+  width:100%;
+  padding:9px 10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+}
+
+.qp-builder-table-wrap {
+  overflow-x:auto;
+}
+
+.qp-builder-table {
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  border:1px solid #dfe7e1;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.qp-builder-table th,
+.qp-builder-table td {
+  padding:10px 11px;
+  text-align:left;
+  vertical-align:middle;
+  border-right:1px solid #dfe7e1;
+  border-bottom:1px solid #dfe7e1;
+  font-size:13px;
+}
+
+.qp-builder-table th {
+  background:#f2f6f3;
+  font-weight:800;
+}
+
+.qp-builder-table th:last-child,
+.qp-builder-table td:last-child {
+  border-right:0;
+}
+
+.qp-builder-table tbody tr:last-child td {
+  border-bottom:0;
+}
+
+.qp-builder-table td:first-child {
+  font-weight:700;
+  min-width:145px;
+}
+
+.qp-builder-table select {
+  width:100%;
+  min-width:220px;
+  padding:8px 10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+}
+
+.qp-builder-status {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.qp-builder-status.excellent { background:#006400; color:#fff; }
+.qp-builder-status.good      { background:#39A96B; color:#17321f; }
+.qp-builder-status.fair      { background:#FFD966; color:#17321f; }
+.qp-builder-status.poor      { background:#F4B183; color:#4a2b16; }
+.qp-builder-status.very-poor { background:#C00000; color:#fff; }
+
+.qp-builder-overall {
+  margin-top:18px;
+  padding:17px 19px;
+  border:1px solid #d9e3db;
+  border-left:6px solid #39A96B;
+  border-radius:10px;
+  background:#f5f8f5;
+}
+
+.qp-builder-overall.excellent { border-left-color:#006400; }
+.qp-builder-overall.good      { border-left-color:#39A96B; }
+.qp-builder-overall.fair      { border-left-color:#FFD966; }
+.qp-builder-overall.poor      { border-left-color:#F4B183; }
+.qp-builder-overall.very-poor { border-left-color:#C00000; }
+
+.qp-builder-overall-label {
+  color:#66746b;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+
+.qp-builder-overall-result {
+  margin-top:4px;
+  font-size:22px;
+  font-weight:800;
+}
+
+.qp-builder-overall-score {
+  margin-top:3px;
+  color:#526158;
+  font-size:13px;
+  font-weight:700;
+}
+
+.qp-builder-overall p {
+  margin:10px 0 0;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.qp-builder-actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.qp-builder-actions button {
+  appearance:none;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  padding:9px 14px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.qp-builder-actions button.primary {
+  background:#17321f;
+  color:#fff;
+  border-color:#17321f;
+}
+
+.qp-builder-message {
+  margin-top:9px;
+  min-height:18px;
+  color:#66746b;
+  font-size:12px;
+}
+
+.qp-builder-output {
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid #dfe7e1;
+}
+
+.qp-builder-output p {
+  margin:5px 0 9px;
+  color:#66746b;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.qp-builder-output textarea {
+  display:block;
+  width:100%;
+  min-height:220px;
+  padding:10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  resize:vertical;
+}
+
+.qp-builder-output button {
+  margin-top:9px;
+  appearance:none;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  padding:9px 14px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+@media(max-width:700px) {
+  .qp-builder-card { padding:14px; }
+  .qp-builder-meta { grid-template-columns:1fr; }
+  .qp-builder-table th,
+  .qp-builder-table td { padding:8px; font-size:12px; }
+  .qp-builder-table select { min-width:190px; font-size:12px; }
+}
+</style>
+
+<script>
+(function(){
+  const indicators = [
+    ["Water colour",[
+      ["Natural / expected",5],["Slight discolouration",4],["Noticeable discolouration",3],["Unusual / poor colour",2],["Strong abnormal colour",1]
+    ]],
+    ["Water clarity",[
+      ["Very clear",5],["Clear",4],["Moderate",3],["Cloudy",2],["Very turbid / opaque",1]
+    ]],
+    ["Water movement",[
+      ["Natural / good movement",5],["Gentle movement",4],["Calm",3],["Very stagnant",2],["Stagnant with signs of deterioration",1]
+    ]],
+    ["Floating litter",[
+      ["None",5],["Very little",4],["Some",3],["Significant",2],["Heavy accumulation",1]
+    ]],
+    ["Surface pollution",[
+      ["None visible",5],["Trace",4],["Some visible",3],["Significant",2],["Severe",1]
+    ]],
+    ["Wildlife activity",[
+      ["Abundant / diverse",5],["Several observations",4],["Some observed",3],["Very little observed",2],["N/A – none observed",1]
+    ]],
+    ["Oil / foam",[
+      ["None",5],["Trace / natural foam",4],["Some present",3],["Significant",2],["Heavy oil / abnormal foam",1]
+    ]],
+    ["Bank vegetation",[
+      ["Healthy / abundant",5],["Mostly healthy",4],["Moderate",3],["Sparse / poor",2],["Severely degraded / absent",1]
+    ]]
+  ];
+
+  const ratings = {
+    5:{label:"Excellent",cls:"excellent",symbol:"●"},
+    4:{label:"Good",cls:"good",symbol:"◆"},
+    3:{label:"Fair",cls:"fair",symbol:"▲"},
+    2:{label:"Poor",cls:"poor",symbol:"■"},
+    1:{label:"Very Poor",cls:"very-poor",symbol:"✖"}
+  };
+
+  const bands = [
+    [4.50,5.00,"Excellent","excellent","●","Waterway appears to be in excellent visual condition, with little or no visible evidence of pollution or environmental deterioration."],
+    [3.50,4.49,"Good","good","◆","Waterway appears to be in good visual condition, with only minor issues observed and no significant visible pollution."],
+    [2.50,3.49,"Fair","fair","▲","Waterway appears to be in fair visual condition. Some signs of environmental pressure or deterioration are present and should be monitored."],
+    [1.50,2.49,"Poor","poor","■","Waterway appears to be in poor visual condition, with several indicators of pollution or environmental deterioration requiring attention."],
+    [1.00,1.49,"Very Poor","very-poor","✖","Waterway appears to be in very poor visual condition, with substantial visible pollution or environmental deterioration."]
+  ];
+
+  const rowsEl = document.getElementById("qpBuilderRows");
+  const overallEl = document.getElementById("qpBuilderOverall");
+  const overallResult = document.getElementById("qpBuilderOverallResult");
+  const overallScore = document.getElementById("qpBuilderOverallScore");
+  const overallText = document.getElementById("qpBuilderOverallText");
+  const message = document.getElementById("qpBuilderMessage");
+
+  function esc(value){
+    return String(value ?? "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function bandFor(score){
+    return bands.find(b => score >= b[0] && score <= b[1]) || bands[bands.length-1];
+  }
+
+  function build(){
+    rowsEl.innerHTML="";
+
+    indicators.forEach((indicator,index)=>{
+      const tr=document.createElement("tr");
+      const td1=document.createElement("td");
+      const td2=document.createElement("td");
+      const td3=document.createElement("td");
+      const select=document.createElement("select");
+
+      td1.textContent=indicator[0];
+
+      indicator[1].forEach(optionData=>{
+        const option=document.createElement("option");
+        option.value=optionData[1];
+        option.textContent=optionData[0];
+        select.appendChild(option);
+      });
+
+      select.dataset.index=index;
+      select.addEventListener("change",update);
+
+      td2.appendChild(select);
+      td3.innerHTML='<span class="qp-builder-status excellent">● Excellent</span>';
+
+      tr.append(td1,td2,td3);
+      rowsEl.appendChild(tr);
+    });
+
+    update();
+  }
+
+  function update(){
+    let total=0;
+
+    [...rowsEl.querySelectorAll("tr")].forEach(tr=>{
+      const select=tr.querySelector("select");
+      const score=Number(select.value);
+      const rating=ratings[score];
+      total+=score;
+
+      tr.children[2].innerHTML =
+        `<span class="qp-builder-status ${rating.cls}">${rating.symbol} ${rating.label}</span>`;
+    });
+
+    const average=total/indicators.length;
+    const band=bandFor(average);
+
+    overallEl.classList.remove("excellent","good","fair","poor","very-poor");
+    overallEl.classList.add(band[3]);
+    overallResult.textContent=`${band[4]} ${band[2]}`;
+    overallScore.textContent=`Overall score: ${average.toFixed(2)} / 5`;
+    overallText.textContent=band[5];
+
+    const output=document.getElementById("qpBuilderOutput");
+    if(output){
+      output.value=makeBlogHtml();
+    }
+
+    message.textContent="";
+  }
+
+  function makeBlogHtml(){
+    const site=document.getElementById("qpBuilderSite").value.trim();
+    const date=document.getElementById("qpBuilderDate").value;
+    const time=document.getElementById("qpBuilderTime").value;
+
+    const rows=[...rowsEl.querySelectorAll("tr")].map((tr,index)=>{
+      const select=tr.querySelector("select");
+      const score=Number(select.value);
+      const observation=select.options[select.selectedIndex].textContent;
+      const rating=ratings[score];
+
+      return `
+<tr>
+  <td>${esc(indicators[index][0])}</td>
+  <td>${esc(observation)}</td>
+  <td><span class="qp-status ${rating.cls}">${rating.symbol} ${rating.label}</span></td>
+</tr>`;
+    }).join("");
+
+    const scores=[...rowsEl.querySelectorAll("select")].map(s=>Number(s.value));
+    const average=scores.reduce((a,b)=>a+b,0)/scores.length;
+    const band=bandFor(average);
+
+    const meta=[site,date,time].filter(Boolean);
+    const metaHtml=meta.length
+      ? `<div style="margin:0 0 10px;color:#66746b;font-size:12px">${meta.map(esc).join(" · ")}</div>\n`
+      : "";
+
+    return `${metaHtml}<div class="qp-assessment-table">
+  <table class="qp-results-table">
+    <thead>
+      <tr>
+        <th>Indicator</th>
+        <th>Observation</th>
+        <th>Assessment</th>
+      </tr>
+    </thead>
+    <tbody>${rows}
+    </tbody>
+  </table>
+</div>
+
+<div class="qp-overall-assessment ${band[3]}">
+  <div class="qp-overall-label">Overall Visual Assessment</div>
+  <div class="qp-overall-result">${band[4]} ${band[2]}</div>
+  <div class="qp-overall-score">Overall score: ${average.toFixed(2)} / 5</div>
+  <p>${esc(band[5])}</p>
+</div>`;
+  }
+
+  function copyAssessment(){
+    const output=document.getElementById("qpBuilderOutput");
+    output.value=makeBlogHtml();
+    output.focus();
+    message.textContent="Generated HTML refreshed. Use “Select Generated HTML” below, then copy it manually.";
+  }
+
+  function reset(){
+    document.getElementById("qpBuilderSite").value="";
+    document.getElementById("qpBuilderDate").value="";
+    document.getElementById("qpBuilderTime").value="";
+    rowsEl.querySelectorAll("select").forEach(s=>s.selectedIndex=0);
+    update();
+  }
+
+  document.getElementById("qpBuilderCopy").addEventListener("click",copyAssessment);
+  document.getElementById("qpBuilderReset").addEventListener("click",reset);
+
+  document.getElementById("qpBuilderSelect").addEventListener("click",function(){
+    const output=document.getElementById("qpBuilderOutput");
+    output.focus();
+    output.select();
+    output.setSelectionRange(0,output.value.length);
+    message.textContent="Generated HTML selected. Now press Command+C on Mac or Ctrl+C on Windows, then paste it into a Webador Custom HTML element.";
+  });
+
+  build();
+})();
+</script>
