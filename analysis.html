@@ -711,6 +711,63 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   }
 }
 
+
+.relationship-intro{
+  margin:0 0 12px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+}
+.relationship-placeholder{
+  padding:16px;
+  border:1px dashed var(--line);
+  border-radius:8px;
+  background:#f8faf8;
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+
+
+.inner-analysis-panel{
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  background:#fff;
+}
+.inner-analysis-panel + .inner-analysis-panel{
+  margin-top:14px;
+}
+.inner-analysis-toggle{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  border:0;
+  background:#fff;
+  color:var(--ink);
+  padding:15px 16px;
+  font:inherit;
+  font-size:15px;
+  font-weight:800;
+  text-align:left;
+  cursor:pointer;
+}
+.inner-analysis-toggle:hover,
+.inner-analysis-toggle:focus-visible{
+  background:#f5f8f5;
+}
+.inner-analysis-content{
+  padding:16px;
+  border-top:1px solid var(--line);
+}
+
+
+#sampleAnalysisGroupContent > .inner-analysis-panel + .inner-analysis-panel{
+  margin-top:14px;
+}
+
 </style>
 </head>
 <body>
@@ -718,16 +775,28 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <section class="outer-analysis-panel">
     <button
-      id="occurrencesToggle"
+      id="sampleAnalysisGroupToggle"
       class="outer-analysis-toggle"
       type="button"
       aria-expanded="true"
-      aria-controls="occurrencesContent">
+      aria-controls="sampleAnalysisGroupContent">
       <span>Sample analysis</span>
+      <span id="sampleAnalysisGroupIcon" aria-hidden="true">−</span>
+    </button>
+
+    <div id="sampleAnalysisGroupContent" class="outer-analysis-content">
+<section class="inner-analysis-panel">
+    <button
+      id="occurrencesToggle"
+      class="inner-analysis-toggle"
+      type="button"
+      aria-expanded="true"
+      aria-controls="occurrencesContent">
+      <span>View nitrate, phosphate and turbidity occurrence charts</span>
       <span id="occurrencesIcon" aria-hidden="true">−</span>
     </button>
 
-    <div id="occurrencesContent" class="outer-analysis-content">
+    <div id="occurrencesContent" class="inner-analysis-content">
 <section class="header">
         <h1>Nitrate and Phosphate Result Occurrences</h1>
         <p id="analysisScopeText">Frequency of each FreshWater Watch result band across all samples in the Greener Canalside dataset.</p>
@@ -831,10 +900,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     </div>
   </section>
 
-  <section class="outer-analysis-panel">
+<section class="inner-analysis-panel">
     <button
       id="resultsTimeToggle"
-      class="outer-analysis-toggle"
+      class="inner-analysis-toggle"
       type="button"
       aria-expanded="false"
       aria-controls="resultsTimeContent">
@@ -842,7 +911,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <span id="resultsTimeIcon" aria-hidden="true">＋</span>
     </button>
 
-    <div id="resultsTimeContent" class="outer-analysis-content" hidden>
+    <div id="resultsTimeContent" class="inner-analysis-content" hidden>
 <div class="site-change-controls">
       <label for="changeSiteSelect">Sampling site:</label>
       <select id="changeSiteSelect"></select>
@@ -872,12 +941,26 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
     </div>
   </section>
+    </div>
+  </section>
 
 
   <section class="outer-analysis-panel">
     <button
-      id="siteComparisonToggle"
+      id="furtherAnalysisToggle"
       class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="furtherAnalysisContent">
+      <span>Site comparison and relationships</span>
+      <span id="furtherAnalysisIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="furtherAnalysisContent" class="outer-analysis-content" hidden>
+<section class="inner-analysis-panel">
+    <button
+      id="siteComparisonToggle"
+      class="inner-analysis-toggle"
       type="button"
       aria-expanded="false"
       aria-controls="siteComparisonContent">
@@ -885,11 +968,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <span id="siteComparisonIcon" aria-hidden="true">＋</span>
     </button>
 
-    <div id="siteComparisonContent" class="outer-analysis-content" hidden>
+    <div id="siteComparisonContent" class="inner-analysis-content" hidden>
       <p class="site-comparison-intro">
-        Compares the latest recorded result from each sampling site. Nitrate and phosphate
-        bars use the midpoint of the FreshWater Watch result range; the original result band
-        is shown beside each site. Turbidity uses the recorded NTU value.
+        Compare the latest recorded result from each sampling site.
+      </p>
+      <p class="site-comparison-intro">
+        Nitrate and phosphate bars use the midpoint of the FreshWater Watch result range;
+        the original result band is shown beside each site. Turbidity uses the recorded NTU value.
       </p>
 
       <div class="site-comparison-tabs" role="tablist" aria-label="Choose site comparison measure">
@@ -899,6 +984,31 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
+    </div>
+  </section>
+
+<section class="inner-analysis-panel">
+    <button
+      id="relationshipToggle"
+      class="inner-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="relationshipContent">
+      <span>Relationship between indicators</span>
+      <span id="relationshipIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="relationshipContent" class="inner-analysis-content" hidden>
+      <p class="relationship-intro">
+        Explore whether two indicators appear to move together across paired samples.
+        This section is ready for relationship charts such as Nitrate vs Phosphate,
+        Phosphate vs Turbidity, and Temperature vs Dissolved Oxygen.
+      </p>
+      <div class="relationship-placeholder">
+        Relationship analysis will appear here.
+      </div>
+    </div>
+  </section>
     </div>
   </section>
 
@@ -2071,19 +2181,14 @@ document.getElementById("compareTurbidity").addEventListener("click",()=>setComp
 
 const accordionPanels=[
   {
-    button:document.getElementById("occurrencesToggle"),
-    content:document.getElementById("occurrencesContent"),
-    icon:document.getElementById("occurrencesIcon")
+    button:document.getElementById("sampleAnalysisGroupToggle"),
+    content:document.getElementById("sampleAnalysisGroupContent"),
+    icon:document.getElementById("sampleAnalysisGroupIcon")
   },
   {
-    button:document.getElementById("resultsTimeToggle"),
-    content:document.getElementById("resultsTimeContent"),
-    icon:document.getElementById("resultsTimeIcon")
-  },
-  {
-    button:document.getElementById("siteComparisonToggle"),
-    content:document.getElementById("siteComparisonContent"),
-    icon:document.getElementById("siteComparisonIcon")
+    button:document.getElementById("furtherAnalysisToggle"),
+    content:document.getElementById("furtherAnalysisContent"),
+    icon:document.getElementById("furtherAnalysisIcon")
   }
 ];
 
@@ -2095,25 +2200,87 @@ function setAccordionPanel(index,open){
     panel.icon.textContent=isOpen?"−":"＋";
   });
 
-  if(open && index===1){
-    renderSiteChangeCharts();
-  }
-
-  if(open && index===2){
-    renderSiteComparison();
-  }
-
   setTimeout(notifyParentOfHeight,40);
   setTimeout(notifyParentOfHeight,140);
   setTimeout(notifyParentOfHeight,300);
 }
 
+const sampleAnalysisPanels=[
+  {
+    button:document.getElementById("occurrencesToggle"),
+    content:document.getElementById("occurrencesContent"),
+    icon:document.getElementById("occurrencesIcon")
+  },
+  {
+    button:document.getElementById("resultsTimeToggle"),
+    content:document.getElementById("resultsTimeContent"),
+    icon:document.getElementById("resultsTimeIcon")
+  }
+];
+
+function setSampleAnalysisPanel(index,open){
+  sampleAnalysisPanels.forEach((panel,i)=>{
+    const shouldOpen=open && i===index;
+    panel.button.setAttribute("aria-expanded",String(shouldOpen));
+    panel.content.hidden=!shouldOpen;
+    panel.icon.textContent=shouldOpen ? "−" : "＋";
+  });
+
+  if(open && index===1){
+    renderSiteChangeCharts();
+  }
+
+  requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,40));
+}
+
+sampleAnalysisPanels.forEach((panel,index)=>{
+  panel.button.addEventListener("click",()=>{
+    const isOpen=panel.button.getAttribute("aria-expanded")==="true";
+    setSampleAnalysisPanel(index,!isOpen);
+  });
+});
+
+const furtherAnalysisPanels=[
+  {
+    button:document.getElementById("siteComparisonToggle"),
+    content:document.getElementById("siteComparisonContent"),
+    icon:document.getElementById("siteComparisonIcon")
+  },
+  {
+    button:document.getElementById("relationshipToggle"),
+    content:document.getElementById("relationshipContent"),
+    icon:document.getElementById("relationshipIcon")
+  }
+];
+
+function setFurtherAnalysisPanel(index,open){
+  furtherAnalysisPanels.forEach((panel,i)=>{
+    const shouldOpen=open && i===index;
+    panel.button.setAttribute("aria-expanded",String(shouldOpen));
+    panel.content.hidden=!shouldOpen;
+    panel.icon.textContent=shouldOpen ? "−" : "＋";
+  });
+
+  if(open && index===0){
+    renderSiteComparison();
+  }
+
+  requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,40));
+}
+
+furtherAnalysisPanels.forEach((panel,index)=>{
+  panel.button.addEventListener("click",()=>{
+    const isOpen=panel.button.getAttribute("aria-expanded")==="true";
+    setFurtherAnalysisPanel(index,!isOpen);
+  });
+});
+
 accordionPanels.forEach((panel,index)=>{
   panel.button.addEventListener("click",()=>{
     const currentlyOpen=panel.button.getAttribute("aria-expanded")==="true";
 
-    // Allow the currently open panel to be collapsed.
-    // Opening one panel automatically closes the others.
+    // Allow the currently open large group to be collapsed.
+    // Sample analysis contains occurrence charts and Results over time; the second large group contains site comparison and relationships.
     if(currentlyOpen){
       panel.button.setAttribute("aria-expanded","false");
       panel.content.hidden=true;
