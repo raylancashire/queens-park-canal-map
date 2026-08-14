@@ -1400,6 +1400,27 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   transform:translateY(-1px);
 }
 
+
+/* Key takeaway summaries */
+.key-takeaway{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border-left:4px solid #5f8a69;
+  border-radius:0 8px 8px 0;
+  background:#f2f7f3;
+  color:#35483b;
+  font-size:12px;
+  line-height:1.5;
+}
+.key-takeaway-label{
+  display:block;
+  margin-bottom:2px;
+  color:#526158;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
 </style>
 </head>
 <body>
@@ -1423,6 +1444,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         A compact view of the available monitoring results. Choose all sites or an individual sampling site,
         then switch between the latest survey and the project average.
       </p>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
+      </div>
 
       <div class="snapshot-controls">
         <div class="snapshot-control">
@@ -1465,6 +1490,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare the two most recent available survey dates for each indicator.
         FreshWater Watch and additional water-quality tests are compared separately when their sampling dates differ.
       </p>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="changeTakeawayText">Summary will update when comparable surveys are available.</span>
+      </div>
 
       <div class="change-summary-controls">
         <div class="change-summary-control">
@@ -1503,6 +1532,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <p class="site-comparison-intro">
         Compare the latest recorded result from each sampling site.
       </p>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
+      </div>
+
       <p class="site-comparison-intro">
         Nitrate and phosphate bars use the midpoint of the FreshWater Watch result range;
         the original result band is shown beside each site. Turbidity uses the recorded NTU value.
@@ -1535,6 +1570,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare how stable each sampling site's results have been across repeated surveys.
         Consistency describes variation only; it does not mean that a consistently high result is environmentally desirable.
       </p>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
+      </div>
+
 
       <div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
         <button id="consistencyNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
@@ -3589,6 +3630,10 @@ function renderSnapshot(){
   }
 
   summary.textContent=narrative;
+  const snapshotTakeaway=document.getElementById("snapshotTakeawayText");
+  if(snapshotTakeaway){
+    snapshotTakeaway.textContent=narrative;
+  }
 
   const fwLatest=fwRows.length
     ? Math.max(...fwRows.map(sampleDateValue).filter(Boolean))
@@ -3717,6 +3762,22 @@ function renderSiteConsistency(){
 
   const info=consistencyMetricInfo(currentConsistencyMetric);
   const rows=collectSiteConsistency(currentConsistencyMetric);
+  const consistencyTakeaway=document.getElementById("siteConsistencyTakeawayText");
+  if(consistencyTakeaway){
+    const usable=rows.filter(r=>r.count>=2 && Number.isFinite(r.cv));
+    const stableCount=usable.filter(r=>r.category.cls==="stable").length;
+    const variableCount=usable.filter(r=>r.category.cls==="variable").length;
+    const metricName=consistencyMetricInfo(currentConsistencyMetric).label;
+    if(!usable.length){
+      consistencyTakeaway.textContent="More repeated samples are needed before site consistency can be assessed.";
+    }else if(stableCount>usable.length/2){
+      consistencyTakeaway.textContent=`${metricName} results have remained relatively consistent at most monitoring locations.`;
+    }else if(variableCount>usable.length/2){
+      consistencyTakeaway.textContent=`${metricName} shows substantial variation across repeated surveys at several monitoring locations.`;
+    }else{
+      consistencyTakeaway.textContent=`${metricName} shows a mixture of stable and changing results across the monitoring locations.`;
+    }
+  }
 
   if(!rows.length){
     holder.innerHTML='<div class="site-comparison-empty">No site consistency data are available for this indicator yet.</div>';
@@ -4144,11 +4205,26 @@ function renderChangeSummary(){
   const stable=outcomes.filter(x=>x.cls==="stable").length;
   const worse=outcomes.filter(x=>x.cls==="worse").length;
 
+  const changeTakeaway=document.getElementById("changeTakeawayText");
   if(outcomes.length){
     overall.innerHTML=
       `<strong>Overall change:</strong> ${improved} improved, ${stable} remained broadly stable and ${worse} deteriorated among indicators with comparable previous results.`;
+    if(changeTakeaway){
+      if(worse===0 && improved>0){
+        changeTakeaway.textContent="Comparable indicators are stable or improving, with no deterioration identified since the previous survey.";
+      }else if(improved>worse){
+        changeTakeaway.textContent="More comparable indicators have improved than deteriorated since the previous survey.";
+      }else if(worse>improved){
+        changeTakeaway.textContent="Several comparable indicators have moved in a less favourable direction and are worth monitoring.";
+      }else{
+        changeTakeaway.textContent="Changes since the previous survey are mixed, with improvements and deteriorations broadly balanced.";
+      }
+    }
   }else{
     overall.textContent="More repeated surveys are needed before an overall change summary can be calculated.";
+    if(changeTakeaway){
+      changeTakeaway.textContent="More repeated surveys are needed before a meaningful change summary can be produced.";
+    }
   }
 }
 
@@ -4239,7 +4315,13 @@ function renderSiteComparison(){
     .sort((a,b)=>a.result.value-b.result.value);
 
   if(!results.length){
-    chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
+    const comparisonTakeaway=document.getElementById("siteComparisonTakeawayText");
+  if(comparisonTakeaway){
+    const metricLabel=currentComparisonMetric==="nitrate"?"Nitrate":currentComparisonMetric==="phosphate"?"Phosphate":"Turbidity";
+    comparisonTakeaway.textContent=`${metricLabel} comparison shows how the latest recorded result differs between monitoring locations.`;
+  }
+
+  chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
     return;
   }
 
