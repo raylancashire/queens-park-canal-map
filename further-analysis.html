@@ -1083,6 +1083,37 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   .snapshot-control select{width:100%;min-width:0}
 }
 
+
+/* =========================================================
+   SITE CONSISTENCY
+   ========================================================= */
+.site-consistency-panel{padding:18px}
+.site-consistency-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.5}
+.site-consistency-toggle{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.site-consistency-toggle button{appearance:none;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);padding:8px 12px;font-size:12px;font-weight:750;cursor:pointer}
+.site-consistency-toggle button.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.site-consistency-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.site-consistency-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;min-width:820px}
+.site-consistency-table th,.site-consistency-table td{padding:10px 11px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;font-size:12px}
+.site-consistency-table th{background:#f2f6f3;font-weight:800}
+.site-consistency-table th:last-child,.site-consistency-table td:last-child{border-right:0}
+.site-consistency-table tbody tr:last-child td{border-bottom:0}
+.site-consistency-site{font-weight:700;color:var(--ink)}
+.site-consistency-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap}
+.site-consistency-badge.stable{background:#e5f3e8;color:#245b32}
+.site-consistency-badge.some{background:#fff4c9;color:#66520d}
+.site-consistency-badge.variable{background:#fbe0d1;color:#7d3d18}
+.site-consistency-range{min-width:170px}
+.site-consistency-rangebar{position:relative;height:10px;border-radius:999px;background:#edf1ee;overflow:hidden}
+.site-consistency-rangefill{position:absolute;top:0;bottom:0;border-radius:999px;background:#7c8e82}
+.site-consistency-rangevalues{display:flex;justify-content:space-between;margin-top:4px;color:#66746b;font-size:9px}
+.site-consistency-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:13px}
+.site-consistency-summary-card{padding:12px 13px;border:1px solid var(--line);border-radius:9px;background:#f8faf8}
+.site-consistency-summary-card small{display:block;margin-bottom:4px;color:#66746b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.site-consistency-summary-card strong{color:var(--ink);font-size:14px}
+.site-consistency-method{margin-top:12px;padding:10px 12px;border-left:4px solid #a9b7ad;background:#f6f8f6;color:#66746b;font-size:11px;line-height:1.5}
+@media(max-width:650px){.site-consistency-summary{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -1161,6 +1192,54 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
     </div>
   </section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="siteConsistencyToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="siteConsistencyContent">
+    <span>Site consistency</span>
+    <span id="siteConsistencyIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="siteConsistencyContent" class="outer-analysis-content" hidden>
+    <div class="site-consistency-panel">
+      <p class="site-consistency-intro">
+        Compare how stable each sampling site's results have been across repeated surveys.
+        Consistency describes variation only; it does not mean that a consistently high result is environmentally desirable.
+      </p>
+
+      <div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
+        <button id="consistencyNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+        <button id="consistencyPhosphate" type="button" aria-pressed="false">Phosphate</button>
+        <button id="consistencyTurbidity" type="button" aria-pressed="false">Turbidity</button>
+      </div>
+
+      <div id="siteConsistencyTable"></div>
+
+      <div class="site-consistency-summary">
+        <div class="site-consistency-summary-card">
+          <small>Most consistent</small>
+          <strong id="mostConsistentSite">—</strong>
+        </div>
+        <div class="site-consistency-summary-card">
+          <small>Most variable</small>
+          <strong id="mostVariableSite">—</strong>
+        </div>
+      </div>
+
+      <div class="site-consistency-method">
+        <strong>How consistency is calculated:</strong>
+        each site's variation is measured relative to its own average result using the coefficient of variation
+        (standard deviation ÷ mean). Lower values indicate more stable results. Sites with fewer than two usable samples
+        are shown as having insufficient data.
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="outer-analysis-panel">
     <button
       id="projectTrendsToggle"
@@ -3199,6 +3278,165 @@ function renderSnapshot(){
 }
 
 
+
+let currentConsistencyMetric="nitrate";
+
+function consistencyMetricInfo(metric){
+  if(metric==="nitrate") return {label:"Nitrate",unit:"mg/L",decimals:2};
+  if(metric==="phosphate") return {label:"Phosphate",unit:"mg/L",decimals:3};
+  return {label:"Turbidity",unit:"NTU",decimals:0};
+}
+
+function consistencyStdDev(values){
+  if(values.length<2) return null;
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const variance=values.reduce((sum,v)=>sum+Math.pow(v-mean,2),0)/values.length;
+  return Math.sqrt(variance);
+}
+
+function consistencyCategory(cv,count){
+  if(count<2 || !Number.isFinite(cv)) return {label:"Insufficient data",cls:"some",symbol:"—"};
+  if(cv<=0.20) return {label:"Stable",cls:"stable",symbol:"●"};
+  if(cv<=0.50) return {label:"Some variation",cls:"some",symbol:"◆"};
+  return {label:"Variable",cls:"variable",symbol:"▲"};
+}
+
+function consistencyTypical(metric,mean){
+  if(!Number.isFinite(mean)) return "—";
+  if(metric==="nitrate"){
+    if(mean<=1) return "Lower range";
+    if(mean<=5) return "Moderate range";
+    return "Higher range";
+  }
+  if(metric==="phosphate"){
+    if(mean<=0.1) return "Lower range";
+    if(mean<=0.5) return "Moderate range";
+    return "Higher range";
+  }
+  if(mean<14) return "Low turbidity";
+  if(mean<=40) return "Moderate turbidity";
+  return "High turbidity";
+}
+
+function collectSiteConsistency(metric){
+  const grouped=new Map();
+
+  freshwaterDataForChanges.forEach(row=>{
+    const site=siteName(row);
+    if(!site) return;
+
+    const value=comparisonMetricValue(row,metric);
+    if(!Number.isFinite(value)) return;
+
+    if(!grouped.has(site)) grouped.set(site,[]);
+    grouped.get(site).push(value);
+  });
+
+  return [...grouped.entries()].map(([site,values])=>{
+    const mean=values.reduce((a,b)=>a+b,0)/values.length;
+    const min=Math.min(...values);
+    const max=Math.max(...values);
+    const sd=consistencyStdDev(values);
+    const cv=Number.isFinite(sd) && mean!==0 ? sd/Math.abs(mean) : null;
+
+    return {
+      site,count:values.length,mean,min,max,sd,cv,
+      category:consistencyCategory(cv,values.length),
+      typical:consistencyTypical(metric,mean)
+    };
+  }).sort((a,b)=>a.site.localeCompare(b.site));
+}
+
+function renderSiteConsistency(){
+  const holder=document.getElementById("siteConsistencyTable");
+  const mostConsistent=document.getElementById("mostConsistentSite");
+  const mostVariable=document.getElementById("mostVariableSite");
+  if(!holder || !mostConsistent || !mostVariable) return;
+
+  const info=consistencyMetricInfo(currentConsistencyMetric);
+  const rows=collectSiteConsistency(currentConsistencyMetric);
+
+  if(!rows.length){
+    holder.innerHTML='<div class="site-comparison-empty">No site consistency data are available for this indicator yet.</div>';
+    mostConsistent.textContent="—";
+    mostVariable.textContent="—";
+    return;
+  }
+
+  const allMin=Math.min(...rows.map(r=>r.min));
+  const allMax=Math.max(...rows.map(r=>r.max));
+  const span=(allMax-allMin)||1;
+
+  holder.innerHTML=`<div class="site-consistency-table-wrap">
+    <table class="site-consistency-table">
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Samples</th>
+          <th>Consistency</th>
+          <th>Typical level</th>
+          <th>Range</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(row=>{
+          const left=((row.min-allMin)/span)*100;
+          const width=Math.max(2,((row.max-row.min)/span)*100);
+          const displaySite=row.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+          return `<tr>
+            <td class="site-consistency-site">${esc(displaySite)}</td>
+            <td>${row.count}</td>
+            <td><span class="site-consistency-badge ${row.category.cls}">${row.category.symbol} ${row.category.label}</span></td>
+            <td>${esc(row.typical)}</td>
+            <td class="site-consistency-range">
+              <div class="site-consistency-rangebar">
+                <div class="site-consistency-rangefill" style="left:${left}%;width:${width}%"></div>
+              </div>
+              <div class="site-consistency-rangevalues">
+                <span>${row.min.toFixed(info.decimals)} ${esc(info.unit)}</span>
+                <span>${row.max.toFixed(info.decimals)} ${esc(info.unit)}</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+  </div>`;
+
+  const valid=rows.filter(r=>r.count>=2 && Number.isFinite(r.cv));
+  if(valid.length){
+    const ordered=[...valid].sort((a,b)=>a.cv-b.cv);
+    const stable=ordered[0];
+    const variable=ordered[ordered.length-1];
+    mostConsistent.textContent=`${stable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} · ${stable.category.label}`;
+    mostVariable.textContent=`${variable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} · ${variable.category.label}`;
+  }else{
+    mostConsistent.textContent="More repeated samples needed";
+    mostVariable.textContent="More repeated samples needed";
+  }
+}
+
+function setConsistencyMetric(metric){
+  currentConsistencyMetric=metric;
+
+  const buttons={
+    nitrate:document.getElementById("consistencyNitrate"),
+    phosphate:document.getElementById("consistencyPhosphate"),
+    turbidity:document.getElementById("consistencyTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([key,button])=>{
+    if(!button) return;
+    const active=key===metric;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderSiteConsistency();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
 let currentComparisonMetric="nitrate";
 
 function latestMetricResultForSite(rows,metric){
@@ -3347,6 +3585,7 @@ async function load(){
     renderSnapshot();
 
     renderSiteComparison();
+    renderSiteConsistency();
     renderProjectTrend();
     populateSeasonalSiteSelect();
     renderSeasonalPattern();
@@ -3475,6 +3714,10 @@ if(document.getElementById("snapshotLatest")){
   document.getElementById("snapshotAverage").addEventListener("click",()=>setSnapshotPeriod("average"));
 }
 
+document.getElementById("consistencyNitrate").addEventListener("click",()=>setConsistencyMetric("nitrate"));
+document.getElementById("consistencyPhosphate").addEventListener("click",()=>setConsistencyMetric("phosphate"));
+document.getElementById("consistencyTurbidity").addEventListener("click",()=>setConsistencyMetric("turbidity"));
+
 document.getElementById("compareNitrate").addEventListener("click",()=>setComparisonMetric("nitrate"));
 document.getElementById("comparePhosphate").addEventListener("click",()=>setComparisonMetric("phosphate"));
 document.getElementById("compareTurbidity").addEventListener("click",()=>setComparisonMetric("turbidity"));
@@ -3490,6 +3733,11 @@ const furtherPanels = [
     button:document.getElementById("siteComparisonToggle"),
     content:document.getElementById("siteComparisonContent"),
     icon:document.getElementById("siteComparisonIcon")
+  },
+  {
+    button:document.getElementById("siteConsistencyToggle"),
+    content:document.getElementById("siteConsistencyContent"),
+    icon:document.getElementById("siteConsistencyIcon")
   },
   {
     button:document.getElementById("projectTrendsToggle"),
@@ -3524,15 +3772,19 @@ function setFurtherPanel(index,open){
     renderSiteComparison();
   }
 
-  if(open && index===2 && typeof renderProjectTrend==="function"){
+  if(open && index===2 && typeof renderSiteConsistency==="function"){
+    renderSiteConsistency();
+  }
+
+  if(open && index===3 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===3 && typeof renderSeasonalPattern==="function"){
+  if(open && index===4 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===4 && typeof renderRelationship==="function"){
+  if(open && index===5 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
