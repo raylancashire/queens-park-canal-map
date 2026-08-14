@@ -1371,6 +1371,35 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   text-transform:none !important;
 }
 
+
+/* Highlight the Overall Water Quality Snapshot period buttons on hover/focus */
+.snapshot-period-toggle button{
+  transition:background-color .16s ease, border-color .16s ease,
+             color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.snapshot-period-toggle button:not(.active):hover,
+.snapshot-period-toggle button:not(.active):focus-visible{
+  background:#eef7f0;
+  border-color:#7fa38a;
+  color:#143823;
+  box-shadow:0 3px 8px rgba(30,70,42,.16);
+  transform:translateY(-1px);
+}
+
+/* Highlight only unselected Site Consistency indicator buttons */
+.site-consistency-toggle button{
+  transition:background-color .16s ease, border-color .16s ease,
+             color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.site-consistency-toggle button:not(.active):hover,
+.site-consistency-toggle button:not(.active):focus-visible{
+  background:#eef7f0;
+  border-color:#7fa38a;
+  color:#143823;
+  box-shadow:0 3px 8px rgba(30,70,42,.16);
+  transform:translateY(-1px);
+}
+
 </style>
 </head>
 <body>
@@ -1389,7 +1418,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <div id="snapshotContent" class="outer-analysis-content">
     <section id="overallSnapshot" class="snapshot-panel" aria-labelledby="snapshotTitle">
-      <div class="snapshot-kicker">Canal Watch · Further Analysis</div>
       <h2 id="snapshotTitle" class="snapshot-title">Overall Water Quality Snapshot</h2>
       <p class="snapshot-intro">
         A compact view of the available monitoring results. Choose all sites or an individual sampling site,
