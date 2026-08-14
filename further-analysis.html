@@ -1572,6 +1572,34 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-bottom-color:#e4b59d;
 }
 
+
+/* Results to Watch */
+.results-watch{margin:0 0 16px}
+.results-watch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.results-watch-title{color:#526158;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.results-watch-count{padding:3px 7px;border-radius:999px;background:#f0f3f1;color:#526158;font-size:9px;font-weight:800}
+.results-watch-grid{display:grid;gap:8px}
+.results-watch-item{padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--watch-colour,#a66a35);border-radius:8px;background:#fffaf5;transition:.15s ease}
+.results-watch-item:hover,.results-watch-item:focus-visible{background:#fff3e7;box-shadow:0 4px 12px rgba(91,62,35,.10);transform:translateY(-1px);outline:none}
+.results-watch-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.results-watch-name{color:var(--ink);font-size:11px;font-weight:850}
+.results-watch-value{color:var(--ink);font-size:13px;font-weight:850;text-align:right}
+.results-watch-reason{margin-top:4px;color:#66746b;font-size:10px;line-height:1.4}
+.results-watch-clear{padding:10px 12px;border:1px solid #cfe1d3;border-radius:8px;background:#f2f8f3;color:#31563b;font-size:11px}
+.snapshot-card.watch-highlight{background:#fff5e9!important;box-shadow:0 0 0 2px rgba(166,106,53,.20),0 5px 14px rgba(91,62,35,.12)!important;transform:translateY(-1px)}
+
+/* More breathing room around concluding Key Takeaway boxes */
+.key-takeaway{
+  margin-top:20px;
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  .key-takeaway{
+    margin-top:16px;
+    margin-bottom:8px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1595,10 +1623,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         A compact view of the available monitoring results. Choose all sites or an individual sampling site,
         then switch between the latest survey and the project average.
       </p>
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
-      </div>
 
       <div class="snapshot-controls">
         <div class="snapshot-control">
@@ -1618,6 +1642,17 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="snapshotGrid" class="snapshot-grid"></div>
+
+      <div id="resultsWatch" class="results-watch">
+        <div class="results-watch-head"><div class="results-watch-title">Results to Watch</div><div id="resultsWatchCount" class="results-watch-count"></div></div>
+        <div id="resultsWatchGrid" class="results-watch-grid"></div>
+      </div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
+      </div>
+
       <div id="snapshotMeta" class="snapshot-meta"></div>
     </section>
   </div>
@@ -1640,12 +1675,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare the two most recent available survey dates for each indicator.
         FreshWater Watch and additional water-quality tests are compared separately when their sampling dates differ.
       </p>
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="changeTakeawayText">Summary will update when comparable surveys are available.</span>
-      </div>
-
-      <div class="change-summary-controls">
+<div class="change-summary-controls">
         <div class="change-summary-control">
           <label for="changeSummarySiteSelect">Location</label>
           <select id="changeSummarySiteSelect">
@@ -1663,6 +1693,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="changeAdditionalGrid" class="change-summary-grid"></div>
 
       <div id="changeOverallSummary" class="change-summary-overall"></div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="changeTakeawayText">Summary will update when comparable surveys are available.</span>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1682,13 +1718,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <p class="site-comparison-intro">
         Compare the latest recorded result from each sampling site.
       </p>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
-      </div>
-
-      <p class="site-comparison-intro">
+<p class="site-comparison-intro">
         Nitrate and phosphate bars use the midpoint of the FreshWater Watch result range;
         the original result band is shown beside each site. Turbidity uses the recorded NTU value.
       </p>
@@ -1700,6 +1730,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
+      </div>
+
     </div>
   </section>
 
@@ -1720,20 +1756,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare how stable each sampling site's results have been across repeated surveys.
         Consistency describes variation only; it does not mean that a consistently high result is environmentally desirable.
       </p>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
-      </div>
-
-
-      <div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
+<div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
         <button id="consistencyNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
         <button id="consistencyPhosphate" type="button" aria-pressed="false">Phosphate</button>
         <button id="consistencyTurbidity" type="button" aria-pressed="false">Turbidity</button>
       </div>
 
       <div id="siteConsistencyTable"></div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
+      </div>
+
 
       <div class="site-consistency-summary">
         <div class="site-consistency-summary-card">
@@ -2560,7 +2595,7 @@ function renderSeasonalPattern(){
 
   if(!points.length){
     chart.innerHTML='<div class="site-comparison-empty">No data are available for this seasonal view yet.</div>';
-    summary.textContent="";
+    if(summary) summary.textContent="";
     return;
   }
 
@@ -3560,7 +3595,7 @@ function snapshotCard(metric,title,valueText,note,status){
     statusHtml=`<span class="snapshot-card-status" style="background:${style.background};color:${style.colour}">${esc(status.label)}</span>`;
   }
 
-  return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
+  return `<article class="snapshot-card" data-indicator="${esc(metric)}" style="--snapshot-colour:${colour}">
     <div class="snapshot-card-title${title==="pH" ? " preserve-case" : ""}">${esc(title)}</div>
     <div class="snapshot-card-value">${esc(valueText)}</div>
     ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
@@ -3647,6 +3682,32 @@ async function loadSnapshotAdditionalData(){
   setTimeout(notifyParentOfHeight,40);
 }
 
+
+function watchReason(key,value){
+  if(!Number.isFinite(value)) return null;
+  if(key==="nitrate" && value>5) return "Nitrate is in the higher range and is worth monitoring.";
+  if(key==="phosphate" && value>0.5) return "Phosphate is in the higher range and is worth monitoring.";
+  if(key==="turbidity"){if(value>40)return "Turbidity is high, indicating reduced water clarity.";if(value>=14)return "Turbidity is moderately elevated and should continue to be monitored.";}
+  if(key==="ph"){const a=snapshotPHAssessment(value);if(a&&a.kind==="poor")return "pH is outside the preferred range.";}
+  if(key==="do"){const a=snapshotDOAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Dissolved Oxygen (DO) is below the more favourable range.";}
+  if(key==="bod"){const a=snapshotBODAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Biochemical Oxygen Demand (BOD) is elevated and is worth monitoring.";}
+  if(key==="coliform" && value>=20) return "Coliform is above the upper limit of the test.";
+  return null;
+}
+function watchLabel(key){return ({nitrate:"Nitrate",phosphate:"Phosphate",turbidity:"Turbidity",temperature:"Temperature",ph:"pH",do:"Dissolved Oxygen (DO)",bod:"Biochemical Oxygen Demand (BOD)",coliform:"Coliform"})[key]||key;}
+function watchValue(key,v){
+  if(key==="nitrate")return `${v.toFixed(2)} mg/L`;if(key==="phosphate")return `${v.toFixed(3)} mg/L`;if(key==="turbidity")return `${v.toFixed(0)} NTU`;if(key==="temperature")return `${v.toFixed(1)} °C`;if(key==="ph")return v.toFixed(1);if(key==="do"||key==="bod")return `${v.toFixed(1)} ppm`;if(key==="coliform")return v>=20?"> 20 coliforms/100ml":`${v.toFixed(0)} coliforms/100ml`;return String(v);
+}
+function setWatchHighlight(key,on){document.querySelectorAll(`.snapshot-card[data-indicator="${key}"]`).forEach(card=>card.classList.toggle("watch-highlight",on));}
+function renderResultsWatch(values){
+  const grid=document.getElementById("resultsWatchGrid"),count=document.getElementById("resultsWatchCount");if(!grid||!count)return;
+  const items=Object.entries(values).map(([key,value])=>({key,value,reason:watchReason(key,value)})).filter(x=>x.reason);
+  count.textContent=`${items.length} indicator${items.length===1?"":"s"}`;
+  if(!items.length){grid.innerHTML='<div class="results-watch-clear">✓ No results currently require particular attention.</div>';return;}
+  grid.innerHTML=items.map(x=>`<div class="results-watch-item" tabindex="0" data-watch-indicator="${esc(x.key)}" style="--watch-colour:${snapshotIndicatorColour(x.key)}"><div class="results-watch-row"><div class="results-watch-name">${esc(watchLabel(x.key))}</div><div class="results-watch-value">${esc(watchValue(x.key,x.value))}</div></div><div class="results-watch-reason">${esc(x.reason)}</div></div>`).join("");
+  grid.querySelectorAll(".results-watch-item").forEach(item=>{const key=item.dataset.watchIndicator;item.addEventListener("mouseenter",()=>setWatchHighlight(key,true));item.addEventListener("mouseleave",()=>setWatchHighlight(key,false));item.addEventListener("focus",()=>setWatchHighlight(key,true));item.addEventListener("blur",()=>setWatchHighlight(key,false));});
+}
+
 function renderSnapshot(){
   const grid=document.getElementById("snapshotGrid");
   const summary=document.getElementById("snapshotSummary");
@@ -3658,7 +3719,7 @@ function renderSnapshot(){
 
   if(!fwRows.length && !addRows.length){
     grid.innerHTML='<div class="snapshot-empty">No results are available for this location and period.</div>';
-    summary.textContent="";
+    if(summary) summary.textContent="";
     meta.textContent="";
     return;
   }
@@ -3748,6 +3809,7 @@ function renderSnapshot(){
   grid.innerHTML=cards.length
     ? cards.join("")
     : '<div class="snapshot-empty">No usable measurements are available for this view.</div>';
+  renderResultsWatch({nitrate,phosphate,turbidity,temperature,ph,do:dissolvedOxygen,bod,coliform});
 
   const scope=currentFocusedSite==="all"
     ? "all monitoring sites"
