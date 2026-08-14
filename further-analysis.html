@@ -3058,6 +3058,14 @@ function snapshotBODAssessment(value){
   return {label:"Calculated BOD",kind:"neutral"};
 }
 
+
+function snapshotPHNature(value){
+  if(!Number.isFinite(value)) return "";
+  if(value<7) return "Acidic";
+  if(value>7) return "Alkaline";
+  return "Neutral";
+}
+
 function snapshotPHAssessment(value){
   const a=phAssessment(value);
   if(!a) return null;
@@ -3240,7 +3248,7 @@ function renderSnapshot(){
   if(Number.isFinite(ph)){
     cards.push(snapshotCard(
       "ph","pH",ph.toFixed(1),
-      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded pH",
+      `${snapshotPHNature(ph)} · ${currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded pH"}`,
       snapshotPHAssessment(ph)
     ));
   }
