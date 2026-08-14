@@ -2,149 +2,86 @@
 
 Interactive water-quality monitoring map for the **Greener Canalside / FreshWater Watch project** on the Grand Union Canal.
 
-The map is designed for **GitHub Pages** and embedding into a **Webador** website. Water-quality data is loaded from CSV files so new sampling results can be published without rebuilding the map.
+The map is designed to be hosted using **GitHub Pages** and embedded into a **Webador** website. Water-quality data is loaded from a CSV file, so new sampling results can be published without rebuilding the map.
+
+---
 
 ## Project files
 
-- `index.html` — interactive Leaflet survey map
+The GitHub repository contains or may contain:
+
+- `index.html` — the interactive Leaflet water-quality map
+- `analysis.html` — sample-results analysis
+- `further-analysis.html` — site comparison, trends and wider project analysis
+- `assessment-builder.html` — visual canal assessment builder
 - `freshwater.csv` — FreshWater Watch sampling data
-- `additional-water-quality.csv` — additional water-quality test results
-- `analysis.html` — Sample analysis and Results over time by site
-- `further-analysis.html` — Site comparison, Project-wide trends, Seasonal patterns and Relationship between indicators
+- `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded
 - `README.md` — project documentation
 
-Repository: `RayLancashire/queens-park-canal-map`
+Repository:
 
-## Analysis structure
+`RayLancashire/queens-park-canal-map`
 
-The analysis is split into **two separate HTML pages**, each controlled by its own Webador disclosure button.
+GitHub Pages address:
 
-### View Nitrate, Phosphate and Turbidity charts
+`https://raylancashire.github.io/queens-park-canal-map/`
 
-The first Webador disclosure loads `analysis.html`.
+---
 
-It contains:
+## Map features
 
-- **Sample analysis**
-  - Nitrate occurrence chart
-  - Phosphate occurrence chart
-  - Turbidity occurrence chart
-  - summary result panels
-  - additional water-quality analysis
-- **Results over time by site**
-  - sampling-site selector
-  - Nitrate results through time
-  - Phosphate results through time
-  - Turbidity results through time
+The map displays sampling locations from the CSV using the latitude and longitude fields.
 
-Occurrence-chart height represents the **number of samples**. The percentage of samples in each result band is shown above the corresponding column.
+Current features include:
 
-Nitrate and phosphate results over time use the midpoint of the FreshWater Watch result range. Turbidity uses the recorded NTU result.
+- Interactive sampling-location markers
+- Automatic grouping of repeated samples by sampling site
+- Latest sample date and time
+- Nitrate result
+- Phosphate result
+- Turbidity result
+- Nutrient-level interpretation
+- Turbidity clarity description where available
+- Previous samples listed in each popup
+- Number of samples shown in the popup history
+- Assessment symbols shown alongside historical results
+- UK date format
+- AM / PM time display
+- Site-selection dropdown
+- Reset map button
+- Automatic zoom to all sampling results
+- Light, Street and Satellite basemap options
+- Responsive layout for desktop, tablet and mobile
+- Summary panels showing:
+  - Sampling sites
+  - Samples in dataset
+  - Latest sample
 
-### Site comparison and relationships
+---
 
-The second Webador disclosure loads `further-analysis.html`.
+## Map text
 
-It contains:
+Current project description:
 
-- **Site comparison**
-- **Project-wide trends**
-- **Seasonal patterns**
-- **Relationship between indicators**
+> Greener Canalside / FreshWater Watch project and citizen-science results from the Grand Union Canal.
 
-**Site comparison opens automatically** when `further-analysis.html` loads.
+Suggested Webador page introduction:
 
-The Site comparison panel provides Nitrate, Phosphate and Turbidity views and compares the latest available result from each sampling site. Nitrate and phosphate use the midpoint of the FreshWater Watch result range while retaining the original result band for context. Turbidity uses the recorded NTU value.
+> Latest water quality testing results from Urbanwise London’s Greener Canalside Project, collected as part of the Greener Canalside / FreshWater Watch citizen-science programme.
 
-**Project-wide trends** shows the overall direction of Nitrate, Phosphate and Turbidity results by survey date. Each point combines the sites sampled on that date.
-
-**Seasonal patterns** can be viewed by calendar month or by season. The panel provides Nitrate, Phosphate and Turbidity views and uses averages of the available samples in each period.
-
-The **Relationship between indicators** panel provides paired-sample comparisons for:
-
-- Nitrate vs Phosphate
-- Phosphate vs Turbidity
-- Nitrate vs Turbidity
-
-Each point represents a sample where both selected indicators were recorded.
-
-## Site-focused analysis
-
-The analysis pages can respond to a site selected on the main map.
-
-Where a site focus is active, relevant analysis can use the selected site's samples rather than the full project dataset. Returning to the all-sites view restores project-wide analysis.
-
-This allows the map, Sample analysis and site-focused results to work as parts of the same exploration workflow.
-
-## Webador accordion behaviour
-
-The outer disclosure controls are kept in **Webador** rather than inside the GitHub HTML pages.
-
-There are two outer Webador disclosures:
-
-1. **View Nitrate, Phosphate and Turbidity charts**
-2. **Site comparison and relationships**
-
-Each embed uses unique button, content-area, icon and iframe IDs. This prevents conflicts caused by duplicating Custom HTML containing identical IDs.
-
-The two Webador disclosures behave as a single accordion: opening one closes the other, while either open disclosure can also be closed manually.
-
-Iframe resize listeners check that resize messages come from the correct iframe. Both analysis pages use the `canal-chart-resize` message to report changing content height and reduce unused space.
-
-## Canal Watch blog filtering
-
-The Webador Canal Watch blog listing now has a client-side filter generated by the Assessment Badge/Filter Custom HTML code.
-
-### Assessment filter
-
-Blog cards can be filtered by:
-
-- All
-- Excellent
-- Good
-- Fair
-- Poor
-- Very Poor
-- Critical
-
-The assessment is read from the existing `[assessment:...]` marker in the blog title/card. The script stores the assessment on the blog card before cleaning the marker from the visible title, so no additional blog metadata has to be maintained.
-
-The total number of visible blogs is shown independently on the right. When a filter is active the count shows the number of matching posts against the total.
-
-### Date filter
-
-The date controls are displayed on a **separate second line** below the assessment tabs.
-
-The filter reads the publication date already displayed by Webador, so dates do not need to be added to blog titles.
-
-The date row contains:
-
-- **All dates**
-- three month buttons at a time
-- `<` previous-month control
-- `>` next-month control
-
-Months are displayed in chronological order from left to right. The initial window shows the latest three available months.
-
-The `<` and `>` controls act as **previous/next month selectors**. If the adjacent month lies outside the three visible month buttons, the window moves automatically and the adjacent month becomes selected.
-
-When **All dates** is selected, it acts as the neutral starting position for month navigation:
-
-- `<` selects the **oldest month currently displayed**, after which further presses continue backwards month by month.
-- `>` selects the **newest month currently displayed**, after which further presses continue forwards month by month.
-- Once a specific month is selected, `<` and `>` continue to select the immediately previous or next available month.
-
-The assessment and date filters work together. For example, selecting **Good** and **Jul 2026** displays only Good-rated blog entries from July 2026.
-
-The filter code uses its own `qpt2-` class/ID namespace to reduce conflicts with Webador styles or earlier Custom HTML code. DOM changes made inside the filter are ignored by the blog-card mutation observer to avoid unnecessary reprocessing and delays.
+---
 
 ## CSV data
 
-The main map and analysis pages read `freshwater.csv`.
+The map reads:
 
-Additional water-quality tests are read from `additional-water-quality.csv`.
+`freshwater.csv`
 
-Recognised FreshWater Watch fields include:
+The CSV can be replaced whenever new FreshWater Watch results are available.
+
+The map has been designed to recognise both original FreshWater Watch field names and simplified field names.
+
+### Main fields used by the map
 
 | Information | Recognised field examples |
 |---|---|
@@ -160,89 +97,235 @@ Recognised FreshWater Watch fields include:
 | Longitude | `x`, `Longitude`, `longitude` |
 | Notes | `notes`, `Notes` |
 
-The turbidity reader also recognises headings containing **Secchi Tube** or **Turbidity** to tolerate small changes in FreshWater Watch exports.
+The turbidity reader also looks for column names containing the words **Secchi Tube** or **Turbidity**, making the import more tolerant of small changes in FreshWater Watch exports.
 
-## Updating water-quality data
+---
 
-For routine FreshWater Watch updates:
+## Updating the water-quality data
 
-1. Prepare the latest data.
-2. Keep the filename `freshwater.csv`.
-3. Replace the existing file in the GitHub repository.
-4. Commit the change.
-5. Wait for GitHub Pages to refresh.
-6. Refresh the Webador page.
+To publish new sampling results:
 
-The HTML should not normally need changing simply because new sampling records have been added.
+1. Prepare the latest FreshWater Watch CSV.
+2. Keep the filename as:
+
+   `freshwater.csv`
+
+3. Open the GitHub repository.
+4. Replace the existing `freshwater.csv`.
+5. Commit the change.
+6. Wait for GitHub Pages to refresh.
+7. Refresh the live map or Webador page.
+
+The HTML normally does not need to be edited when new records are added.
+
+---
+
+## Updating the map
+
+If `index.html` is changed:
+
+1. Open `index.html` in the GitHub repository.
+2. Click the edit icon.
+3. Replace or amend the HTML.
+4. Click **Commit changes**.
+5. Wait for GitHub Pages to rebuild.
+6. Refresh the live page.
+
+On a Mac, a forced browser refresh can be performed using:
+
+`Command + Shift + R`
+
+---
+
+## Sampling-site grouping
+
+Samples are grouped by **site name**.
+
+This means that repeat visits to the same sampling location appear as one map marker with a history of previous samples inside the popup.
+
+For example:
+
+- Ladbroke Grove Bridge
+- Meanwhile Gardens
+- Half Penny Steps Group
+
+Each popup displays the latest reading first, followed by previous samples.
+
+---
+
+## Popup layout
+
+Each sampling popup includes:
+
+1. Sampling-site name
+2. Latest sample date and actual sample time
+3. Water-quality assessment
+4. Nitrate
+5. Phosphate
+6. Turbidity
+7. Previous samples
+
+The previous-sample table includes:
+
+- Date and time
+- Assessment symbol
+- Nitrate
+- Phosphate
+- Turbidity
+
+If turbidity was not recorded, the map displays:
+
+`Not taken`
+
+---
 
 ## Accessibility
 
-Water-quality status is not communicated by colour alone. Assessment displays use combinations of text, colour and shape.
+The map has been designed so that water-quality status is not communicated by colour alone.
 
-Other measures include written assessment labels, high-contrast text, table headings, screen-reader labels where applicable, responsive layouts, and distinct active/hover states for interactive controls.
+Assessment categories use a combination of:
 
-The blog filters use text labels and active states, with the assessment and date controls separated into distinct rows for clarity.
+- Text
+- Colour
+- Shape
+
+Current symbols:
+
+| Assessment | Symbol |
+|---|---|
+| Excellent | Dark green circle |
+| Good | Emerald diamond |
+| Fair | Yellow triangle |
+| Poor | Red square |
+| Not yet assessed | Grey circle |
+
+The legend uses the same symbols and colours as the map and popup.
+
+Other accessibility measures include:
+
+- Clear written assessment labels
+- High-contrast popup text
+- Larger popup text
+- Table headings
+- Screen-reader labels for assessment symbols
+- Responsive mobile layout
+
+---
+
+## Water-quality interpretation
+
+Nitrate and phosphate results are displayed with a plain-language interpretation such as:
+
+- Good
+- Moderate
+- Poor
+
+The assessment is calculated automatically from the midpoint values supplied in the CSV.
+
+Turbidity is displayed separately as a clarity result. Where appropriate, a descriptive label such as **Very clear** is shown.
+
+---
+
+## Map types
+
+Visitors can switch between:
+
+- **Light** — clean map designed to make sampling markers stand out
+- **Street** — OpenStreetMap
+- **Satellite** — aerial imagery
+
+The Light map is used as the default view.
+
+---
+
+## Reset map
+
+The reset button returns the map to a view containing all current sampling results.
+
+The reset view is calculated from the sampling-point coordinates in the CSV rather than from a fixed location.
+
+This means the reset function will continue to work if new sampling sites are added later.
+
+---
+
+## Webador embedding
+
+Example Webador embed code:
+
+```html
+<div class="canal-map-embed">
+  <iframe
+    src="https://raylancashire.github.io/queens-park-canal-map/"
+    title="Queen's Park Canal Water Quality Monitoring Map"
+    loading="lazy">
+  </iframe>
+</div>
+
+<style>
+.canal-map-embed {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.canal-map-embed iframe {
+  display: block;
+  width: 100%;
+  height: 950px;
+  border: 0;
+  border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+  .canal-map-embed iframe {
+    height: 1000px;
+  }
+}
+
+@media (max-width: 600px) {
+  .canal-map-embed iframe {
+    height: 1200px;
+    border-radius: 0;
+  }
+}
+</style>
+```
+
+The iframe height may need small adjustments depending on the Webador page layout and screen size.
+
+---
 
 ## Technology
 
-HTML, CSS, JavaScript, Leaflet, OpenStreetMap, CARTO basemap tiles, Esri satellite imagery, GitHub Pages and Webador.
+The map uses:
+
+- HTML
+- CSS
+- JavaScript
+- Leaflet
+- OpenStreetMap
+- CARTO basemap tiles
+- Esri satellite imagery
+- GitHub Pages
+- Webador
+
+---
 
 ## Data source
 
 Water-quality results are collected through the **Greener Canalside / FreshWater Watch citizen-science project**.
 
-The map and analysis pages provide an accessible public view of citizen-science monitoring data and should not be read as a statutory water-quality classification.
+The map is intended to provide an accessible public view of sampling results over time and should be read as citizen-science monitoring data rather than as a statutory water-quality classification.
 
-## Change log
+---
 
-### 13 August 2026
+## Maintenance
 
-#### Analysis
+For routine updates, only `freshwater.csv` should normally need replacing.
 
-- Split analysis into `analysis.html` and `further-analysis.html`.
-- Retained **Sample analysis** and **Results over time by site** in `analysis.html`.
-- Moved **Site comparison** to `further-analysis.html`.
-- Added **Project-wide trends** for Nitrate, Phosphate and Turbidity.
-- Added **Seasonal patterns** with Monthly and Seasonal views.
-- Added **Relationship between indicators** with paired-sample comparisons.
-- Added a second Webador outer disclosure for **Site comparison and relationships**.
-- Renamed the first Webador disclosure **View Nitrate, Phosphate and Turbidity charts**.
-- Gave the two Webador embeds unique IDs to prevent duplicated-code conflicts.
-- Restricted resize handling to messages from the corresponding iframe.
-- Made the two Webador outer disclosures mutually exclusive.
-- Set **Site comparison** to open automatically when the second analysis embed loads.
-- Corrected first-load behaviour so the Site comparison chart renders immediately after `freshwater.csv` loads.
-- Retained dynamic iframe-height reporting when analysis content expands or collapses.
-- Added/refined site-focused behaviour so relevant analysis can follow the site selected on the map.
+If the FreshWater Watch export format changes substantially, the field-name mappings in `index.html` may need to be updated.
 
-#### Canal Watch blog
-
-- Added assessment filtering using the existing `[assessment:...]` blog-title marker.
-- Replaced the assessment dropdown with tabs.
-- Added an independently displayed blog count.
-- Added date filtering using Webador's displayed publication dates.
-- Separated assessment and date controls onto two distinct lines.
-- Added a three-month date window showing the latest available months by default.
-- Changed month display to chronological order.
-- Added `<` and `>` previous/next month controls.
-- Previous/next controls automatically select the adjacent month and move the visible month window when required.
-- Corrected **All dates** navigation so `<` begins with the oldest displayed month and `>` begins with the newest displayed month before continuing month by month.
-- Assessment and date filters can be combined.
-- Isolated filter styling and IDs under the `qpt2-` namespace to reduce Webador CSS conflicts.
-- Reduced unnecessary mutation-observer processing to improve date-filter responsiveness.
-
-### 12 August 2026
-
-- Renamed the main analysis panel **Sample analysis**.
-- Added **Results over time by site** for Nitrate, Phosphate and Turbidity.
-- Added/refined Temperature, pH, Coliform, BOD and Dissolved Oxygen displays.
-- Changed occurrence-chart vertical axes to number of samples.
-- Added sample-count guide lines and percentage-above-column labels.
-- Reformatted Turbidity to match the Nitrate and Phosphate occurrence charts.
-- Made result summary panels clickable.
-- Improved chart hover/active states.
-- Changed the map reset control to a Home icon.
-- Improved iframe height reporting and analysis spacing.
+---
 
 ## Project
 
@@ -250,3 +333,256 @@ The map and analysis pages provide an accessible public view of citizen-science 
 
 Greener Canalside / FreshWater Watch project  
 Grand Union Canal
+
+---
+
+## Analysis pages
+
+The project now includes two GitHub-hosted analysis pages that can be embedded into Webador using iframes.
+
+### `analysis.html`
+
+Used for the main sample-results analysis, including:
+
+- Nitrate results
+- Phosphate results
+- Turbidity results
+- Temperature
+- pH
+- Coliform
+- **Biochemical Oxygen Demand (BOD)**
+- **Dissolved Oxygen (DO)**
+- Results over time by site
+- Responsive chart layout
+- Automatic iframe-height messaging to Webador
+
+Scientific notation is standardised as **pH**.
+
+### `further-analysis.html`
+
+Used for wider interpretation of the monitoring dataset.
+
+Current features include:
+
+- **Overall Water Quality Snapshot**
+  - All sites or individual site
+  - Latest survey or project average
+  - Nitrate
+  - Phosphate
+  - Turbidity
+  - Temperature
+  - pH with Acidic / Neutral / Alkaline description
+  - Dissolved Oxygen (DO)
+  - Biochemical Oxygen Demand (BOD)
+  - Coliform displayed as `> 20 coliforms/100ml` where the test is above its upper limit
+  - Results to Watch
+  - Key Takeaway
+
+- **Change Since Previous Survey**
+  - Previous and current values
+  - Indicator-aware improvement / stability / deterioration logic
+  - Separate handling for temperature, pH and dissolved oxygen
+  - FreshWater Watch and additional-test dates shown separately when necessary
+  - Interactive Overall Change wording: hovering over **improved**, **stable** or **deteriorated** highlights the corresponding result cards
+
+- **Site comparison**
+  - Nitrate
+  - Phosphate
+  - Turbidity
+
+- **Site consistency**
+  - Nitrate
+  - Phosphate
+  - Turbidity
+  - Sample count
+  - Consistency category
+  - Typical level
+  - Result range
+  - Most consistent site
+  - Most variable site
+  - Hover / keyboard explanations for Typical Level
+  - Consistency is calculated using the coefficient of variation: standard deviation ÷ mean
+
+- **Project-wide trends**
+
+- **Seasonal patterns**
+
+- **Relationship between indicators**
+  - Nitrate vs Phosphate
+  - Phosphate vs Turbidity
+  - Nitrate vs Turbidity
+  - Separate indicator colours shown in the chart and legend
+  - Correlation summary based on paired samples
+
+### Analysis accordion behaviour
+
+The Further Analysis page uses a single-open accordion pattern.
+
+Only one analysis section is open at a time. The **Overall Water Quality Snapshot** opens by default.
+
+Key Takeaway boxes are placed at the **end of the relevant analysis**, so visitors see the evidence before the concluding interpretation.
+
+---
+
+## Results to Watch
+
+The Overall Water Quality Snapshot includes a **Results to Watch** section after the main result cards.
+
+It:
+
+- Shows only measurements that meet a reason to warrant closer attention
+- Shows the indicator name, result and short explanation
+- Displays a clear message when no results currently require particular attention
+- Highlights the corresponding main result card when the watch item is hovered over or keyboard-focused
+- Keeps the permanent coloured strip at the top of each result card to identify the measurement
+
+The top strips identify indicators and are separate from improvement / deterioration highlighting.
+
+---
+
+## Indicator colours in analysis
+
+The analysis pages use consistent indicator colours to help distinguish measurements.
+
+The colour is supplementary: indicator names and result text remain visible so meaning is not communicated by colour alone.
+
+The relationship charts also use separate colours for:
+
+- Nitrate
+- Phosphate
+- Turbidity
+
+On relationship scatter plots, the paired indicators are represented using the point fill and outline, with an in-chart legend.
+
+---
+
+## Assessment Builder
+
+The **Canal Visual Assessment Builder** is hosted as:
+
+`assessment-builder.html`
+
+Hosting the builder on GitHub Pages and embedding it into Webador avoids Webador restrictions that prevented the builder's JavaScript-generated rows from appearing correctly when the complete script was placed directly inside a Webador HTML element.
+
+The builder includes:
+
+- Site
+- Date
+- Time
+- Eight visual-assessment indicators
+- Five assessment levels
+- Automatic overall score
+- Overall assessment description
+- Generated blog HTML
+- Accessible text, colour and status symbols
+
+The builder is intended as an administrative tool rather than a public navigation item.
+
+A CSV-export idea has been considered but is currently on hold.
+
+---
+
+## Canal Watch blog filters
+
+The Webador Canal Watch blog uses an automatic assessment and date filter.
+
+Assessment filters include:
+
+- All
+- Excellent
+- Good
+- Fair
+- Poor
+- Very Poor
+- Critical
+
+Date filtering includes:
+
+- All dates
+- A sliding window of month buttons
+- `<` and `>` month navigation
+
+Month buttons are sorted chronologically.
+
+When **All dates** is selected, pressing `<` or `>` selects a month automatically instead of requiring a second click on a month button. Further presses move to the immediately previous or next month.
+
+The filter avoids rebuilding the date controls on every click, which prevents the pause and repeated-click failures seen in earlier versions.
+
+### Blog filter styling
+
+The filter container uses a pale grey-green background:
+
+`#f2f6f3`
+
+Individual controls remain white.
+
+Unselected assessment, month and enabled navigation buttons receive a pale-green hover / keyboard-focus highlight. Selected buttons do not receive the extra hover treatment.
+
+---
+
+## Webador embedded analysis accordions
+
+The Webador page uses separate accordion buttons for the GitHub-hosted analysis pages.
+
+The two main embeds are:
+
+- Sample Analysis — `analysis.html`
+- Site comparison and relationships / Further Analysis — `further-analysis.html`
+
+Opening one Webador accordion closes the other.
+
+The iframe height is updated from the GitHub page using `postMessage`, allowing the Webador page to resize as internal accordions are opened and closed.
+
+For consistency with the Canal Watch blog filters, closed Webador accordion buttons can use the same pale-green hover / keyboard-focus treatment. Open accordion buttons remain unchanged.
+
+---
+
+## Accessibility and interaction
+
+Accessibility improvements now include:
+
+- Text labels alongside colours
+- Distinct assessment symbols
+- Keyboard-accessible hover/focus effects
+- Hover highlighting of result cards and table rows
+- Selected controls remain visually distinct
+- Unselected controls highlight on mouse hover and keyboard focus
+- pH is written using correct scientific capitalisation
+- Full names are used for specialist abbreviations where helpful:
+  - **Dissolved Oxygen (DO)**
+  - **Biochemical Oxygen Demand (BOD)**
+- Acidic / Neutral / Alkaline wording accompanies pH results
+- Key Takeaway summaries follow the detailed evidence
+- Results to Watch provides a concise interpretation after the main results
+- Colour is used as a supporting cue rather than the sole means of conveying meaning
+- Responsive layouts support smaller screens
+
+---
+
+## Update — 14 August 2026
+
+The following changes were developed or refined on **14 August 2026**:
+
+1. Added and expanded the **Overall Water Quality Snapshot**.
+2. Put the Snapshot into its own accordion.
+3. Added additional-test indicators to the Snapshot.
+4. Standardised **pH** notation and added Acidic / Neutral / Alkaline descriptions.
+5. Changed Dissolved Oxygen to **Dissolved Oxygen (DO)**.
+6. Changed BOD to **Biochemical Oxygen Demand (BOD)**.
+7. Standardised high coliform display as **`> 20 coliforms/100ml`**.
+8. Added **Change Since Previous Survey** using both FreshWater Watch and additional water-quality results.
+9. Added indicator-aware change interpretation rather than treating every increase or decrease the same way.
+10. Added **Site Consistency**, including Typical Level explanations and consistency calculations.
+11. Added separate indicator colours to the relationship comparison charts and legend.
+12. Added hover highlighting to result cards and analysis controls.
+13. Added interactive **Improved / Stable / Deteriorated** highlighting in the Overall Change summary while preserving the permanent indicator-colour strips.
+14. Added **Key Takeaway** summaries and moved them to the end of each relevant analysis section.
+15. Added additional spacing around Key Takeaway and Results to Watch sections.
+16. Added **Results to Watch** after the main Snapshot result cards.
+17. Added a pale grey-green background to the Webador Canal Watch blog-filter panel.
+18. Added hover / keyboard-focus highlighting to unselected blog-filter controls.
+19. Defined matching hover behaviour for closed Webador analysis accordion buttons.
+20. Continued the GitHub Pages → iframe → Webador approach for JavaScript-heavy tools and analysis pages.
+
+These changes are intended to improve readability, interpretation and accessibility without making the public-facing analysis unnecessarily complicated.
+
