@@ -1365,6 +1365,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   background:#f2f7f3;
 }
 
+
+/* Preserve scientific capitalisation such as pH inside otherwise uppercase labels */
+.preserve-case{
+  text-transform:none !important;
+}
+
 </style>
 </head>
 <body>
@@ -3336,7 +3342,7 @@ function snapshotCard(metric,title,valueText,note,status){
   }
 
   return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
-    <div class="snapshot-card-title">${esc(title)}</div>
+    <div class="snapshot-card-title${title==="pH" ? " preserve-case" : ""}">${esc(title)}</div>
     <div class="snapshot-card-value">${esc(valueText)}</div>
     ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
     ${statusHtml}
@@ -3443,7 +3449,7 @@ function renderSnapshot(){
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
 
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
-  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
+  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","pH"])));
   const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
     "Dissolved Oxygen PPM",
     "Dissolved Oxygen ppm",
@@ -3504,7 +3510,7 @@ function renderSnapshot(){
 
   if(Number.isFinite(bod)){
     cards.push(snapshotCard(
-      "bod","BOD",`${bod.toFixed(1)} ppm`,
+      "bod","Biochemical Oxygen Demand (BOD)",`${bod.toFixed(1)} ppm`,
       "Initial DO minus 5-day DO",
       snapshotBODAssessment(bod)
     ));
@@ -3834,7 +3840,7 @@ function changeIndicatorInfo(key){
     temperature:{label:"Temperature",unit:"°C",decimals:1,neutralDirection:true},
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
-    bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
+    bod:{label:"Biochemical Oxygen Demand (BOD)",unit:"ppm",decimals:1,lowerBetter:true},
     coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
   return info[key];
@@ -3937,7 +3943,7 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
   const colour=snapshotIndicatorColour(key);
 
   return `<article class="change-summary-card" style="--change-indicator:${colour}">
-    <div class="change-summary-name">${esc(info.label)}</div>
+    <div class="change-summary-name${info.label==="pH" ? " preserve-case" : ""}">${esc(info.label)}</div>
 
     <div class="change-summary-values">
       <div class="change-summary-value">
@@ -4056,7 +4062,7 @@ function renderChangeSummary(){
     : '<div class="change-summary-empty">No FreshWater Watch comparison is available for this location yet.</div>';
 
   const tempGetter=r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"]);
-  const phGetter=r=>snapshotFirstNumber(r,["pH","PH"]);
+  const phGetter=r=>snapshotFirstNumber(r,["pH","pH"]);
   const doGetter=r=>snapshotFirstNumber(r,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
