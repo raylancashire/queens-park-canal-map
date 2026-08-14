@@ -559,6 +559,22 @@ Accessibility improvements now include:
 
 ---
 
+
+### Canal Visual Assessment improvements
+
+The Canal Visual Assessment Builder has also been refined for easier reading and clearer blog output:
+
+- Added subtle **alternate-row shading** to the visual assessment table to make Indicator, Observation and Assessment rows easier to follow.
+- Retained a slightly stronger row highlight on hover.
+- Added a conditional wildlife context note when **Wildlife activity** is set to **`N/A – none observed`**.
+- The note appears inside the **Overall Visual Assessment** panel beneath the main assessment explanation:
+  - *Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.*
+- The same wildlife note is automatically included in the **generated blog HTML**, so it can appear in the published Webador visual assessment without being added manually.
+- The wildlife note is omitted automatically when wildlife activity is recorded.
+- Presentation of the wildlife note is controlled through the shared CSS class `.qp-wildlife-note`, while the Assessment Builder JavaScript controls whether the note is included.
+
+---
+
 ## Update — 14 August 2026
 
 The following changes were developed or refined on **14 August 2026**:
@@ -583,6 +599,9 @@ The following changes were developed or refined on **14 August 2026**:
 18. Added hover / keyboard-focus highlighting to unselected blog-filter controls.
 19. Defined matching hover behaviour for closed Webador analysis accordion buttons.
 20. Continued the GitHub Pages → iframe → Webador approach for JavaScript-heavy tools and analysis pages.
+21. Added alternate-row highlighting to the **Canal Visual Assessment** table for easier scanning.
+22. Added a conditional wildlife context note when **Wildlife activity = N/A – none observed**.
+23. Added the same conditional wildlife note to the **generated blog HTML**, allowing it to appear automatically in the published Overall Visual Assessment.
 
 These changes are intended to improve readability, interpretation and accessibility without making the public-facing analysis unnecessarily complicated.
 
