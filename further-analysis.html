@@ -927,7 +927,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
    OVERALL WATER QUALITY SNAPSHOT
    ========================================================= */
 .snapshot-panel{
-  margin:0 0 14px;
+  margin:0;
   padding:18px;
   border:1px solid var(--line);
   border-radius:12px;
@@ -1088,34 +1088,48 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 <body>
 <div class="wrap">
 
-<section id="overallSnapshot" class="snapshot-panel" aria-labelledby="snapshotTitle">
-  <div class="snapshot-kicker">Canal Watch · Further Analysis</div>
-  <h2 id="snapshotTitle" class="snapshot-title">Overall Water Quality Snapshot</h2>
-  <p class="snapshot-intro">
-    A compact view of the available monitoring results. Choose all sites or an individual sampling site,
-    then switch between the latest survey and the project average.
-  </p>
+<section class="outer-analysis-panel">
+  <button
+    id="snapshotToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="true"
+    aria-controls="snapshotContent">
+    <span>Overall Water Quality Snapshot</span>
+    <span id="snapshotIcon" aria-hidden="true">−</span>
+  </button>
 
-  <div class="snapshot-controls">
-    <div class="snapshot-control">
-      <label for="snapshotSiteSelect">Location</label>
-      <select id="snapshotSiteSelect">
-        <option value="all">All sites</option>
-      </select>
-    </div>
+  <div id="snapshotContent" class="outer-analysis-content">
+    <section id="overallSnapshot" class="snapshot-panel" aria-labelledby="snapshotTitle">
+      <div class="snapshot-kicker">Canal Watch · Further Analysis</div>
+      <h2 id="snapshotTitle" class="snapshot-title">Overall Water Quality Snapshot</h2>
+      <p class="snapshot-intro">
+        A compact view of the available monitoring results. Choose all sites or an individual sampling site,
+        then switch between the latest survey and the project average.
+      </p>
 
-    <div class="snapshot-control">
-      <label>Period</label>
-      <div class="snapshot-period-toggle" role="group" aria-label="Choose snapshot period">
-        <button id="snapshotLatest" class="active" type="button" aria-pressed="true">Latest survey</button>
-        <button id="snapshotAverage" type="button" aria-pressed="false">Project average</button>
+      <div class="snapshot-controls">
+        <div class="snapshot-control">
+          <label for="snapshotSiteSelect">Location</label>
+          <select id="snapshotSiteSelect">
+            <option value="all">All sites</option>
+          </select>
+        </div>
+
+        <div class="snapshot-control">
+          <label>Period</label>
+          <div class="snapshot-period-toggle" role="group" aria-label="Choose snapshot period">
+            <button id="snapshotLatest" class="active" type="button" aria-pressed="true">Latest survey</button>
+            <button id="snapshotAverage" type="button" aria-pressed="false">Project average</button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div id="snapshotGrid" class="snapshot-grid"></div>
-  <div id="snapshotSummary" class="snapshot-summary"></div>
-  <div id="snapshotMeta" class="snapshot-meta"></div>
+      <div id="snapshotGrid" class="snapshot-grid"></div>
+      <div id="snapshotSummary" class="snapshot-summary"></div>
+      <div id="snapshotMeta" class="snapshot-meta"></div>
+    </section>
+  </div>
 </section>
 
 <section class="outer-analysis-panel">
@@ -1123,13 +1137,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       id="siteComparisonToggle"
       class="outer-analysis-toggle"
       type="button"
-      aria-expanded="true"
+      aria-expanded="false"
       aria-controls="siteComparisonContent">
       <span>Site comparison</span>
-      <span id="siteComparisonIcon" aria-hidden="true">−</span>
+      <span id="siteComparisonIcon" aria-hidden="true">＋</span>
     </button>
 
-    <div id="siteComparisonContent" class="outer-analysis-content">
+    <div id="siteComparisonContent" class="outer-analysis-content" hidden>
       <p class="site-comparison-intro">
         Compare the latest recorded result from each sampling site.
       </p>
@@ -3114,7 +3128,7 @@ function renderSnapshot(){
 
   if(Number.isFinite(coliform)){
     cards.push(snapshotCard(
-      "coliform","Coliform",`${coliform.toFixed(0)}`,
+      "coliform","Coliform",coliform>20 ? "> 20 coliform/100ml" : `${coliform.toFixed(0)} coliform/100ml`,
       "48-hour result",
       coliform===0
         ? {label:"None detected",kind:"good"}
@@ -3468,6 +3482,11 @@ document.getElementById("compareTurbidity").addEventListener("click",()=>setComp
 
 const furtherPanels = [
   {
+    button:document.getElementById("snapshotToggle"),
+    content:document.getElementById("snapshotContent"),
+    icon:document.getElementById("snapshotIcon")
+  },
+  {
     button:document.getElementById("siteComparisonToggle"),
     content:document.getElementById("siteComparisonContent"),
     icon:document.getElementById("siteComparisonIcon")
@@ -3497,19 +3516,23 @@ function setFurtherPanel(index,open){
     panel.icon.textContent=isOpen ? "−" : "＋";
   });
 
-  if(open && index===0 && typeof renderSiteComparison==="function"){
+  if(open && index===0 && typeof renderSnapshot==="function"){
+    renderSnapshot();
+  }
+
+  if(open && index===1 && typeof renderSiteComparison==="function"){
     renderSiteComparison();
   }
 
-  if(open && index===1 && typeof renderProjectTrend==="function"){
+  if(open && index===2 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===2 && typeof renderSeasonalPattern==="function"){
+  if(open && index===3 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===3 && typeof renderRelationship==="function"){
+  if(open && index===4 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
