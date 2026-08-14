@@ -721,7 +721,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="bodPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="bodTab" hidden>
     <h2>Biochemical Oxygen Demand (BOD)</h2>
-    <p class="sub">Recorded BOD results over time.</p>
+    <p class="sub">
+      Biochemical Oxygen Demand (BOD) indicates how much dissolved oxygen is used by microorganisms as organic matter in the water breaks down.
+      It is calculated here from the difference between the initial dissolved oxygen reading and the reading after five days.
+      Lower BOD generally indicates less biodegradable organic material and lower oxygen demand, while higher BOD can indicate greater organic pollution and increased pressure on dissolved oxygen levels.
+    </p>
     <div id="bodChart"></div>
   </article>
 
@@ -1189,6 +1193,23 @@ function additionalAssessment(column,value){
   return null;
 }
 
+
+function formatAdditionalUKDate(date){
+  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return "Date not recorded";
+  return date.toLocaleDateString("en-GB",{
+    day:"numeric",
+    month:"long",
+    year:"numeric"
+  });
+}
+
+function addDays(date,days){
+  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  const copy=new Date(date.getTime());
+  copy.setDate(copy.getDate()+days);
+  return copy;
+}
+
 function renderAdditionalSeries(containerId,data,column,unit){
   const el=document.getElementById(containerId);
 
@@ -1196,6 +1217,24 @@ function renderAdditionalSeries(containerId,data,column,unit){
     .map(row=>({
       value:parseAdditionalNumber(row[column]),
       temperature:parseAdditionalNumber(row["Temperature °C"]),
+      initialDO:parseAdditionalNumber(getField(
+        row,
+        "Initial Dissolved Oxygen ppm",
+        "Initial Dissolved Oxygen PPM",
+        "Dissolved Oxygen mg/L",
+        "Dissolved Oxygen PPM",
+        "Dissolved Oxygen ppm"
+      )),
+      fiveDayDO:parseAdditionalNumber(getField(
+        row,
+        "Final Dissolved Oxygen ppm",
+        "Final Dissolved Oxygen PPM",
+        "Dissolved Oxygen PPM (5days)",
+        "Dissolved Oxygen PPM (5 days)",
+        "Dissolved Oxygen ppm (5days)",
+        "Dissolved Oxygen mg/L (5days)",
+        "Dissolved Oxygen mg/L (5 days)"
+      )),
       date:parseUKDate(row["Date"],row["Time"]),
       label:additionalDateLabel(row),
       location:String(row["Location"]||"").trim()
@@ -1243,6 +1282,22 @@ function renderAdditionalSeries(containerId,data,column,unit){
         </span>`;
       }
       extraHtml+=`<span>Total coliform is a general microbial indicator. This result is not an official bathing-water classification; UK bathing-water classifications use E. coli and intestinal enterococci.</span>`;
+    }
+
+    if(column==="BOD mg/L" && Number.isFinite(p.initialDO) && Number.isFinite(p.fiveDayDO)){
+      const finalDate=addDays(p.date,5);
+      extraHtml=`<span style="margin-top:8px">
+          Initial dissolved oxygen — <strong>${esc(formatAdditionalUKDate(p.date))}: ${esc(p.initialDO)} ppm</strong>
+        </span>
+        <span>
+          Dissolved oxygen — five days later${finalDate ? ` (${esc(formatAdditionalUKDate(finalDate))})` : ""}:
+          <strong>${esc(p.fiveDayDO)} ppm</strong>
+        </span>
+        <span>
+          <strong style="font-size:20px;margin:8px 0 0">
+            ${esc(p.initialDO)} ppm − ${esc(p.fiveDayDO)} ppm = ${esc(p.value)} ppm BOD
+          </strong>
+        </span>`;
     }
 
     if(column==="Dissolved Oxygen mg/L"){
@@ -1367,6 +1422,8 @@ function normaliseAdditionalRow(row){
   if(!String(copy["Dissolved Oxygen mg/L"]??"").trim()){
     copy["Dissolved Oxygen mg/L"]=getField(
       row,
+      "Initial Dissolved Oxygen ppm",
+      "Initial Dissolved Oxygen PPM",
       "Dissolved Oxygen PPM",
       "Dissolved Oxygen ppm",
       "Dissolved Oxygen mg/L"
@@ -1388,6 +1445,8 @@ function normaliseAdditionalRow(row){
     }else{
       const initial=parseAdditionalNumber(getField(
         row,
+        "Initial Dissolved Oxygen ppm",
+        "Initial Dissolved Oxygen PPM",
         "Dissolved Oxygen PPM",
         "Dissolved Oxygen ppm",
         "Dissolved Oxygen mg/L"
@@ -1395,6 +1454,8 @@ function normaliseAdditionalRow(row){
 
       const afterFive=parseAdditionalNumber(getField(
         row,
+        "Final Dissolved Oxygen ppm",
+        "Final Dissolved Oxygen PPM",
         "Dissolved Oxygen PPM (5days)",
         "Dissolved Oxygen PPM (5 days)",
         "Dissolved Oxygen ppm (5days)",
