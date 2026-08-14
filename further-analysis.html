@@ -1114,6 +1114,62 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .site-consistency-method{margin-top:12px;padding:10px 12px;border-left:4px solid #a9b7ad;background:#f6f8f6;color:#66746b;font-size:11px;line-height:1.5}
 @media(max-width:650px){.site-consistency-summary{grid-template-columns:1fr}}
 
+
+.site-consistency-tip{
+  position:relative;
+  display:inline-block;
+  border-bottom:1px dotted #66746b;
+  cursor:help;
+  outline:none;
+}
+.site-consistency-tip::after{
+  content:attr(data-tip);
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 9px);
+  z-index:20;
+  width:230px;
+  max-width:70vw;
+  padding:8px 10px;
+  border-radius:7px;
+  background:#17321f;
+  color:#fff;
+  font-size:10px;
+  font-weight:500;
+  line-height:1.4;
+  text-align:left;
+  white-space:normal;
+  box-shadow:0 5px 16px rgba(0,0,0,.18);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translate(-50%,4px);
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.site-consistency-tip::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 3px);
+  z-index:21;
+  border:6px solid transparent;
+  border-top-color:#17321f;
+  opacity:0;
+  visibility:hidden;
+  transform:translateX(-50%);
+}
+.site-consistency-tip:hover::after,
+.site-consistency-tip:hover::before,
+.site-consistency-tip:focus::after,
+.site-consistency-tip:focus::before{
+  opacity:1;
+  visibility:visible;
+}
+.site-consistency-tip:hover::after,
+.site-consistency-tip:focus::after{
+  transform:translate(-50%,0);
+}
+
 </style>
 </head>
 <body>
@@ -3318,6 +3374,29 @@ function consistencyTypical(metric,mean){
   return "High turbidity";
 }
 
+
+function consistencyTypicalDescription(metric,label){
+  if(metric==="nitrate"){
+    if(label==="Lower range") return "The site's average nitrate result is 1 mg/L or below.";
+    if(label==="Moderate range") return "The site's average nitrate result is above 1 mg/L and up to 5 mg/L.";
+    if(label==="Higher range") return "The site's average nitrate result is above 5 mg/L.";
+  }
+
+  if(metric==="phosphate"){
+    if(label==="Lower range") return "The site's average phosphate result is 0.1 mg/L or below.";
+    if(label==="Moderate range") return "The site's average phosphate result is above 0.1 mg/L and up to 0.5 mg/L.";
+    if(label==="Higher range") return "The site's average phosphate result is above 0.5 mg/L.";
+  }
+
+  if(metric==="turbidity"){
+    if(label==="Low turbidity") return "The site's average turbidity is below 14 NTU.";
+    if(label==="Moderate turbidity") return "The site's average turbidity is between 14 and 40 NTU.";
+    if(label==="High turbidity") return "The site's average turbidity is above 40 NTU.";
+  }
+
+  return "Typical level is based on the site's average result across its usable samples.";
+}
+
 function collectSiteConsistency(metric){
   const grouped=new Map();
 
@@ -3387,7 +3466,7 @@ function renderSiteConsistency(){
             <td class="site-consistency-site">${esc(displaySite)}</td>
             <td>${row.count}</td>
             <td><span class="site-consistency-badge ${row.category.cls}">${row.category.symbol} ${row.category.label}</span></td>
-            <td>${esc(row.typical)}</td>
+            <td><span class="site-consistency-tip" tabindex="0" data-tip="${esc(consistencyTypicalDescription(currentConsistencyMetric,row.typical))}">${esc(row.typical)}</span></td>
             <td class="site-consistency-range">
               <div class="site-consistency-rangebar">
                 <div class="site-consistency-rangefill" style="left:${left}%;width:${width}%"></div>
