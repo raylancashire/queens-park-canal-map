@@ -1467,7 +1467,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="snapshotGrid" class="snapshot-grid"></div>
-      <div id="snapshotSummary" class="snapshot-summary"></div>
       <div id="snapshotMeta" class="snapshot-meta"></div>
     </section>
   </div>
@@ -3501,7 +3500,7 @@ function renderSnapshot(){
   const grid=document.getElementById("snapshotGrid");
   const summary=document.getElementById("snapshotSummary");
   const meta=document.getElementById("snapshotMeta");
-  if(!grid || !summary || !meta || !freshwaterDataForChanges.length) return;
+  if(!grid || !meta || !freshwaterDataForChanges.length) return;
 
   const fwRows=snapshotFreshwaterScopeRows();
   const addRows=snapshotAdditionalScopeRows();
@@ -3629,7 +3628,7 @@ function renderSnapshot(){
     if(da) narrative+=` Dissolved oxygen is assessed as ${da.label.toLowerCase()}.`;
   }
 
-  summary.textContent=narrative;
+  if(summary) summary.textContent=narrative;
   const snapshotTakeaway=document.getElementById("snapshotTakeawayText");
   if(snapshotTakeaway){
     snapshotTakeaway.textContent=narrative;
