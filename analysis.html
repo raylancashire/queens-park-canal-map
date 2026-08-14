@@ -614,29 +614,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-color:#7fa38a;
 }
 
-
-#bodPanel .bod-date-meta{
-  margin-top:6px;
-  font-size:10px;
-  line-height:1.35;
-  color:var(--muted);
-}
-
-#bodPanel .bod-reading{
-  margin-top:8px;
-  font-size:14px;
-  line-height:1.45;
-  color:var(--ink);
-}
-
-#bodPanel .bod-calculation{
-  margin-top:8px;
-  font-size:19px;
-  line-height:1.3;
-  font-weight:800;
-  color:var(--ink);
-}
-
 </style>
 </head>
 <body>
@@ -738,19 +715,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="coliformPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="coliformTab" hidden>
     <h2>Coliform</h2>
-    <p class="sub">Total coliform colony results per 100 mL. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
+    <p class="sub">Coliform results per 100ml. A result at the upper limit of the test is displayed as &gt; 20 coliforms/100ml. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
     <div id="coliformChart"></div>
   </article>
 
   <article id="bodPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="bodTab" hidden>
     <h2>Biochemical Oxygen Demand (BOD)</h2>
-    <p class="sub">BOD is calculated from the initial dissolved-oxygen reading and the reading taken five days later. The panel separates the sample date from the 5-day result date so the later reading is not shown as if it were taken on the original sampling date.</p>
+    <p class="sub">Recorded BOD results over time.</p>
     <div id="bodChart"></div>
   </article>
 
   <article id="doPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="doTab" hidden>
     <h2>Dissolved Oxygen</h2>
-    <p class="sub">Recorded dissolved oxygen results over time in ppm. Result colours follow the supplied 0, 4 and 8 ppm test-kit colour card; percent saturation is calculated from the supplied temperature/oxygen table.</p>
+    <p class="sub">Recorded dissolved oxygen results over time. Result colours follow the supplied 0, 4 and 8 ppm test-kit colour card; percent saturation is calculated from the supplied temperature/oxygen table.</p>
     <div id="doChart"></div>
   </article>
 </section>
@@ -1107,6 +1084,15 @@ function phTestKit(value){
   return scale[n] ? {reading:`pH ${n}`,...scale[n]} : null;
 }
 
+
+function formatColiformResult(value){
+  if(!Number.isFinite(Number(value))) return "—";
+  const n=Number(value);
+  return n>=20
+    ? "> 20 coliforms/100ml"
+    : `${n.toFixed(0)} coliforms/100ml`;
+}
+
 function coliformTestKit(value){
   const n=Number(value);
   if(!Number.isFinite(n)) return null;
@@ -1205,219 +1191,6 @@ function coliformAssessment(value){
   };
 }
 
-
-function bodAssessment(value){
-  const n=Number(value);
-  if(!Number.isFinite(n)) return null;
-
-  /*
-   * Supplied ranking guide:
-   * 0 ppm = Excellent
-   * 4 ppm = Good
-   * 8 ppm = Fair
-   *
-   * The guide does not provide a BOD "Poor" value, so values
-   * outside the three stated results are not assigned an
-   * unsupported classification.
-   */
-  if(Math.abs(n-0)<0.0001) return {
-    label:"Excellent",
-    colour:"#006400",
-    text:"#ffffff",
-    symbol:"●"
-  };
-
-  if(Math.abs(n-4)<0.0001) return {
-    label:"Good",
-    colour:"#39A96B",
-    text:"#17321f",
-    symbol:"◆"
-  };
-
-  if(Math.abs(n-8)<0.0001) return {
-    label:"Fair",
-    colour:"#FFD966",
-    text:"#17321f",
-    symbol:"▲"
-  };
-
-  return {
-    label:"Not ranked by supplied guide",
-    colour:"#eef2ef",
-    text:"#43594a",
-    symbol:""
-  };
-}
-
-function firstAdditionalNumber(row,names){
-  for(const name of names){
-    if(Object.prototype.hasOwnProperty.call(row,name)){
-      const n=parseAdditionalNumber(row[name]);
-      if(Number.isFinite(n)) return n;
-    }
-  }
-  return null;
-}
-
-
-function addDaysToDate(date,days){
-  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
-  const d=new Date(date.getTime());
-  d.setDate(d.getDate()+days);
-  return d;
-}
-
-function formatUKDate(date){
-  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-  return String(date.getDate()).padStart(2,"0") + "/" +
-         String(date.getMonth()+1).padStart(2,"0") + "/" +
-         date.getFullYear();
-}
-
-function bodReading(row){
-  /*
-   * Current project CSV headings:
-   * - Dissolved Oxygen mg/L          = initial dissolved oxygen
-   * - Dissolved Oxygen mg/L (5days)  = dissolved oxygen after 5 days
-   *
-   * BOD = initial DO - 5-day DO
-   * Display in ppm to match the supplied test guide.
-   */
-  const initial=firstAdditionalNumber(row,[
-    "Dissolved Oxygen PPM",
-    "Dissolved Oxygen ppm",
-    "Dissolved Oxygen mg/L",
-    "Dissolved Oxygen",
-    "DO PPM",
-    "DO ppm",
-    "DO mg/L"
-  ]);
-
-  const afterFiveDays=firstAdditionalNumber(row,[
-    "Dissolved Oxygen PPM (5days)",
-    "Dissolved Oxygen PPM (5 days)",
-    "Dissolved Oxygen ppm (5days)",
-    "Dissolved Oxygen ppm (5 days)",
-    "Dissolved Oxygen mg/L (5days)",
-    "Dissolved Oxygen mg/L (5 days)",
-    "5 Day Dissolved Oxygen PPM",
-    "5-day Dissolved Oxygen PPM",
-    "5 Day Dissolved Oxygen mg/L",
-    "5-day Dissolved Oxygen mg/L"
-  ]);
-
-  const value=
-    Number.isFinite(initial) && Number.isFinite(afterFiveDays)
-      ? initial-afterFiveDays
-      : null;
-
-  return {
-    initial,
-    afterFiveDays,
-    value
-  };
-}
-
-function renderBODSeries(data){
-  const el=document.getElementById("bodChart");
-  if(!el) return;
-
-  const points=data
-    .map(row=>{
-      const reading=bodReading(row);
-      const sampleDate=parseUKDate(row["Date"],row["Time"]);
-      const resultDate=addDaysToDate(sampleDate,5);
-
-      return {
-        ...reading,
-        sampleDate,
-        resultDate,
-        sampleLabel:additionalDateLabel(row),
-        resultDateLabel:formatUKDate(resultDate),
-        location:String(row["Location"]||"").trim()
-      };
-    })
-    .filter(p=>Number.isFinite(p.value))
-    .sort((a,b)=>(a.sampleDate?.getTime()||0)-(b.sampleDate?.getTime()||0));
-
-  if(!points.length){
-    el.innerHTML='<div class="no-results">BOD cannot be calculated until both the initial dissolved-oxygen result and the 5-day dissolved-oxygen result are recorded.</div>';
-    return;
-  }
-
-  if(points.length===1){
-    const p=points[0];
-    const assessment=bodAssessment(p.value);
-
-    const assessmentHtml=assessment
-      ? `<span class="result-assessment" style="background:${assessment.colour};color:${assessment.text}">
-           ${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}
-         </span>`
-      : "";
-
-    el.innerHTML=`<div class="single-result">
-      <div>
-        <strong>BOD ${esc(p.value)} ppm</strong>
-
-        <span class="bod-date-meta">
-          Sample: ${esc(formatUKDate(p.sampleDate))}
-          ${p.location ? ` · ${esc(p.location)}` : ""}
-          · 5-day result: ${esc(p.resultDateLabel)}
-        </span>
-
-        <span class="bod-reading">
-          Initial dissolved oxygen: <strong>${esc(p.initial)} ppm</strong>
-        </span>
-
-        <span class="bod-reading">
-          Dissolved oxygen after 5 days: <strong>${esc(p.afterFiveDays)} ppm</strong>
-        </span>
-
-        <span class="bod-calculation">
-          ${esc(p.initial)} − ${esc(p.afterFiveDays)} = ${esc(p.value)} ppm BOD
-        </span>
-
-        ${assessmentHtml}
-
-        <span style="margin-top:10px">
-          The supplied test-result guide ranks BOD as
-          0 ppm = Excellent, 4 ppm = Good and 8 ppm = Fair.
-        </span>
-      </div>
-    </div>`;
-    return;
-  }
-
-  const max=Math.max(...points.map(p=>Math.max(p.value,0)),1);
-
-  el.innerHTML=`<div class="series-chart">`+
-    points.map(p=>{
-      const assessment=bodAssessment(p.value);
-      const height=Math.max(3,(Math.max(p.value,0)/max)*100);
-      const colour=assessment?.colour || "#66746b";
-
-      const assessmentText=assessment
-        ? `<br><span style="font-weight:700">${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}</span>`
-        : "";
-
-      return `<div class="series-row">
-        <div class="series-value">BOD ${esc(p.value)} ppm</div>
-        <div class="series-track">
-          <div class="series-fill" style="height:${height}%;background:${colour}"></div>
-        </div>
-        <div class="series-label">
-          <span style="font-size:9px;color:var(--muted)">
-            ${esc(formatUKDate(p.sampleDate))} → ${esc(p.resultDateLabel)}
-          </span>
-          ${p.location ? `<br>${esc(p.location)}` : ""}
-          <br>${esc(p.initial)} − ${esc(p.afterFiveDays)} = ${esc(p.value)} ppm
-          ${assessmentText}
-        </div>
-      </div>`;
-    }).join("")+
-    `</div>`;
-}
-
 function additionalAssessment(column,value){
   if(column==="pH") return phAssessment(value);
   if(column==="Coliform") return coliformAssessment(value);
@@ -1472,7 +1245,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     if(column==="Coliform"){
       const kit=coliformTestKit(p.value);
-      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(formatColiformResult(p.value))}</strong></span>`;
       if(kit){
         extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
           ● Test-kit result: ${esc(kit.reading)}
@@ -1503,7 +1276,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     el.innerHTML=`<div class="single-result">
       <div>
-        <strong>${esc(p.value)}${esc(unitText)}</strong>
+        <strong>${column==="Coliform" ? esc(formatColiformResult(p.value)) : `${esc(p.value)}${esc(unitText)}`}</strong>
         <span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span>
         ${extraHtml}
         ${assessmentHtml}
@@ -1537,7 +1310,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
         }
       }
       return `<div class="series-row">
-        <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
+        <div class="series-value">${column==="Coliform" ? esc(formatColiformResult(p.value)) : `${esc(p.value)}${esc(unitText)}`}</div>
         <div class="series-track"><div class="series-fill" style="${barStyle}"></div></div>
         <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}${phNatureText}${saturationText}${assessmentText}</div>
       </div>`;
@@ -1575,62 +1348,14 @@ function filterAdditionalForSite(data,site){
   });
 }
 
-
-function renderColiformSeries(data){
-  /*
-   * Current project CSV uses "Coliform (48 Hrs)".
-   * Retain compatibility with the earlier "Coliform" heading.
-   */
-  const normalised=data.map(row=>{
-    if(
-      !Object.prototype.hasOwnProperty.call(row,"Coliform") &&
-      Object.prototype.hasOwnProperty.call(row,"Coliform (48 Hrs)")
-    ){
-      return {...row,Coliform:row["Coliform (48 Hrs)"]};
-    }
-    return row;
-  });
-
-  renderAdditionalSeries("coliformChart",normalised,"Coliform","");
-}
-
-
-function renderDissolvedOxygenSeries(data){
-  /*
-   * Current project CSV uses "Dissolved Oxygen PPM".
-   * Copy it into the legacy field expected by the existing renderer so
-   * the Dissolved Oxygen panel, assessment and saturation calculation
-   * continue to work without changing the CSV.
-   */
-  const normalised=data.map(row=>{
-    if(
-      !Object.prototype.hasOwnProperty.call(row,"Dissolved Oxygen mg/L") &&
-      Object.prototype.hasOwnProperty.call(row,"Dissolved Oxygen PPM")
-    ){
-      return {
-        ...row,
-        "Dissolved Oxygen mg/L":row["Dissolved Oxygen PPM"]
-      };
-    }
-    return row;
-  });
-
-  renderAdditionalSeries(
-    "doChart",
-    normalised,
-    "Dissolved Oxygen mg/L",
-    "ppm"
-  );
-}
-
 function renderAdditionalForFocusedSite(){
   const data=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite);
 
   renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
   renderAdditionalSeries("phChart",data,"pH","");
-  renderColiformSeries(data);
-  renderBODSeries(data);
-  renderDissolvedOxygenSeries(data);
+  renderAdditionalSeries("coliformChart",data,"Coliform","");
+  renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
+  renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
 }
 
 async function loadAdditionalData(){
