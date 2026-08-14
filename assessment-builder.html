@@ -484,6 +484,17 @@ body{
     margin:14px;
   }
 }
+
+/* Alternate-row shading for easier scanning */
+.qp-builder-table tbody tr:nth-child(even) td{
+  background:#f7faf7;
+}
+
+/* Keep hover clear and slightly stronger than the zebra stripe */
+.qp-builder-table tbody tr:hover td{
+  background:#eef5ef;
+}
+
 </style>
 
 <script>
@@ -603,7 +614,22 @@ body{
     overallEl.classList.add(band[3]);
     overallResult.textContent=`${band[4]} ${band[2]}`;
     overallScore.textContent=`Overall score: ${average.toFixed(2)} / 5`;
-    overallText.textContent=band[5];
+
+    const wildlifeSelect=[...rowsEl.querySelectorAll("tr")]
+      .find((tr,index)=>indicators[index][0]==="Wildlife activity")
+      ?.querySelector("select");
+
+    const wildlifeNoneObserved =
+      wildlifeSelect &&
+      wildlifeSelect.options[wildlifeSelect.selectedIndex].textContent
+        .toLowerCase()
+        .includes("none observed");
+
+    overallText.textContent =
+      band[5] +
+      (wildlifeNoneObserved
+        ? " *Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions."
+        : "");
 
     const output=document.getElementById("qpBuilderOutput");
     if(output){
@@ -641,6 +667,18 @@ body{
       ? `<div style="margin:0 0 10px;color:#66746b;font-size:12px">${meta.map(esc).join(" · ")}</div>\n`
       : "";
 
+    const wildlifeRow=[...rowsEl.querySelectorAll("tr")]
+      .find((tr,index)=>indicators[index][0]==="Wildlife activity");
+    const wildlifeSelect=wildlifeRow ? wildlifeRow.querySelector("select") : null;
+    const wildlifeNoneObserved =
+      wildlifeSelect &&
+      wildlifeSelect.options[wildlifeSelect.selectedIndex].textContent
+        .toLowerCase()
+        .includes("none observed");
+    const wildlifeNote = wildlifeNoneObserved
+      ? `<p class="qp-wildlife-note"><em>*Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em></p>`
+      : "";
+
     return `${metaHtml}<div class="qp-assessment-table">
   <table class="qp-results-table">
     <thead>
@@ -660,6 +698,7 @@ body{
   <div class="qp-overall-result">${band[4]} ${band[2]}</div>
   <div class="qp-overall-score">Overall score: ${average.toFixed(2)} / 5</div>
   <p>${esc(band[5])}</p>
+${wildlifeNote}
 </div>`;
   }
 
