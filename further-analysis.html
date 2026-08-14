@@ -837,10 +837,17 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   font-size:11px;
 }
 .relationship-point{
-  fill:#2f6b45;
-  opacity:.82;
-  stroke:#ffffff;
-  stroke-width:1.5;
+  opacity:.9;
+  stroke-width:3;
+}
+.relationship-legend-text{
+  font-size:11px;
+  font-weight:700;
+  fill:#43594a;
+}
+.relationship-axis-title{
+  font-size:12px;
+  font-weight:800;
 }
 .relationship-summary{
   margin-top:12px;
@@ -904,10 +911,213 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   font-size:13px;
 }
 
+
+#relationNitratePhosphate{
+  border-top:3px solid #D40D8C;
+}
+#relationPhosphateTurbidity{
+  border-top:3px solid #5C6FD6;
+}
+#relationNitrateTurbidity{
+  border-top:3px solid #2F7F6A;
+}
+
+
+/* =========================================================
+   OVERALL WATER QUALITY SNAPSHOT
+   ========================================================= */
+.snapshot-panel{
+  margin:0 0 14px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:linear-gradient(135deg,#f8fbf8,#ffffff);
+}
+.snapshot-kicker{
+  color:#66746b;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+.snapshot-title{
+  margin:4px 0 4px;
+  color:var(--ink);
+  font-size:22px;
+  line-height:1.2;
+}
+.snapshot-intro{
+  margin:0 0 14px;
+  color:#5f6f64;
+  font-size:13px;
+  line-height:1.5;
+}
+.snapshot-controls{
+  display:flex;
+  align-items:flex-end;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#f4f7f4;
+}
+.snapshot-control{
+  display:grid;
+  gap:5px;
+}
+.snapshot-control label{
+  color:#526158;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.snapshot-control select{
+  min-width:230px;
+  max-width:100%;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  padding:8px 10px;
+  font-size:13px;
+}
+.snapshot-period-toggle{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.snapshot-period-toggle button{
+  appearance:none;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:750;
+  cursor:pointer;
+}
+.snapshot-period-toggle button.active{
+  background:var(--ink);
+  border-color:var(--ink);
+  color:#fff;
+}
+.snapshot-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.snapshot-card{
+  position:relative;
+  min-height:118px;
+  padding:13px 13px 12px;
+  border:1px solid var(--line);
+  border-top:4px solid var(--snapshot-colour,#2f6b45);
+  border-radius:10px;
+  background:#fff;
+}
+.snapshot-card-title{
+  color:#526158;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.snapshot-card-value{
+  margin-top:7px;
+  color:var(--ink);
+  font-size:21px;
+  line-height:1.15;
+  font-weight:850;
+}
+.snapshot-card-note{
+  margin-top:4px;
+  color:#66746b;
+  font-size:11px;
+  line-height:1.35;
+}
+.snapshot-card-status{
+  display:inline-flex;
+  margin-top:8px;
+  padding:3px 7px;
+  border-radius:999px;
+  font-size:10px;
+  line-height:1.25;
+  font-weight:800;
+}
+.snapshot-summary{
+  margin-top:13px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#f8faf8;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.55;
+}
+.snapshot-meta{
+  margin-top:8px;
+  color:#66746b;
+  font-size:10px;
+  line-height:1.4;
+}
+.snapshot-empty{
+  grid-column:1/-1;
+  padding:18px;
+  border:1px dashed var(--line);
+  border-radius:9px;
+  color:#66746b;
+  text-align:center;
+  font-size:13px;
+}
+@media(max-width:900px){
+  .snapshot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .snapshot-panel{padding:14px}
+  .snapshot-grid{grid-template-columns:1fr}
+  .snapshot-control{width:100%}
+  .snapshot-control select{width:100%;min-width:0}
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<section id="overallSnapshot" class="snapshot-panel" aria-labelledby="snapshotTitle">
+  <div class="snapshot-kicker">Canal Watch · Further Analysis</div>
+  <h2 id="snapshotTitle" class="snapshot-title">Overall Water Quality Snapshot</h2>
+  <p class="snapshot-intro">
+    A compact view of the available monitoring results. Choose all sites or an individual sampling site,
+    then switch between the latest survey and the project average.
+  </p>
+
+  <div class="snapshot-controls">
+    <div class="snapshot-control">
+      <label for="snapshotSiteSelect">Location</label>
+      <select id="snapshotSiteSelect">
+        <option value="all">All sites</option>
+      </select>
+    </div>
+
+    <div class="snapshot-control">
+      <label>Period</label>
+      <div class="snapshot-period-toggle" role="group" aria-label="Choose snapshot period">
+        <button id="snapshotLatest" class="active" type="button" aria-pressed="true">Latest survey</button>
+        <button id="snapshotAverage" type="button" aria-pressed="false">Project average</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="snapshotGrid" class="snapshot-grid"></div>
+  <div id="snapshotSummary" class="snapshot-summary"></div>
+  <div id="snapshotMeta" class="snapshot-meta"></div>
+</section>
+
 <section class="outer-analysis-panel">
     <button
       id="siteComparisonToggle"
@@ -1804,6 +2014,25 @@ function setSeasonalMetric(metric){
 
 let currentRelationship="nitrate-phosphate";
 
+
+function relationshipMetricColour(metric){
+  const colours={
+    nitrate:"#D40D8C",
+    phosphate:"#5C6FD6",
+    turbidity:"#2F7F6A"
+  };
+  return colours[metric] || "#2f6b45";
+}
+
+function relationshipMetricLabel(metric){
+  const labels={
+    nitrate:"Nitrate",
+    phosphate:"Phosphate",
+    turbidity:"Turbidity"
+  };
+  return labels[metric] || metric;
+}
+
 function relationshipDefinition(key){
   const defs={
     "nitrate-phosphate":{
@@ -1920,8 +2149,8 @@ function renderRelationship(){
   }
 
   const W=660;
-  const H=360;
-  const left=68,right=30,top=28,bottom=66;
+  const H=380;
+  const left=68,right=30,top=58,bottom=66;
   const plotW=W-left-right;
   const plotH=H-top-bottom;
 
@@ -1954,24 +2183,73 @@ function renderRelationship(){
     </text>
   `).join("");
 
+  const xColour=relationshipMetricColour(def.xMetric);
+  const yColour=relationshipMetricColour(def.yMetric);
+
+  /*
+   * Each point uses the x-axis indicator colour as its fill and the
+   * y-axis indicator colour as its outline. This lets both indicators
+   * remain visible on the same paired-sample point.
+   */
   const marks=points.map(p=>`
-    <circle cx="${x(p.x)}" cy="${y(p.y)}" r="6" class="relationship-point">
+    <circle
+      cx="${x(p.x)}"
+      cy="${y(p.y)}"
+      r="6"
+      class="relationship-point"
+      fill="${xColour}"
+      stroke="${yColour}">
       <title>${esc(p.site)} — ${esc(p.date)}; ${def.xLabel}: ${p.x.toFixed(def.xDecimals)} ${def.xUnit}; ${def.yLabel}: ${p.y.toFixed(def.yDecimals)} ${def.yUnit}</title>
     </circle>
   `).join("");
 
+  const legendMetrics=[
+    ["nitrate","Nitrate"],
+    ["phosphate","Phosphate"],
+    ["turbidity","Turbidity"]
+  ];
+
+  const legendStart=left;
+  const legend=legendMetrics.map((item,i)=>{
+    const metric=item[0];
+    const label=item[1];
+    const lx=legendStart+(i*150);
+    const colour=relationshipMetricColour(metric);
+    const active=(metric===def.xMetric || metric===def.yMetric);
+    return `
+      <g opacity="${active ? "1" : ".42"}">
+        <circle cx="${lx}" cy="24" r="5" fill="${colour}"></circle>
+        <text x="${lx+10}" y="28" class="relationship-legend-text">${label}</text>
+      </g>`;
+  }).join("");
+
   chart.innerHTML=`<svg class="relationship-svg" viewBox="0 0 ${W} ${H}" role="img"
     aria-label="${esc(def.xLabel)} compared with ${esc(def.yLabel)} across paired samples">
+      ${legend}
       ${xGrid}
       ${yGrid}
-      <line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}" stroke="#809086"></line>
-      <line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}" stroke="#809086"></line>
+
+      <line x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}" stroke="${xColour}" stroke-width="1.5"></line>
+      <line x1="${left}" y1="${top}" x2="${left}" y2="${top+plotH}" stroke="${yColour}" stroke-width="1.5"></line>
+
       ${marks}
-      <text x="${left+plotW/2}" y="${H-8}" text-anchor="middle" class="relationship-axis">
+
+      <text
+        x="${left+plotW/2}"
+        y="${H-8}"
+        text-anchor="middle"
+        class="relationship-axis relationship-axis-title"
+        fill="${xColour}">
         ${esc(def.xLabel)} (${esc(def.xUnit)})
       </text>
-      <text x="16" y="${top+plotH/2}" text-anchor="middle"
-        transform="rotate(-90 16 ${top+plotH/2})" class="relationship-axis">
+
+      <text
+        x="16"
+        y="${top+plotH/2}"
+        text-anchor="middle"
+        transform="rotate(-90 16 ${top+plotH/2})"
+        class="relationship-axis relationship-axis-title"
+        fill="${yColour}">
         ${esc(def.yLabel)} (${esc(def.yUnit)})
       </text>
     </svg>`;
@@ -1983,7 +2261,9 @@ function renderRelationship(){
     `<strong>${points.length} paired ${points.length===1?"sample":"samples"}</strong>. ` +
     `Correlation (r): <strong>${rText}</strong>. ` +
     `${esc(correlationDescription(r,points.length))} ` +
-    `This describes association only and does not show that one indicator causes the other.`;
+    `This describes association only and does not show that one indicator causes the other. ` +
+    `<span style="white-space:nowrap"><span style="color:${xColour};font-weight:800">● ${esc(def.xLabel)}</span> fill</span> and ` +
+    `<span style="white-space:nowrap"><span style="color:${yColour};font-weight:800">● ${esc(def.yLabel)}</span> outline</span> identify the two indicators on each point.`;
 }
 
 function setRelationship(key){
@@ -2206,6 +2486,14 @@ function updateScopeText(site,rows){
 }
 
 function renderSampleAnalysisForFocusedSite(){
+  /*
+   * This is a split Further Analysis page, so the Sample Analysis
+   * elements may not exist. Skip that renderer when they are absent.
+   */
+  if(!document.getElementById("totalSamples")){
+    return;
+  }
+
   const data=filterFreshwaterForSite(freshwaterDataAll,currentFocusedSite);
   const nVals=data.map(getNitrate).filter(Boolean);
   const pVals=data.map(getPhosphate).filter(Boolean);
@@ -2253,9 +2541,14 @@ function setFocusedSite(site){
   }
 
   syncSeasonalSiteUI();
+  syncSnapshotSiteUI();
 
   if(typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
+  }
+
+  if(typeof renderSnapshot==="function"){
+    renderSnapshot();
   }
 }
 
@@ -2479,6 +2772,419 @@ function initialiseSiteChanges(){
 }
 
 
+
+/* =========================================================
+   OVERALL WATER QUALITY SNAPSHOT
+   ========================================================= */
+
+let currentSnapshotPeriod="latest";
+let snapshotAdditionalData=[];
+
+function snapshotIndicatorColour(metric){
+  const colours={
+    nitrate:"#D40D8C",
+    phosphate:"#5C6FD6",
+    turbidity:"#2F7F6A",
+    temperature:"#D9822B",
+    ph:"#8C6BB1",
+    do:"#2D7FB8",
+    bod:"#7A5A3A",
+    coliform:"#A66A32"
+  };
+  return colours[metric] || "#2f6b45";
+}
+
+function snapshotStatusStyle(kind){
+  const styles={
+    good:{background:"#006400",colour:"#ffffff"},
+    okay:{background:"#39A96B",colour:"#17321f"},
+    fair:{background:"#FFD966",colour:"#17321f"},
+    poor:{background:"#C00000",colour:"#ffffff"},
+    neutral:{background:"#eef2ef",colour:"#43594a"}
+  };
+  return styles[kind] || styles.neutral;
+}
+
+function snapshotFreshwaterAssessment(metric,value){
+  if(!Number.isFinite(value)) return null;
+
+  if(metric==="nitrate"){
+    if(value<=1) return {label:"Lower range",kind:"good"};
+    if(value<=5) return {label:"Moderate range",kind:"fair"};
+    return {label:"Higher range",kind:"poor"};
+  }
+
+  if(metric==="phosphate"){
+    if(value<=0.1) return {label:"Lower range",kind:"good"};
+    if(value<=0.5) return {label:"Moderate range",kind:"fair"};
+    return {label:"Higher range",kind:"poor"};
+  }
+
+  if(metric==="turbidity"){
+    if(value<14) return {label:"Low turbidity",kind:"good"};
+    if(value<=40) return {label:"Moderate turbidity",kind:"fair"};
+    return {label:"High turbidity",kind:"poor"};
+  }
+
+  return null;
+}
+
+function snapshotDayKey(timestamp){
+  if(!timestamp) return "";
+  const d=new Date(timestamp);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function snapshotLatestFreshwaterRows(rows){
+  const dated=rows.filter(row=>sampleDateValue(row));
+  if(!dated.length) return [];
+  const latest=Math.max(...dated.map(sampleDateValue));
+  const key=snapshotDayKey(latest);
+  return dated.filter(row=>snapshotDayKey(sampleDateValue(row))===key);
+}
+
+function snapshotAverage(values){
+  const nums=values.filter(Number.isFinite);
+  return nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+}
+
+function snapshotFreshwaterScopeRows(){
+  const rows=filterFreshwaterForSite(freshwaterDataForChanges,currentFocusedSite);
+  return currentSnapshotPeriod==="latest"
+    ? snapshotLatestFreshwaterRows(rows)
+    : rows;
+}
+
+function snapshotAdditionalDateValue(row){
+  const d=parseUKDate(row["Date"],row["Time"]);
+  return d ? d.getTime() : 0;
+}
+
+function snapshotAdditionalScopeRows(){
+  let rows=filterAdditionalForSite(snapshotAdditionalData,currentFocusedSite);
+
+  if(currentSnapshotPeriod==="latest"){
+    const dated=rows.filter(row=>snapshotAdditionalDateValue(row));
+    if(!dated.length) return [];
+    const latest=Math.max(...dated.map(snapshotAdditionalDateValue));
+    const key=snapshotDayKey(latest);
+    rows=dated.filter(row=>snapshotDayKey(snapshotAdditionalDateValue(row))===key);
+  }
+
+  return rows;
+}
+
+function snapshotFirstNumber(row,names){
+  for(const name of names){
+    if(Object.prototype.hasOwnProperty.call(row,name)){
+      const n=parseAdditionalNumber(row[name]);
+      if(Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
+function snapshotBOD(row){
+  const initial=snapshotFirstNumber(row,[
+    "Dissolved Oxygen PPM",
+    "Dissolved Oxygen ppm",
+    "Dissolved Oxygen mg/L"
+  ]);
+  const afterFive=snapshotFirstNumber(row,[
+    "Dissolved Oxygen PPM (5days)",
+    "Dissolved Oxygen PPM (5 days)",
+    "Dissolved Oxygen ppm (5days)",
+    "Dissolved Oxygen mg/L (5days)"
+  ]);
+  return Number.isFinite(initial) && Number.isFinite(afterFive)
+    ? initial-afterFive
+    : null;
+}
+
+function snapshotBODAssessment(value){
+  if(!Number.isFinite(value)) return null;
+  if(Math.abs(value-0)<0.01) return {label:"Excellent",kind:"good"};
+  if(Math.abs(value-4)<0.01) return {label:"Good",kind:"okay"};
+  if(Math.abs(value-8)<0.01) return {label:"Fair",kind:"fair"};
+  return {label:"Calculated BOD",kind:"neutral"};
+}
+
+function snapshotPHAssessment(value){
+  const a=phAssessment(value);
+  if(!a) return null;
+  if(a.label.startsWith("Good")) return {label:"Good / suitable range",kind:"good"};
+  if(a.label.startsWith("Fair")) return {label:"Outside preferred range",kind:"fair"};
+  return {label:"Outside suitable range",kind:"poor"};
+}
+
+function snapshotDOAssessment(value){
+  const a=dissolvedOxygenAssessment(value);
+  if(!a) return null;
+  const kind={
+    "Excellent":"good",
+    "Good":"okay",
+    "Fair":"fair",
+    "Poor":"poor",
+    "Very Poor":"poor"
+  }[a.label] || "neutral";
+  return {label:a.label,kind};
+}
+
+function snapshotCard(metric,title,valueText,note,status){
+  const colour=snapshotIndicatorColour(metric);
+  let statusHtml="";
+  if(status){
+    const style=snapshotStatusStyle(status.kind);
+    statusHtml=`<span class="snapshot-card-status" style="background:${style.background};color:${style.colour}">${esc(status.label)}</span>`;
+  }
+
+  return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
+    <div class="snapshot-card-title">${esc(title)}</div>
+    <div class="snapshot-card-value">${esc(valueText)}</div>
+    ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
+    ${statusHtml}
+  </article>`;
+}
+
+function populateSnapshotSiteSelect(){
+  const select=document.getElementById("snapshotSiteSelect");
+  if(!select) return;
+
+  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
+    .filter(Boolean)
+    .sort((a,b)=>a.localeCompare(b));
+
+  select.innerHTML=
+    `<option value="all">All sites</option>`+
+    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+
+  syncSnapshotSiteUI();
+}
+
+function syncSnapshotSiteUI(){
+  const select=document.getElementById("snapshotSiteSelect");
+  if(!select) return;
+
+  if(currentFocusedSite==="all"){
+    select.value="all";
+    return;
+  }
+
+  const match=[...select.options].find(
+    option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+  );
+  if(match) select.value=match.value;
+}
+
+function applySnapshotSiteFocus(site){
+  currentFocusedSite=site || "all";
+  syncSnapshotSiteUI();
+  syncSeasonalSiteUI();
+
+  try{
+    localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({
+      type:"site-focus",
+      site:currentFocusedSite
+    });
+  }
+
+  renderSnapshot();
+  renderSeasonalPattern();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+function setSnapshotPeriod(period){
+  currentSnapshotPeriod=period==="average" ? "average" : "latest";
+
+  const latest=document.getElementById("snapshotLatest");
+  const average=document.getElementById("snapshotAverage");
+
+  latest.classList.toggle("active",currentSnapshotPeriod==="latest");
+  latest.setAttribute("aria-pressed",String(currentSnapshotPeriod==="latest"));
+
+  average.classList.toggle("active",currentSnapshotPeriod==="average");
+  average.setAttribute("aria-pressed",String(currentSnapshotPeriod==="average"));
+
+  renderSnapshot();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+async function loadSnapshotAdditionalData(){
+  try{
+    const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
+    snapshotAdditionalData=parseCSV(raw);
+  }catch(e){
+    snapshotAdditionalData=[];
+  }
+  renderSnapshot();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+function renderSnapshot(){
+  const grid=document.getElementById("snapshotGrid");
+  const summary=document.getElementById("snapshotSummary");
+  const meta=document.getElementById("snapshotMeta");
+  if(!grid || !summary || !meta || !freshwaterDataForChanges.length) return;
+
+  const fwRows=snapshotFreshwaterScopeRows();
+  const addRows=snapshotAdditionalScopeRows();
+
+  if(!fwRows.length && !addRows.length){
+    grid.innerHTML='<div class="snapshot-empty">No results are available for this location and period.</div>';
+    summary.textContent="";
+    meta.textContent="";
+    return;
+  }
+
+  const nitrate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"nitrate")));
+  const phosphate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"phosphate")));
+  const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
+
+  const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
+  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
+  const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
+    "Dissolved Oxygen PPM",
+    "Dissolved Oxygen ppm",
+    "Dissolved Oxygen mg/L"
+  ])));
+  const bod=snapshotAverage(addRows.map(snapshotBOD));
+  const coliform=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"])));
+
+  const cards=[];
+
+  if(Number.isFinite(nitrate)){
+    cards.push(snapshotCard(
+      "nitrate","Nitrate",`${nitrate.toFixed(2)} mg/L`,
+      currentSnapshotPeriod==="latest" ? "Average midpoint for latest survey" : "Project average midpoint",
+      snapshotFreshwaterAssessment("nitrate",nitrate)
+    ));
+  }
+
+  if(Number.isFinite(phosphate)){
+    cards.push(snapshotCard(
+      "phosphate","Phosphate",`${phosphate.toFixed(3)} mg/L`,
+      currentSnapshotPeriod==="latest" ? "Average midpoint for latest survey" : "Project average midpoint",
+      snapshotFreshwaterAssessment("phosphate",phosphate)
+    ));
+  }
+
+  if(Number.isFinite(turbidity)){
+    cards.push(snapshotCard(
+      "turbidity","Turbidity",`${turbidity.toFixed(0)} NTU`,
+      currentSnapshotPeriod==="latest" ? "Latest-survey average" : "Project average",
+      snapshotFreshwaterAssessment("turbidity",turbidity)
+    ));
+  }
+
+  if(Number.isFinite(temperature)){
+    cards.push(snapshotCard(
+      "temperature","Temperature",`${temperature.toFixed(1)} °C`,
+      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded temperature",
+      {label:"Recorded temperature",kind:"neutral"}
+    ));
+  }
+
+  if(Number.isFinite(ph)){
+    cards.push(snapshotCard(
+      "ph","pH",ph.toFixed(1),
+      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded pH",
+      snapshotPHAssessment(ph)
+    ));
+  }
+
+  if(Number.isFinite(dissolvedOxygen)){
+    cards.push(snapshotCard(
+      "do","Dissolved Oxygen (DO)",`${dissolvedOxygen.toFixed(1)} ppm`,
+      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result",
+      snapshotDOAssessment(dissolvedOxygen)
+    ));
+  }
+
+  if(Number.isFinite(bod)){
+    cards.push(snapshotCard(
+      "bod","BOD",`${bod.toFixed(1)} ppm`,
+      "Initial DO minus 5-day DO",
+      snapshotBODAssessment(bod)
+    ));
+  }
+
+  if(Number.isFinite(coliform)){
+    cards.push(snapshotCard(
+      "coliform","Coliform",`${coliform.toFixed(0)}`,
+      "48-hour result",
+      coliform===0
+        ? {label:"None detected",kind:"good"}
+        : {label:"Detected",kind:"fair"}
+    ));
+  }
+
+  grid.innerHTML=cards.length
+    ? cards.join("")
+    : '<div class="snapshot-empty">No usable measurements are available for this view.</div>';
+
+  const scope=currentFocusedSite==="all"
+    ? "all monitoring sites"
+    : String(currentFocusedSite).replace(/^Grand Union Canal\s*-\s*/i,"");
+
+  const periodText=currentSnapshotPeriod==="latest"
+    ? "latest available survey"
+    : "project average";
+
+  const phrases=[];
+  const nA=snapshotFreshwaterAssessment("nitrate",nitrate);
+  const pA=snapshotFreshwaterAssessment("phosphate",phosphate);
+  const tA=snapshotFreshwaterAssessment("turbidity",turbidity);
+
+  if(nA) phrases.push(`nitrate is in the ${nA.label.toLowerCase()}`);
+  if(pA) phrases.push(`phosphate is in the ${pA.label.toLowerCase()}`);
+  if(tA) phrases.push(`turbidity is described as ${tA.label.toLowerCase()}`);
+
+  let narrative=`For ${scope}, the ${periodText}`;
+  narrative += phrases.length ? ` shows that ${phrases.join(", ")}.` : ".";
+
+  if(Number.isFinite(ph)){
+    const pa=snapshotPHAssessment(ph);
+    if(pa) narrative+=` pH is ${pa.label.toLowerCase()}.`;
+  }
+
+  if(Number.isFinite(dissolvedOxygen)){
+    const da=snapshotDOAssessment(dissolvedOxygen);
+    if(da) narrative+=` Dissolved oxygen is assessed as ${da.label.toLowerCase()}.`;
+  }
+
+  summary.textContent=narrative;
+
+  const fwLatest=fwRows.length
+    ? Math.max(...fwRows.map(sampleDateValue).filter(Boolean))
+    : 0;
+  const addLatest=addRows.length
+    ? Math.max(...addRows.map(snapshotAdditionalDateValue).filter(Boolean))
+    : 0;
+
+  const metaParts=[
+    `${fwRows.length} FreshWater Watch ${fwRows.length===1?"sample":"samples"} in this view`
+  ];
+
+  if(fwLatest){
+    metaParts.push(`FreshWater Watch date: ${new Date(fwLatest).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}`);
+  }
+
+  if(addRows.length){
+    metaParts.push(`${addRows.length} additional water-quality ${addRows.length===1?"test":"tests"}`);
+  }
+
+  if(addLatest){
+    metaParts.push(`additional-test date: ${new Date(addLatest).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}`);
+  }
+
+  meta.textContent=metaParts.join(" · ");
+}
+
+
 let currentComparisonMetric="nitrate";
 
 function latestMetricResultForSite(rows,metric){
@@ -2623,11 +3329,20 @@ async function load(){
       This split file contains only the Further Analysis panels.
       Render Site Comparison immediately once the CSV has loaded.
     */
+    populateSnapshotSiteSelect();
+    renderSnapshot();
+
     renderSiteComparison();
     renderProjectTrend();
     populateSeasonalSiteSelect();
     renderSeasonalPattern();
     renderRelationship();
+
+    /*
+     * Additional water-quality results are loaded separately because
+     * they come from additional-water-quality.csv.
+     */
+    loadSnapshotAdditionalData();
 
     setTimeout(notifyParentOfHeight,80);
 
@@ -2734,6 +3449,17 @@ function setChartTab(which){
 
 
 
+
+
+if(document.getElementById("snapshotSiteSelect")){
+  document.getElementById("snapshotSiteSelect").addEventListener("change",event=>{
+    applySnapshotSiteFocus(event.target.value);
+  });
+}
+if(document.getElementById("snapshotLatest")){
+  document.getElementById("snapshotLatest").addEventListener("click",()=>setSnapshotPeriod("latest"));
+  document.getElementById("snapshotAverage").addEventListener("click",()=>setSnapshotPeriod("average"));
+}
 
 document.getElementById("compareNitrate").addEventListener("click",()=>setComparisonMetric("nitrate"));
 document.getElementById("comparePhosphate").addEventListener("click",()=>setComparisonMetric("phosphate"));
