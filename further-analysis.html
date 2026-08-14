@@ -1344,6 +1344,27 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   .change-summary-control select{width:100%;min-width:0}
 }
 
+
+/* Hover highlight for individual result cards */
+.snapshot-card,
+.change-summary-card,
+.site-consistency-table tbody tr,
+.site-comparison-table tbody tr{
+  transition:background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.snapshot-card:hover,
+.change-summary-card:hover{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+}
+
+.site-consistency-table tbody tr:hover td,
+.site-comparison-table tbody tr:hover td{
+  background:#f2f7f3;
+}
+
 </style>
 </head>
 <body>
