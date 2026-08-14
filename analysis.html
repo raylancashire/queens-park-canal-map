@@ -1084,15 +1084,6 @@ function phTestKit(value){
   return scale[n] ? {reading:`pH ${n}`,...scale[n]} : null;
 }
 
-
-function formatColiformResult(value){
-  if(!Number.isFinite(Number(value))) return "—";
-  const n=Number(value);
-  return n>=20
-    ? "> 20 coliforms/100ml"
-    : `${n.toFixed(0)} coliforms/100ml`;
-}
-
 function coliformTestKit(value){
   const n=Number(value);
   if(!Number.isFinite(n)) return null;
@@ -1245,7 +1236,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     if(column==="Coliform"){
       const kit=coliformTestKit(p.value);
-      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(formatColiformResult(p.value))}</strong></span>`;
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${Number(p.value)>=20 ? "&gt; 20 coliforms/100ml" : esc(p.value)+" coliforms/100ml"}</strong></span>`;
       if(kit){
         extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
           ● Test-kit result: ${esc(kit.reading)}
@@ -1276,7 +1267,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     el.innerHTML=`<div class="single-result">
       <div>
-        <strong>${column==="Coliform" ? esc(formatColiformResult(p.value)) : `${esc(p.value)}${esc(unitText)}`}</strong>
+        <strong>${esc(p.value)}${esc(unitText)}</strong>
         <span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span>
         ${extraHtml}
         ${assessmentHtml}
@@ -1310,7 +1301,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
         }
       }
       return `<div class="series-row">
-        <div class="series-value">${column==="Coliform" ? esc(formatColiformResult(p.value)) : `${esc(p.value)}${esc(unitText)}`}</div>
+        <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
         <div class="series-track"><div class="series-fill" style="${barStyle}"></div></div>
         <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}${phNatureText}${saturationText}${assessmentText}</div>
       </div>`;
@@ -1358,10 +1349,72 @@ function renderAdditionalForFocusedSite(){
   renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
 }
 
+
+function normaliseAdditionalRow(row){
+  const copy={...row};
+
+  // Coliform: support both the older and current column headings.
+  if(!String(copy["Coliform"]??"").trim()){
+    copy["Coliform"]=getField(
+      row,
+      "Coliform (48 Hrs)",
+      "Coliform (48 hrs)",
+      "Coliform"
+    );
+  }
+
+  // Current dissolved oxygen result.
+  if(!String(copy["Dissolved Oxygen mg/L"]??"").trim()){
+    copy["Dissolved Oxygen mg/L"]=getField(
+      row,
+      "Dissolved Oxygen PPM",
+      "Dissolved Oxygen ppm",
+      "Dissolved Oxygen mg/L"
+    );
+  }
+
+  // BOD: use a directly supplied BOD value when present. Otherwise calculate
+  // BOD from initial DO minus the five-day DO result.
+  if(!String(copy["BOD mg/L"]??"").trim()){
+    const directBOD=getField(
+      row,
+      "BOD mg/L",
+      "BOD ppm",
+      "BOD"
+    );
+
+    if(directBOD){
+      copy["BOD mg/L"]=directBOD;
+    }else{
+      const initial=parseAdditionalNumber(getField(
+        row,
+        "Dissolved Oxygen PPM",
+        "Dissolved Oxygen ppm",
+        "Dissolved Oxygen mg/L"
+      ));
+
+      const afterFive=parseAdditionalNumber(getField(
+        row,
+        "Dissolved Oxygen PPM (5days)",
+        "Dissolved Oxygen PPM (5 days)",
+        "Dissolved Oxygen ppm (5days)",
+        "Dissolved Oxygen mg/L (5days)",
+        "Dissolved Oxygen mg/L (5 days)"
+      ));
+
+      if(Number.isFinite(initial) && Number.isFinite(afterFive)){
+        copy["BOD mg/L"]=String(initial-afterFive);
+      }
+    }
+  }
+
+  return copy;
+}
+
 async function loadAdditionalData(){
   try{
     const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
-    const data=parseCSV(raw);
+    const data=parseCSV(raw).map(normaliseAdditionalRow);
     additionalWaterQualityData=data;
     renderAdditionalForFocusedSite();
 
