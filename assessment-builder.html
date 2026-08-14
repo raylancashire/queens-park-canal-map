@@ -43,6 +43,9 @@
       <div id="qpBuilderOverallResult" class="qp-builder-overall-result">◆ Good</div>
       <div id="qpBuilderOverallScore" class="qp-builder-overall-score">Overall score: 4.00 / 5</div>
       <p id="qpBuilderOverallText"></p>
+      <p id="qpBuilderWildlifeNote" class="qp-builder-wildlife-note" hidden>
+        <em>Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em>
+      </p>
     </div>
 
     <div class="qp-builder-actions">
@@ -495,6 +498,20 @@ body{
   background:#eef5ef;
 }
 
+
+.qp-builder-wildlife-note{
+  margin:12px 0 0;
+  padding-top:10px;
+  border-top:1px solid rgba(23,50,31,.14);
+  color:#526458;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.qp-builder-wildlife-note[hidden]{
+  display:none;
+}
+
 </style>
 
 <script>
@@ -625,11 +642,12 @@ body{
         .toLowerCase()
         .includes("none observed");
 
-    overallText.textContent =
-      band[5] +
-      (wildlifeNoneObserved
-        ? " *Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions."
-        : "");
+    overallText.textContent=band[5];
+
+    const wildlifeNote=document.getElementById("qpBuilderWildlifeNote");
+    if(wildlifeNote){
+      wildlifeNote.hidden=!wildlifeNoneObserved;
+    }
 
     const output=document.getElementById("qpBuilderOutput");
     if(output){
@@ -676,7 +694,7 @@ body{
         .toLowerCase()
         .includes("none observed");
     const wildlifeNote = wildlifeNoneObserved
-      ? `<p class="qp-wildlife-note"><em>*Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em></p>`
+      ? `<p class="qp-wildlife-note"><em>Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em></p>`
       : "";
 
     return `${metaHtml}<div class="qp-assessment-table">
