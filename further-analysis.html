@@ -1421,6 +1421,157 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   text-transform:uppercase;
   letter-spacing:.06em;
 }
+
+/* Distinguish improved results without masking the indicator colour tab */
+.change-summary-card.improved{
+  background:#ffffff;
+  border-color:#b8d8bf;
+  box-shadow:inset 0 0 0 2px rgba(57,169,107,.18);
+}
+.change-summary-card.improved:hover{
+  background:#f4faf5;
+  border-color:#8fbe99;
+  box-shadow:
+    inset 0 0 0 2px rgba(57,169,107,.28),
+    0 5px 14px rgba(36,91,50,.14);
+}
+
+
+/* Interactive Overall Change words */
+.change-filter-word{
+  display:inline-block;
+  padding:1px 4px;
+  border-radius:4px;
+  font-weight:800;
+  cursor:default;
+  transition:background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.change-filter-word[data-status="improved"]:hover,
+.change-filter-word[data-status="improved"]:focus-visible{
+  background:#dff1e3;
+  color:#245b32;
+  box-shadow:0 0 0 2px rgba(36,91,50,.12);
+}
+.change-filter-word[data-status="stable"]:hover,
+.change-filter-word[data-status="stable"]:focus-visible{
+  background:#fff1b8;
+  color:#66520d;
+  box-shadow:0 0 0 2px rgba(102,82,13,.10);
+}
+.change-filter-word[data-status="worse"]:hover,
+.change-filter-word[data-status="worse"]:focus-visible{
+  background:#f8d8c9;
+  color:#7c3b18;
+  box-shadow:0 0 0 2px rgba(124,59,24,.10);
+}
+
+/* Cards highlighted from Overall Change words */
+.change-summary-card.word-highlight{
+  transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(23,50,31,.16);
+}
+.change-summary-card.word-highlight.improved{
+  background:#f0f8f2;
+  box-shadow:
+    inset 0 0 0 2px rgba(57,169,107,.28),
+    0 6px 16px rgba(36,91,50,.16);
+}
+.change-summary-card.word-highlight.stable{
+  background:#fff9df;
+  box-shadow:
+    inset 0 0 0 2px rgba(184,148,31,.22),
+    0 6px 16px rgba(102,82,13,.12);
+}
+.change-summary-card.word-highlight.worse{
+  background:#fff1ea;
+  box-shadow:
+    inset 0 0 0 2px rgba(176,83,40,.20),
+    0 6px 16px rgba(124,59,24,.12);
+}
+
+
+
+/* Change cards remain white normally: the top strip identifies the measurement */
+.change-summary-card.improved,
+.change-summary-card.stable,
+.change-summary-card.worse,
+.change-summary-card.neutral{
+  background:#fff;
+  border-color:#d8e2da;
+  box-shadow:none;
+}
+
+/* Ordinary card hover remains subtle and neutral */
+.change-summary-card.improved:hover,
+.change-summary-card.stable:hover,
+.change-summary-card.worse:hover,
+.change-summary-card.neutral:hover{
+  background:#f2f7f3;
+  border-color:#d8e2da;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+}
+
+/* Hovering/focusing the Overall Change words temporarily highlights matching cards */
+.change-summary-card.word-highlight.improved,
+.change-summary-card.word-highlight.improved:hover{
+  background:#e8f5eb;
+  border-color:#b7d8bf;
+  box-shadow:0 6px 16px rgba(36,91,50,.14);
+}
+.change-summary-card.word-highlight.stable,
+.change-summary-card.word-highlight.stable:hover{
+  background:#fff7d6;
+  border-color:#e5d58d;
+  box-shadow:0 6px 16px rgba(102,82,13,.12);
+}
+.change-summary-card.word-highlight.worse,
+.change-summary-card.word-highlight.worse:hover{
+  background:#fbe7dc;
+  border-color:#e4b59d;
+  box-shadow:0 6px 16px rgba(124,59,24,.12);
+}
+
+
+/* Preserve each measurement's coloured top strip at all times */
+.change-summary-card,
+.change-summary-card.improved,
+.change-summary-card.stable,
+.change-summary-card.worse,
+.change-summary-card.neutral,
+.change-summary-card:hover,
+.change-summary-card.word-highlight{
+  border-top-color:var(--change-indicator,#2f6b45) !important;
+}
+
+/* Only the side/bottom borders should change during hover/highlight states */
+.change-summary-card.improved,
+.change-summary-card.stable,
+.change-summary-card.worse,
+.change-summary-card.neutral{
+  border-left-color:#d8e2da;
+  border-right-color:#d8e2da;
+  border-bottom-color:#d8e2da;
+}
+
+.change-summary-card.word-highlight.improved,
+.change-summary-card.word-highlight.improved:hover{
+  border-left-color:#b7d8bf;
+  border-right-color:#b7d8bf;
+  border-bottom-color:#b7d8bf;
+}
+.change-summary-card.word-highlight.stable,
+.change-summary-card.word-highlight.stable:hover{
+  border-left-color:#e5d58d;
+  border-right-color:#e5d58d;
+  border-bottom-color:#e5d58d;
+}
+.change-summary-card.word-highlight.worse,
+.change-summary-card.word-highlight.worse:hover{
+  border-left-color:#e4b59d;
+  border-right-color:#e4b59d;
+  border-bottom-color:#e4b59d;
+}
+
 </style>
 </head>
 <body>
@@ -4030,7 +4181,7 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
   const status=changeClassification(key,current,previous);
   const colour=snapshotIndicatorColour(key);
 
-  return `<article class="change-summary-card" style="--change-indicator:${colour}">
+  return `<article class="change-summary-card ${status.cls}" style="--change-indicator:${colour}">
     <div class="change-summary-name${info.label==="pH" ? " preserve-case" : ""}">${esc(info.label)}</div>
 
     <div class="change-summary-values">
@@ -4114,6 +4265,36 @@ function applyChangeSummarySiteFocus(site){
   renderChangeSummary();
   renderSeasonalPattern();
   setTimeout(notifyParentOfHeight,40);
+}
+
+
+function setChangeWordHighlight(status,on){
+  document.querySelectorAll(`.change-summary-card.${status}`).forEach(card=>{
+    card.classList.toggle("word-highlight",on);
+  });
+}
+
+function bindChangeWordHighlights(){
+  const overall=document.getElementById("changeOverallSummary");
+  if(!overall || overall.dataset.highlightBound==="true") return;
+  overall.dataset.highlightBound="true";
+
+  overall.addEventListener("mouseover",event=>{
+    const word=event.target.closest(".change-filter-word");
+    if(word) setChangeWordHighlight(word.dataset.status,true);
+  });
+  overall.addEventListener("mouseout",event=>{
+    const word=event.target.closest(".change-filter-word");
+    if(word) setChangeWordHighlight(word.dataset.status,false);
+  });
+  overall.addEventListener("focusin",event=>{
+    const word=event.target.closest(".change-filter-word");
+    if(word) setChangeWordHighlight(word.dataset.status,true);
+  });
+  overall.addEventListener("focusout",event=>{
+    const word=event.target.closest(".change-filter-word");
+    if(word) setChangeWordHighlight(word.dataset.status,false);
+  });
 }
 
 function renderChangeSummary(){
@@ -4205,9 +4386,10 @@ function renderChangeSummary(){
   const worse=outcomes.filter(x=>x.cls==="worse").length;
 
   const changeTakeaway=document.getElementById("changeTakeawayText");
+  bindChangeWordHighlights();
   if(outcomes.length){
     overall.innerHTML=
-      `<strong>Overall change:</strong> ${improved} improved, ${stable} remained broadly stable and ${worse} deteriorated among indicators with comparable previous results.`;
+      `<strong>Overall change:</strong> ${improved} <span class="change-filter-word" data-status="improved" tabindex="0">improved</span>, ${stable} remained broadly <span class="change-filter-word" data-status="stable" tabindex="0">stable</span> and ${worse} <span class="change-filter-word" data-status="worse" tabindex="0">deteriorated</span> among indicators with comparable previous results.`;
     if(changeTakeaway){
       if(worse===0 && improved>0){
         changeTakeaway.textContent="Comparable indicators are stable or improving, with no deterioration identified since the previous survey.";
