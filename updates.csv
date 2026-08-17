@@ -1,7 +1,8 @@
 date,title,summary,link,type
 17/08/2026,Floating Canal Watch Updates widget refined,"The floating updates panel was restricted to the Canal Watch page, brought to the front of page content, improved so recent updates collapse correctly, and the expand/minimise icon was changed to reliable + and - characters.",,Website
 17/08/2026,Canal Visual Assessment updated,Alternate row highlighting and a conditional wildlife observation note were added to improve readability and context.,,Visual assessment
-18/08/2026,Canal Data Update,Collected latest set of surveys from FreshWater Watch website.,,Data
+18/08/2026,Canal Watch Data Update,Collected latest set of surveys from FreshWater Watch website.,,Data
 14/08/2026,Further Analysis expanded,"Results to Watch, Site Consistency, Change Since Previous Survey and improved accessibility interactions were added.",,Analysis
 14/08/2026,Sample Analysis updated,"Additional water-quality testing was refined, including pH, coliform, Biochemical Oxygen Demand (BOD) and Dissolved Oxygen (DO).",,Water quality
 13/08/2026,Analysis pages reorganised,Sample Analysis and Further Analysis were separated into dedicated GitHub-hosted pages for clearer navigation in Webador.,,Website
+13/08/2026,Grand Union Canal Conditions Update,Visual conditional assesment,https://www.queensparktrust.org/what-we-do/canal-watch/3323096_grand-union-canal-conditions-update-assessment-good,Visual assessment
