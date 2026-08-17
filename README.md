@@ -232,11 +232,30 @@ Turbidity is displayed separately as a clarity result. Where appropriate, a desc
 
 Visitors can switch between:
 
-- **Light** — clean map designed to make sampling markers stand out
+- **Light** — clean map with a highlighted and labelled Grand Union Canal route, designed to keep sampling markers prominent
 - **Street** — OpenStreetMap
 - **Satellite** — aerial imagery
 
 The Light map is used as the default view.
+
+---
+
+## Enhanced Grand Union Canal display
+
+The **Light** map now includes a dedicated Grand Union Canal overlay so the waterway is easier to identify while viewing sampling locations and water-quality results.
+
+The enhancement includes:
+
+- A highlighted blue canal route through the monitored project corridor
+- A darker outline to improve definition against the pale Light basemap
+- A clear **Grand Union Canal** map label
+- The overlay is displayed only when the **Light** basemap is active
+- Switching to **Street** or **Satellite** automatically removes the additional canal highlight
+- Existing sampling markers, popups, filters and water-quality results remain unchanged
+
+The highlighted route covers the current Canal Watch monitoring corridor around **Ladbroke Grove Bridge**, **Half Penny Steps** and **Meanwhile Gardens**.
+
+This enhancement is intended to provide clearer geographic context without making the Light map visually cluttered.
 
 ---
 
@@ -638,6 +657,9 @@ The following Canal Watch interface and documentation changes were developed or 
 11. Kept the **NEW** badge inline with the **Canal Watch Updates** title.
 12. Set the closed/minimised widget width to **220px**.
 13. Updated `updates.csv` with the latest Canal Watch interface changes.
+14. Enhanced the **Light** Canal Watch map with a dedicated highlighted **Grand Union Canal** route.
+15. Added a darker canal outline and **Grand Union Canal** label to make the waterway easier to identify.
+16. Limited the enhanced canal overlay to the **Light** basemap so the existing Street and Satellite views remain unchanged.
 
 These changes keep recent project information visible and easy to reach while allowing the widget to remain compact when it is not being used.
 
