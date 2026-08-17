@@ -30,27 +30,142 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
 .footer button:hover,.footer button:focus-visible{background:var(--hover);border-color:#9fb4a4;outline:none}
 .no-results{padding:18px;border:1px dashed #cfd9d2;border-radius:10px;background:#fff;color:var(--muted);font-size:13px}
 @media(max-width:700px){.widget{padding:14px}.header{display:block}.status{margin-top:10px}.update{grid-template-columns:1fr;gap:7px}.type{justify-self:start}.footer{align-items:flex-start;flex-direction:column}}
+
+/* Compact top-of-page version */
+.widget.compact{
+  padding:0;
+  overflow:hidden;
+  background:#fff;
+}
+
+.latest-update{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:14px;
+  align-items:center;
+  padding:14px 16px;
+  background:var(--soft);
+}
+
+.latest-kicker{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--muted);
+  white-space:nowrap;
+}
+
+.latest-main .title{
+  margin:0 0 3px;
+  font-size:15px;
+}
+
+.latest-main .summary{
+  font-size:12.5px;
+}
+
+.latest-date{
+  font-size:12px;
+  font-weight:800;
+  color:var(--muted);
+  white-space:nowrap;
+}
+
+.history-toggle{
+  width:100%;
+  min-height:42px;
+  padding:9px 16px;
+  border:0;
+  border-top:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  font:800 12px inherit;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+}
+
+.history-toggle:hover,
+.history-toggle:focus-visible{
+  background:var(--hover);
+  outline:none;
+}
+
+.history{
+  padding:12px 14px 14px;
+  border-top:1px solid var(--line);
+  background:#fff;
+}
+
+.history[hidden]{
+  display:none!important;
+}
+
+.history .update:first-child{
+  display:none;
+}
+
+.history .updates{
+  gap:8px;
+}
+
+.history .update{
+  grid-template-columns:100px minmax(0,1fr) auto;
+  padding:11px 12px;
+}
+
+.history .footer{
+  margin-top:10px;
+}
+
+@media(max-width:700px){
+  .latest-update{
+    grid-template-columns:1fr;
+    gap:6px;
+    padding:12px 14px;
+  }
+  .latest-kicker,
+  .latest-date{
+    white-space:normal;
+  }
+  .history .update{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
-  <section class="widget" aria-labelledby="updatesTitle">
-    <div class="header">
-      <div>
-        <h2 id="updatesTitle">Latest Canal Watch Updates</h2>
-        <p>Recent changes to monitoring, analysis and visual assessment tools.</p>
-      </div>
-      <div class="status">Updated automatically from CSV</div>
+  <section class="widget compact" aria-labelledby="updatesTitle">
+    <div id="latestUpdate" class="latest-update" aria-live="polite">
+      <div class="no-results">Loading latest Canal Watch update…</div>
     </div>
-    <div id="updates" class="updates" aria-live="polite"><div class="no-results">Loading updates…</div></div>
-    <div class="footer"><span id="countText"></span><button id="showMore" type="button" hidden>Show more updates</button></div>
+
+    <button
+      id="historyToggle"
+      class="history-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="updatesHistory">
+      <span>View recent updates</span>
+      <span id="historyIcon" aria-hidden="true">＋</span>
+    </button>
+
+    <div id="updatesHistory" class="history" hidden>
+      <div id="updates" class="updates"></div>
+      <div class="footer">
+        <span id="countText"></span>
+      </div>
+    </div>
   </section>
 </div>
 <script>
 (function(){
   const CSV_SOURCES=["./updates.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/updates.csv"];
-  const INITIAL_COUNT=4;
-  let allUpdates=[],visibleCount=INITIAL_COUNT;
+  let allUpdates=[];
 
   function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
   function parseCSV(text){
@@ -67,11 +182,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
   function formatDate(raw){const d=parseUKDate(raw);return d.getTime()?d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):esc(raw)}
   async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load updates.csv")}
   function render(){
-    const holder=document.getElementById("updates"),countText=document.getElementById("countText"),showMore=document.getElementById("showMore");
-    if(!allUpdates.length){holder.innerHTML='<div class="no-results">No Canal Watch updates have been published yet.</div>';countText.textContent="";showMore.hidden=true;return}
-    const latestTime=Math.max(...allUpdates.map(u=>parseUKDate(u.date).getTime()));
-    const visible=allUpdates.slice(0,visibleCount);
-    holder.innerHTML=visible.map(u=>{
+    const latestHolder=document.getElementById("latestUpdate");
+    const holder=document.getElementById("updates");
+    const countText=document.getElementById("countText");
+
+    if(!allUpdates.length){
+      latestHolder.innerHTML='<div class="no-results">No Canal Watch updates have been published yet.</div>';
+      holder.innerHTML="";
+      countText.textContent="";
+      return;
+    }
+
+    const latest=allUpdates[0];
+    const latestTime=parseUKDate(latest.date).getTime();
+
+    latestHolder.innerHTML=`
+      <div class="latest-kicker">Canal Watch update <span class="new-badge">NEW</span></div>
+      <div class="latest-main">
+        <div class="title">${esc(latest.title||"Update")}</div>
+        <p class="summary">${esc(latest.summary||"")}</p>
+      </div>
+      <div class="latest-date">${formatDate(latest.date)}</div>`;
+
+    holder.innerHTML=allUpdates.map(u=>{
       const isNew=parseUKDate(u.date).getTime()===latestTime;
       const title=esc(u.title||"Update");
       const content=u.link
@@ -79,11 +212,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
         : `<div><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></div>`;
       return `<article class="update"><div class="date">${formatDate(u.date)}</div>${content}<div class="type">${esc(u.type||"Update")}</div></article>`;
     }).join("");
-    countText.textContent=visible.length===allUpdates.length?`${allUpdates.length} update${allUpdates.length===1?"":"s"} shown`:`${visible.length} of ${allUpdates.length} updates shown`;
-    showMore.hidden=visible.length>=allUpdates.length;
+
+    const historyCount=Math.max(0,allUpdates.length-1);
+    countText.textContent=
+      `${historyCount} previous update${historyCount===1?"":"s"}`;
   }
+
   function notifyHeight(){requestAnimationFrame(()=>setTimeout(()=>parent.postMessage({type:"canal-updates-resize",height:document.documentElement.scrollHeight},"*"),40))}
-  document.getElementById("showMore").addEventListener("click",function(){visibleCount+=4;render();notifyHeight()});
+
+  const historyToggle=document.getElementById("historyToggle");
+  const history=document.getElementById("updatesHistory");
+  const historyIcon=document.getElementById("historyIcon");
+
+  historyToggle.addEventListener("click",function(){
+    const isOpen=historyToggle.getAttribute("aria-expanded")==="true";
+    history.hidden=isOpen;
+    historyToggle.setAttribute("aria-expanded",isOpen?"false":"true");
+    historyIcon.textContent=isOpen?"＋":"−";
+    historyToggle.querySelector("span:first-child").textContent=
+      isOpen?"View recent updates":"Hide recent updates";
+    notifyHeight();
+  });
+
   fetchCSV().then(text=>{allUpdates=parseCSV(text).filter(u=>u.title||u.summary).sort((a,b)=>parseUKDate(b.date)-parseUKDate(a.date));render();notifyHeight()}).catch(()=>{document.getElementById("updates").innerHTML='<div class="no-results">The Canal Watch updates could not be loaded.</div>';notifyHeight()});
   window.addEventListener("load",notifyHeight);window.addEventListener("resize",notifyHeight);
 })();
