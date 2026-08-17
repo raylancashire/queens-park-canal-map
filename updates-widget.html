@@ -240,12 +240,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
 
   historyToggle.addEventListener("click",function(){
     const isOpen=historyToggle.getAttribute("aria-expanded")==="true";
+
     history.hidden=isOpen;
     historyToggle.setAttribute("aria-expanded",isOpen?"false":"true");
     historyIcon.textContent=isOpen?"＋":"−";
     historyToggle.querySelector("span:first-child").textContent=
       isOpen?"View recent updates":"Hide recent updates";
-    notifyHeight();
+
+    /*
+     * Force the browser to apply the open/closed layout first,
+     * then report the newly measured height to Webador.
+     */
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        const widget=document.querySelector(".widget");
+        const newHeight=widget
+          ? Math.ceil(widget.getBoundingClientRect().height)
+          : Math.ceil(document.body.getBoundingClientRect().height);
+
+        parent.postMessage({
+          type:"canal-updates-resize",
+          height:newHeight,
+          collapsed:isOpen
+        },"*");
+      });
+    });
   });
 
   fetchCSV().then(text=>{allUpdates=parseCSV(text).filter(u=>u.title||u.summary).sort((a,b)=>parseUKDate(b.date)-parseUKDate(a.date));render();notifyHeight()}).catch(()=>{document.getElementById("updates").innerHTML='<div class="no-results">The Canal Watch updates could not be loaded.</div>';notifyHeight()});
