@@ -16,6 +16,8 @@ The GitHub repository contains or may contain:
 - `assessment-builder.html` — visual canal assessment builder
 - `freshwater.csv` — FreshWater Watch sampling data
 - `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded
+- `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
+- `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
 - `README.md` — project documentation
 
 Repository:
@@ -537,6 +539,50 @@ For consistency with the Canal Watch blog filters, closed Webador accordion butt
 
 ---
 
+## Canal Watch Updates widget
+
+A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
+
+### Data and hosting
+
+The widget uses:
+
+- `updates.csv` — stores the update date, title, summary, optional link and update type
+- `updates-widget.html` — reads the CSV and displays the latest update plus expandable recent-update history
+- GitHub Pages — hosts the widget and CSV
+- Webador **Body – end** custom HTML — provides the floating frontmost container
+
+The data flow is:
+
+`updates.csv` → `updates-widget.html` → GitHub Pages → Webador floating panel
+
+New entries can normally be published by adding a row to `updates.csv` and committing the updated CSV to GitHub.
+
+### Floating Webador behaviour
+
+The floating container:
+
+- Appears only on the Canal Watch page at `/what-we-do/canal-watch`
+- Uses `position: fixed` so it does not reserve space in the normal Webador page layout
+- Is kept above the Canal Watch page content using a high stacking order
+- Starts in a compact minimised state
+- Expands and minimises using a keyboard-accessible `+` / `-` control
+- Uses plain ASCII `+` and `-` characters to avoid character-encoding problems in Webador
+- Displays the **NEW** badge inline with **Canal Watch Updates**
+- Uses a **220px closed/minimised width**
+- Retains a wider expanded panel for reading the latest update and update history
+- Adapts to a bottom-width layout on smaller screens
+
+### Update history
+
+The GitHub-hosted widget displays the latest update first. Visitors can use **View recent updates** to reveal earlier entries and **Hide recent updates** to close the history again.
+
+The widget and its Webador parent communicate using `postMessage` so the iframe height can be recalculated as the recent-update history opens and closes.
+
+The Updates widget should be installed through Webador's site-level **Body – end** custom HTML rather than as a normal page Embed Code element. This avoids Webador reserving a large blank content block for the floating widget.
+
+---
+
 ## Accessibility and interaction
 
 Accessibility improvements now include:
@@ -572,6 +618,28 @@ The Canal Visual Assessment Builder has also been refined for easier reading and
 - The same wildlife note is automatically included in the **generated blog HTML**, so it can appear in the published Webador visual assessment without being added manually.
 - The wildlife note is omitted automatically when wildlife activity is recorded.
 - Presentation of the wildlife note is controlled through the shared CSS class `.qp-wildlife-note`, while the Assessment Builder JavaScript controls whether the note is included.
+
+---
+
+## Update — 17 August 2026
+
+The following Canal Watch interface and documentation changes were developed or refined on **17 August 2026**:
+
+1. Added a CSV-driven **Canal Watch Updates** widget.
+2. Added `updates.csv` as the simple source for dated update entries.
+3. Added `updates-widget.html` to display the latest update and expandable recent-update history.
+4. Converted the Updates widget to a floating Webador panel.
+5. Moved the floating implementation to Webador **Body – end** so it does not reserve normal page-layout space.
+6. Restricted the floating widget to the Canal Watch page only: `/what-we-do/canal-watch`.
+7. Raised the floating widget above other Canal Watch page content.
+8. Added expand / minimise behaviour and recent-update disclosure controls.
+9. Refined iframe-height messaging for opening and closing the recent-update history.
+10. Changed the floating control icons to plain `+` and `-` characters for reliable Webador display.
+11. Kept the **NEW** badge inline with the **Canal Watch Updates** title.
+12. Set the closed/minimised widget width to **220px**.
+13. Updated `updates.csv` with the latest Canal Watch interface changes.
+
+These changes keep recent project information visible and easy to reach while allowing the widget to remain compact when it is not being used.
 
 ---
 
