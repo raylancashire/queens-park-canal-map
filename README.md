@@ -558,6 +558,27 @@ For consistency with the Canal Watch blog filters, closed Webador accordion butt
 
 ---
 
+## Results over time by site — All sites comparison
+
+The **Results over time by site** panel in `analysis.html` supports both individual-site and whole-project comparison views.
+
+The **All sites** option has been corrected so it now renders the monitoring data instead of asking the visitor to select an individual sampling site.
+
+When **All sites** is selected:
+
+- Nitrate, phosphate and turbidity are displayed as separate results-over-time charts
+- Each sampling location is shown as its own coloured line
+- A sampling-site legend identifies the lines
+- Survey dates share a common horizontal time axis to make changes between sites easier to compare
+- Individual data points retain the recorded result for the relevant survey date
+- Selecting an individual sampling site continues to show the existing single-site results-over-time view
+
+Nitrate and phosphate continue to use the midpoint of the recorded FreshWater Watch result range for plotting. Turbidity continues to use the recorded NTU test value.
+
+This makes **All sites** a genuine comparison view while retaining the individual-site option for closer examination of one monitoring location.
+
+---
+
 ## Canal Watch Updates widget
 
 A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
@@ -660,6 +681,10 @@ The following Canal Watch interface and documentation changes were developed or 
 14. Enhanced the **Light** Canal Watch map with a dedicated highlighted **Grand Union Canal** route.
 15. Added a darker canal outline and **Grand Union Canal** label to make the waterway easier to identify.
 16. Limited the enhanced canal overlay to the **Light** basemap so the existing Street and Satellite views remain unchanged.
+17. Corrected the **All sites** option in **Results over time by site**, which previously did not render the charts.
+18. Added an all-sites comparison view for nitrate, phosphate and turbidity.
+19. Added separate coloured lines and a sampling-site legend so monitoring locations can be compared on the same chart.
+20. Kept the existing individual-site results-over-time view unchanged.
 
 These changes keep recent project information visible and easy to reach while allowing the widget to remain compact when it is not being used.
 
