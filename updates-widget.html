@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Queen's Park Canal Watch Updates</title>
+<style>
+:root{--ink:#17321f;--muted:#66746b;--line:#dfe7e1;--soft:#f2f6f3;--hover:#e8f1ea;--white:#fff;--green:#2f6b45;--good:#39A96B}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent;color:var(--ink)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.wrap{width:100%;max-width:1200px;margin:0 auto}
+.widget{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px}
+.header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.header h2{margin:0 0 4px;font-size:22px;line-height:1.2}
+.header p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.status{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid #cfd9d2;border-radius:999px;background:#fff;color:var(--muted);font-size:12px;font-weight:750}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.updates{display:grid;gap:10px}
+.update{display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 15px;border:1px solid var(--line);border-radius:11px;background:var(--white);transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.update:hover,.update:focus-within{background:var(--hover);border-color:#b8c9bc;box-shadow:0 3px 10px rgba(23,50,31,.08);transform:translateY(-1px)}
+.date{color:var(--muted);font-size:12px;font-weight:800;line-height:1.4}
+.title{margin:0 0 4px;font-size:15px;font-weight:850;line-height:1.35}
+.summary{margin:0;color:#43594a;font-size:13px;line-height:1.5}
+.type{justify-self:end;display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap;background:#edf3ee;color:var(--ink);border:1px solid #d5dfd7}
+.new-badge{display:inline-flex;margin-left:8px;padding:3px 7px;border-radius:999px;background:var(--green);color:#fff;font-size:10px;font-weight:900;letter-spacing:.04em;vertical-align:1px}
+.update a{color:inherit;text-decoration:none}.update a:hover .title,.update a:focus .title{text-decoration:underline}
+.footer{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px;color:var(--muted);font-size:12px}
+.footer button{border:1px solid #cfd9d2;border-radius:8px;background:#fff;color:var(--ink);font:800 12px inherit;padding:8px 11px;cursor:pointer}
+.footer button:hover,.footer button:focus-visible{background:var(--hover);border-color:#9fb4a4;outline:none}
+.no-results{padding:18px;border:1px dashed #cfd9d2;border-radius:10px;background:#fff;color:var(--muted);font-size:13px}
+@media(max-width:700px){.widget{padding:14px}.header{display:block}.status{margin-top:10px}.update{grid-template-columns:1fr;gap:7px}.type{justify-self:start}.footer{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="widget" aria-labelledby="updatesTitle">
+    <div class="header">
+      <div>
+        <h2 id="updatesTitle">Latest Canal Watch Updates</h2>
+        <p>Recent changes to monitoring, analysis and visual assessment tools.</p>
+      </div>
+      <div class="status">Updated automatically from CSV</div>
+    </div>
+    <div id="updates" class="updates" aria-live="polite"><div class="no-results">Loading updates…</div></div>
+    <div class="footer"><span id="countText"></span><button id="showMore" type="button" hidden>Show more updates</button></div>
+  </section>
+</div>
+<script>
+(function(){
+  const CSV_SOURCES=["./updates.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/updates.csv"];
+  const INITIAL_COUNT=4;
+  let allUpdates=[],visibleCount=INITIAL_COUNT;
+
+  function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+  function parseCSV(text){
+    const rows=[];let row=[],field="",quoted=false;
+    for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
+      if(quoted){if(ch==='"'&&next==='"'){field+='"';i++}else if(ch==='"'){quoted=false}else field+=ch}
+      else{if(ch==='"')quoted=true;else if(ch===','){row.push(field);field=""}else if(ch==='\r'||ch==='\n'){if(ch==='\r'&&next==='\n')i++;row.push(field);field="";if(row.some(v=>String(v).trim()!==""))rows.push(row);row=[]}else field+=ch}
+    }
+    row.push(field);if(row.some(v=>String(v).trim()!==""))rows.push(row);if(!rows.length)return[];
+    const headers=rows[0].map(h=>String(h).trim().replace(/^\uFEFF/,""));
+    return rows.slice(1).map(r=>{const o={};headers.forEach((h,i)=>o[h]=(r[i]??"").trim());return o});
+  }
+  function parseUKDate(raw){const m=String(raw||"").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);return m?new Date(Number(m[3]),Number(m[2])-1,Number(m[1])):new Date(0)}
+  function formatDate(raw){const d=parseUKDate(raw);return d.getTime()?d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}):esc(raw)}
+  async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load updates.csv")}
+  function render(){
+    const holder=document.getElementById("updates"),countText=document.getElementById("countText"),showMore=document.getElementById("showMore");
+    if(!allUpdates.length){holder.innerHTML='<div class="no-results">No Canal Watch updates have been published yet.</div>';countText.textContent="";showMore.hidden=true;return}
+    const latestTime=Math.max(...allUpdates.map(u=>parseUKDate(u.date).getTime()));
+    const visible=allUpdates.slice(0,visibleCount);
+    holder.innerHTML=visible.map(u=>{
+      const isNew=parseUKDate(u.date).getTime()===latestTime;
+      const title=esc(u.title||"Update");
+      const content=u.link
+        ? `<a href="${esc(u.link)}" target="_top"><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></a>`
+        : `<div><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></div>`;
+      return `<article class="update"><div class="date">${formatDate(u.date)}</div>${content}<div class="type">${esc(u.type||"Update")}</div></article>`;
+    }).join("");
+    countText.textContent=visible.length===allUpdates.length?`${allUpdates.length} update${allUpdates.length===1?"":"s"} shown`:`${visible.length} of ${allUpdates.length} updates shown`;
+    showMore.hidden=visible.length>=allUpdates.length;
+  }
+  function notifyHeight(){requestAnimationFrame(()=>setTimeout(()=>parent.postMessage({type:"canal-updates-resize",height:document.documentElement.scrollHeight},"*"),40))}
+  document.getElementById("showMore").addEventListener("click",function(){visibleCount+=4;render();notifyHeight()});
+  fetchCSV().then(text=>{allUpdates=parseCSV(text).filter(u=>u.title||u.summary).sort((a,b)=>parseUKDate(b.date)-parseUKDate(a.date));render();notifyHeight()}).catch(()=>{document.getElementById("updates").innerHTML='<div class="no-results">The Canal Watch updates could not be loaded.</div>';notifyHeight()});
+  window.addEventListener("load",notifyHeight);window.addEventListener("resize",notifyHeight);
+})();
+</script>
+</body>
+</html>
