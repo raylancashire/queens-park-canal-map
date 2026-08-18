@@ -1390,7 +1390,23 @@ async function loadData() {
       const marker = L.marker([lat, lon], {
         icon: markerIcon(r),
         title: site
-      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
+      }).bindPopup(
+        popup(rows),
+        {
+          maxWidth:430,
+          maxHeight:320,
+          autoPan:true,
+
+          /*
+           * Leave extra space above the popup so that when a site is
+           * opened from a deep link the popup remains fully visible
+           * beneath the top edge of the embedded map.
+           */
+          autoPanPaddingTopLeft:[20,230],
+          autoPanPaddingBottomRight:[20,30],
+          offset:[0,-8]
+        }
+      );
 
       marker.site = site;
       marker.on("click", (e) => {
@@ -1431,7 +1447,39 @@ async function loadData() {
         const marker = markers.find(m => m.site === validSelection);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
-          if (openPopup) marker.openPopup();
+
+          if (openPopup) {
+            marker.openPopup();
+
+            /*
+             * Leaflet normally auto-pans an opened popup, but the map
+             * may still be settling after a Webador deep-link load.
+             * Re-run the popup positioning once the map has rendered.
+             */
+            window.setTimeout(
+              function () {
+                const popup = marker.getPopup();
+
+                if (popup && popup.isOpen()) {
+                  popup.update();
+
+                  const popupElement = popup.getElement();
+
+                  if (popupElement) {
+                    map.panInside(
+                      marker.getLatLng(),
+                      {
+                        paddingTopLeft:[20,230],
+                        paddingBottomRight:[20,30],
+                        animate:true
+                      }
+                    );
+                  }
+                }
+              },
+              250
+            );
+          }
         }
       } else if (defaultResultBounds && defaultResultBounds.isValid()) {
         map.fitBounds(defaultResultBounds, {padding:[25,25]});
