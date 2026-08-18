@@ -207,8 +207,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
     holder.innerHTML=allUpdates.map(u=>{
       const isNew=parseUKDate(u.date).getTime()===latestTime;
       const title=esc(u.title||"Update");
+      const isParentRelativeLink =
+        u.link && /^\//.test(String(u.link).trim());
+
       const content=u.link
-        ? `<a href="${esc(u.link)}" target="_top"><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></a>`
+        ? (
+            isParentRelativeLink
+              ? `<a href="#" data-parent-link="${esc(u.link)}"><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></a>`
+              : `<a href="${esc(u.link)}" target="_top"><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></a>`
+          )
         : `<div><div class="title">${title}${isNew?'<span class="new-badge">NEW</span>':''}</div><p class="summary">${esc(u.summary)}</p></div>`;
       return `<article class="update"><div class="date">${formatDate(u.date)}</div>${content}<div class="type">${esc(u.type||"Update")}</div></article>`;
     }).join("");
@@ -240,31 +247,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
 
   historyToggle.addEventListener("click",function(){
     const isOpen=historyToggle.getAttribute("aria-expanded")==="true";
-
     history.hidden=isOpen;
     historyToggle.setAttribute("aria-expanded",isOpen?"false":"true");
     historyIcon.textContent=isOpen?"＋":"−";
     historyToggle.querySelector("span:first-child").textContent=
       isOpen?"View recent updates":"Hide recent updates";
+    notifyHeight();
+  });
+
+  document.addEventListener("click", function(event){
+    const link = event.target.closest("a[data-parent-link]");
+    if(!link) return;
+
+    event.preventDefault();
+
+    const destination = link.getAttribute("data-parent-link") || "";
+    if(!destination) return;
 
     /*
-     * Force the browser to apply the open/closed layout first,
-     * then report the newly measured height to Webador.
+     * Relative Canal Watch links must be opened by the Webador parent
+     * page rather than by the GitHub-hosted iframe. Otherwise a path
+     * such as /what-we-do/canal-watch would be resolved on github.io.
      */
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        const widget=document.querySelector(".widget");
-        const newHeight=widget
-          ? Math.ceil(widget.getBoundingClientRect().height)
-          : Math.ceil(document.body.getBoundingClientRect().height);
-
-        parent.postMessage({
-          type:"canal-updates-resize",
-          height:newHeight,
-          collapsed:isOpen
-        },"*");
-      });
-    });
+    window.parent.postMessage(
+      {
+        type:"canal-updates-navigate",
+        href:destination
+      },
+      "*"
+    );
   });
 
   fetchCSV().then(text=>{allUpdates=parseCSV(text).filter(u=>u.title||u.summary).sort((a,b)=>parseUKDate(b.date)-parseUKDate(a.date));render();notifyHeight()}).catch(()=>{document.getElementById("updates").innerHTML='<div class="no-results">The Canal Watch updates could not be loaded.</div>';notifyHeight()});
