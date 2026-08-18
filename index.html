@@ -1390,23 +1390,7 @@ async function loadData() {
       const marker = L.marker([lat, lon], {
         icon: markerIcon(r),
         title: site
-      }).bindPopup(
-        popup(rows),
-        {
-          maxWidth:430,
-          maxHeight:320,
-          autoPan:true,
-
-          /*
-           * Leave extra space above the popup so that when a site is
-           * opened from a deep link the popup remains fully visible
-           * beneath the top edge of the embedded map.
-           */
-          autoPanPaddingTopLeft:[20,230],
-          autoPanPaddingBottomRight:[20,30],
-          offset:[0,-8]
-        }
-      );
+      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
       marker.site = site;
       marker.on("click", (e) => {
@@ -1452,32 +1436,43 @@ async function loadData() {
             marker.openPopup();
 
             /*
-             * Leaflet normally auto-pans an opened popup, but the map
-             * may still be settling after a Webador deep-link load.
-             * Re-run the popup positioning once the map has rendered.
+             * Keep a deep-linked popup fully inside the visible map.
+             * Measure the actual popup after Leaflet has rendered it,
+             * then move the map only by the amount needed.
              */
             window.setTimeout(
               function () {
                 const popup = marker.getPopup();
+                const popupEl = popup && popup.getElement
+                  ? popup.getElement()
+                  : null;
+                const mapEl = map.getContainer();
 
-                if (popup && popup.isOpen()) {
-                  popup.update();
+                if (!popupEl || !mapEl) return;
 
-                  const popupElement = popup.getElement();
+                const popupRect = popupEl.getBoundingClientRect();
+                const mapRect = mapEl.getBoundingClientRect();
 
-                  if (popupElement) {
-                    map.panInside(
-                      marker.getLatLng(),
-                      {
-                        paddingTopLeft:[20,230],
-                        paddingBottomRight:[20,30],
-                        animate:true
-                      }
-                    );
-                  }
+                const topGap = 14;
+                const desiredTop = mapRect.top + topGap;
+
+                if (popupRect.top < desiredTop) {
+                  const overlap = desiredTop - popupRect.top;
+
+                  /*
+                   * Negative Y moves the map content downward,
+                   * bringing the popup down into view.
+                   */
+                  map.panBy(
+                    [0, -Math.ceil(overlap)],
+                    {
+                      animate: true,
+                      duration: 0.25
+                    }
+                  );
                 }
               },
-              250
+              300
             );
           }
         }
