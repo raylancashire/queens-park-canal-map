@@ -589,6 +589,31 @@ This makes **All sites** a genuine comparison view while retaining the individua
 
 ---
 
+## Site-specific Canal Watch update links
+
+Canal Watch data updates can now link directly to a sampling site using a `site` query parameter in the Canal Watch page URL.
+
+Example:
+
+`/what-we-do/canal-watch?site=Burket%20Close`
+
+When a site-specific URL is opened:
+
+- the Webador Canal Watch page passes the `site` value into the GitHub-hosted map iframe
+- the map matches the requested name against the sampling-site names in `freshwater.csv`
+- the optional `Grand Union Canal -` prefix is ignored when matching site names
+- the matching site is selected automatically in the **Sampling site** dropdown
+- the map zooms to the matching marker
+- the site's popup opens automatically
+- the Webador page scrolls smoothly to bring the map into view
+- the popup position is checked after rendering and the map is panned only when needed so the popup remains fully visible within the map viewport
+
+Relative links in `updates.csv` are handled by the Webador parent page rather than directly by the GitHub-hosted Updates iframe. This avoids GitHub Pages trying to open Webador paths such as `/what-we-do/canal-watch` and returning a page-not-found error.
+
+The dedicated **Grand Union Canal highlight line and label** were removed from the Light basemap because the overlay did not follow the canal accurately enough and was visually distracting. The Light basemap, sampling markers, assessment symbols and normal map controls remain unchanged.
+
+---
+
 ## Canal Watch Updates widget
 
 A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
@@ -684,8 +709,14 @@ The following Canal Watch visual-condition and blog-filter changes were develope
 7. Updated the month-navigation direction so `<` moves towards newer months and `>` moves towards older months.
 8. Updated arrow disabled states and accessibility labels to reflect the revised month order.
 9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
+10. Added site-specific Canal Watch deep links using the `?site=` URL parameter.
+11. Added automatic site matching, dropdown selection, marker zoom and popup opening for deep-linked sampling sites.
+12. Updated the floating Updates widget so Webador-relative links are opened by the Webador parent page rather than GitHub Pages.
+13. Added automatic scrolling so site-specific Canal Watch links bring the embedded map into view.
+14. Added dynamic popup fitting so deep-linked popups are measured after rendering and kept fully inside the visible map area.
+15. Removed the dedicated Grand Union Canal highlight line and label from the Light basemap.
 
-These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
+These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation. They also allow Canal Watch Data Updates to take visitors directly to the relevant sampling site without losing the existing map and analysis behaviour.
 
 ---
 
