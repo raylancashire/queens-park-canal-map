@@ -496,17 +496,7 @@ select {
 }
 
 
-.canal-name-label {
-  background:rgba(255,255,255,.92);
-  color:#24556d;
-  border:1px solid rgba(47,111,143,.45);
-  border-radius:6px;
-  box-shadow:0 1px 4px rgba(0,0,0,.12);
-  padding:3px 7px;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
-}
+
 
 .canal-name-label::before {
   display:none;
@@ -637,63 +627,8 @@ const satelliteMap = L.tileLayer(
   }
 );
 
-/*
- * Grand Union Canal highlight for the Light basemap.
- * The line follows the monitored canal corridor through the current project area.
- * It is shown only when the Light basemap is active.
- */
-const grandUnionCanalOutline = L.polyline(
-  [
-    [51.52705, -0.2190],
-    [51.52667, -0.21528],  // Ladbroke Grove Bridge
-    [51.52642, -0.2115],
-    [51.52615, -0.20751],  // Half Penny Steps
-    [51.52515, -0.2052],
-    [51.52385, -0.2032],
-    [51.52285, -0.20223],  // Meanwhile Gardens
-    [51.52195, -0.2007]
-  ],
-  {
-    color:"#2f6f8f",
-    weight:9,
-    opacity:0.72,
-    lineCap:"round",
-    lineJoin:"round",
-    interactive:false
-  }
-);
-
-const grandUnionCanalLine = L.polyline(
-  grandUnionCanalOutline.getLatLngs(),
-  {
-    color:"#8fd0e5",
-    weight:5,
-    opacity:0.98,
-    lineCap:"round",
-    lineJoin:"round",
-    interactive:false
-  }
-);
-
-const grandUnionCanalLabel = L.tooltip({
-  permanent:true,
-  direction:"center",
-  className:"canal-name-label",
-  interactive:false,
-  opacity:0.95
-})
-.setContent("Grand Union Canal")
-.setLatLng([51.52525, -0.2070]);
-
-const grandUnionCanalLayer = L.layerGroup([
-  grandUnionCanalOutline,
-  grandUnionCanalLine,
-  grandUnionCanalLabel
-]);
-
 // Use the clean light map by default.
 lightMap.addTo(map);
-grandUnionCanalLayer.addTo(map);
 
 // Map type selector in the top-right corner.
 L.control.layers(
@@ -708,16 +643,6 @@ L.control.layers(
     collapsed:true
   }
 ).addTo(map);
-
-map.on("baselayerchange", function(event) {
-  if (event.layer === lightMap) {
-    if (!map.hasLayer(grandUnionCanalLayer)) {
-      grandUnionCanalLayer.addTo(map);
-    }
-  } else if (map.hasLayer(grandUnionCanalLayer)) {
-    map.removeLayer(grandUnionCanalLayer);
-  }
-});
 
 // Reset button: return the map to a view containing all sampling results.
 const ResetControl = L.Control.extend({
