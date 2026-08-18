@@ -520,12 +520,22 @@ Assessment filters include:
 Date filtering includes:
 
 - All dates
-- A sliding window of month buttons
+- A sliding window of three month buttons
+- Automatic selection of the **current month** on first load
 - `<` and `>` month navigation
 
-Month buttons are sorted chronologically.
+The visible month buttons are displayed **newest to oldest**, with the current month first. For example, in August 2026 the initial button order is:
 
-When **All dates** is selected, pressing `<` or `>` selects a month automatically instead of requiring a second click on a month button. Further presses move to the immediately previous or next month.
+`Aug 2026 | Jul 2026 | Jun 2026`
+
+The current month is selected automatically when the page first loads. If there are no blog entries for the current month yet, the filter falls back to the latest available month so the page does not open with an empty result set.
+
+Because the buttons now run newest to oldest, the arrow behaviour is matched to that order:
+
+- `<` moves towards **newer** months
+- `>` moves towards **older** months
+
+The arrow disabled states and accessibility labels follow the same direction logic.
 
 The filter avoids rebuilding the date controls on every click, which prevents the pause and repeated-click failures seen in earlier versions.
 
@@ -658,6 +668,24 @@ The Canal Visual Assessment Builder has also been refined for easier reading and
 - The same wildlife note is automatically included in the **generated blog HTML**, so it can appear in the published Webador visual assessment without being added manually.
 - The wildlife note is omitted automatically when wildlife activity is recorded.
 - Presentation of the wildlife note is controlled through the shared CSS class `.qp-wildlife-note`, while the Assessment Builder JavaScript controls whether the note is included.
+
+---
+
+## Update — 18 August 2026
+
+The following Canal Watch visual-condition and blog-filter changes were developed or refined on **18 August 2026**:
+
+1. Reviewed the latest Queen's Park canalside visual survey photographs, including views from Ladbroke Grove Bridge, Queen's Park canalside and Ha'Penny Steps.
+2. Confirmed **Good** as the overall visual-condition assessment for the survey, based on generally calm water, very little visible litter and no obvious signs of oil, foam, surface scum or significant algal growth.
+3. Refined the wording used in Canal Watch updates to distinguish **good visual condition** from a formal water-quality classification.
+4. Updated the Canal Watch blog date filter so the **current month is selected automatically on first load**.
+5. Added a fallback to the latest available month when there are no blog entries for the current month.
+6. Changed the three visible month buttons to display **newest to oldest**, placing the current month first.
+7. Updated the month-navigation direction so `<` moves towards newer months and `>` moves towards older months.
+8. Updated arrow disabled states and accessibility labels to reflect the revised month order.
+9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
+
+These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
 
 ---
 
