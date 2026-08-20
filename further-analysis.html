@@ -2493,6 +2493,7 @@ function normaliseSiteForMatch(value){
   return String(value||"")
     .replace(/^Grand Union Canal\s*-\s*/i,"")
     .trim()
+    .replace(/\s+/g," ")
     .toLowerCase();
 }
 
@@ -2539,13 +2540,11 @@ function populateSeasonalSiteSelect(){
   const select=document.getElementById("seasonalSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncSeasonalSiteUI();
 }
@@ -2557,7 +2556,7 @@ function syncSeasonalSiteUI(){
       select.value="all";
     }else{
       const match=[...select.options].find(
-        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+        o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
       );
       if(match) select.value=match.value;
     }
@@ -3169,7 +3168,7 @@ function canonicalSiteForSync(site){
   const target=normaliseSiteForMatch(site);
   const source=freshwaterDataForChanges.length ? freshwaterDataForChanges : freshwaterDataAll;
   const match=source.find(row=>normaliseSiteForMatch(siteName(row))===target);
-  return match ? siteName(match) : site;
+  return match ? canonicalSiteDisplay(siteName(match)) : canonicalSiteDisplay(site);
 }
 
 function syncAllSiteDropdowns(){
@@ -3182,9 +3181,82 @@ function syncAllSiteDropdowns(){
       return;
     }
     const match=[...select.options].find(
-      option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+      option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
     );
     if(match) select.value=match.value;
+  });
+}
+
+
+function canonicalSiteKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function canonicalSiteDisplay(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
+}
+
+function uniqueSitesFromRows(rows, siteGetter){
+  const seen = new Map();
+
+  rows.forEach(row=>{
+    const raw = siteGetter(row);
+    if(!raw) return;
+
+    const key = canonicalSiteKey(raw);
+    if(!key) return;
+
+    if(!seen.has(key)){
+      seen.set(key, {
+        key,
+        full: String(raw).trim(),
+        display: canonicalSiteDisplay(raw)
+      });
+    }
+  });
+
+  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
+}
+
+
+function dedupeSiteDropdown(select){
+  if(!select) return;
+
+  const options=[...select.options];
+  const seen=new Set();
+
+  options.forEach(option=>{
+    if(option.value==="all") return;
+
+    const key=canonicalSiteKey(option.value || option.textContent);
+    if(!key || seen.has(key)){
+      option.remove();
+      return;
+    }
+
+    seen.add(key);
+
+    /* Keep the existing value used by the synchronisation code, but make
+       the visible label consistent by removing the canal prefix. */
+    const countMatch=option.textContent.match(/\s+\(\d+\s+samples?\)\s*$/i);
+    const suffix=countMatch ? countMatch[0] : "";
+    option.textContent=canonicalSiteDisplay(option.value || option.textContent)+suffix;
+  });
+}
+
+function dedupeAllSiteDropdowns(){
+  document.querySelectorAll("select").forEach(select=>{
+    const siteOptions=[...select.options].filter(o=>o.value!=="all");
+    if(siteOptions.some(o=>canonicalSiteKey(o.value || o.textContent))){
+      dedupeSiteDropdown(select);
+    }
   });
 }
 
@@ -3243,7 +3315,7 @@ function renderSampleAnalysisForFocusedSite(){
       renderSiteChangeCharts();
     }else{
       const matching=[...select.options].find(
-        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+        o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
       );
       if(matching){
         select.value=matching.value;
@@ -3326,7 +3398,11 @@ function sampleDateLabel(row){
 }
 
 function siteName(row){
-  return getField(row,"Site Name","site_name") || "Unnamed site";
+  const raw=getField(row,"Site Name","site_name") || "Unnamed site";
+  return String(raw)
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .replace(/\s+/g," ");
 }
 
 function midpointFromRange(raw){
@@ -3487,11 +3563,12 @@ function initialiseSiteChanges(){
     `<option value="all">All sites</option>` +
     sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
 
+  dedupeSiteDropdown(select);
   select.value=currentFocusedSite==="all" ? "all" : currentFocusedSite;
 
   if(select.value!==currentFocusedSite && currentFocusedSite!=="all"){
     const matching=[...select.options].find(
-      o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+      o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
     );
     if(matching) select.value=matching.value;
   }
@@ -3686,13 +3763,11 @@ function populateSnapshotSiteSelect(){
   const select=document.getElementById("snapshotSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncSnapshotSiteUI();
 }
@@ -3707,7 +3782,7 @@ function syncSnapshotSiteUI(){
   }
 
   const match=[...select.options].find(
-    option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+    option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
   );
   if(match) select.value=match.value;
 }
@@ -4312,13 +4387,11 @@ function populateChangeSummarySiteSelect(){
   const select=document.getElementById("changeSummarySiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncChangeSummarySiteUI();
 }
@@ -4333,7 +4406,7 @@ function syncChangeSummarySiteUI(){
   }
 
   const match=[...select.options].find(
-    option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+    option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
   );
   if(match) select.value=match.value;
 }
@@ -5084,6 +5157,11 @@ if(document.getElementById("compareNitrate")){
 }
 
 load();
+
+document.addEventListener("DOMContentLoaded",()=>{
+  setTimeout(dedupeAllSiteDropdowns,0);
+  setTimeout(dedupeAllSiteDropdowns,250);
+});
 </script>
 </body>
 </html>

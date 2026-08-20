@@ -1327,6 +1327,7 @@ function normaliseSiteForMatch(value){
   return String(value||"")
     .replace(/^Grand Union Canal\s*-\s*/i,"")
     .trim()
+    .replace(/\s+/g," ")
     .toLowerCase();
 }
 
@@ -1384,7 +1385,80 @@ function canonicalSiteForSync(site){
   if(!site || site==="all") return "all";
   const target=normaliseSiteForMatch(site);
   const match=freshwaterDataAll.find(row=>normaliseSiteForMatch(siteName(row))===target);
-  return match ? siteName(match) : site;
+  return match ? canonicalSiteDisplay(siteName(match)) : canonicalSiteDisplay(site);
+}
+
+
+function canonicalSiteKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function canonicalSiteDisplay(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
+}
+
+function uniqueSitesFromRows(rows, siteGetter){
+  const seen = new Map();
+
+  rows.forEach(row=>{
+    const raw = siteGetter(row);
+    if(!raw) return;
+
+    const key = canonicalSiteKey(raw);
+    if(!key) return;
+
+    if(!seen.has(key)){
+      seen.set(key, {
+        key,
+        full: String(raw).trim(),
+        display: canonicalSiteDisplay(raw)
+      });
+    }
+  });
+
+  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
+}
+
+
+function dedupeSiteDropdown(select){
+  if(!select) return;
+
+  const options=[...select.options];
+  const seen=new Set();
+
+  options.forEach(option=>{
+    if(option.value==="all") return;
+
+    const key=canonicalSiteKey(option.value || option.textContent);
+    if(!key || seen.has(key)){
+      option.remove();
+      return;
+    }
+
+    seen.add(key);
+
+    /* Keep the existing value used by the synchronisation code, but make
+       the visible label consistent by removing the canal prefix. */
+    const countMatch=option.textContent.match(/\s+\(\d+\s+samples?\)\s*$/i);
+    const suffix=countMatch ? countMatch[0] : "";
+    option.textContent=canonicalSiteDisplay(option.value || option.textContent)+suffix;
+  });
+}
+
+function dedupeAllSiteDropdowns(){
+  document.querySelectorAll("select").forEach(select=>{
+    const siteOptions=[...select.options].filter(o=>o.value!=="all");
+    if(siteOptions.some(o=>canonicalSiteKey(o.value || o.textContent))){
+      dedupeSiteDropdown(select);
+    }
+  });
 }
 
 function filterFreshwaterForSite(data,site){
@@ -1497,7 +1571,11 @@ function sampleDateLabel(row){
 }
 
 function siteName(row){
-  return getField(row,"Site Name","site_name") || "Unnamed site";
+  const raw=getField(row,"Site Name","site_name") || "Unnamed site";
+  return String(raw)
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .replace(/\s+/g," ");
 }
 
 function midpointFromRange(raw){
@@ -1658,6 +1736,7 @@ function initialiseSiteChanges(){
     `<option value="all">All sites</option>` +
     sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
 
+  dedupeSiteDropdown(select);
   select.value=currentFocusedSite==="all" ? "all" : currentFocusedSite;
 
   if(select.value!==currentFocusedSite && currentFocusedSite!=="all"){
@@ -1861,6 +1940,11 @@ accordionPanels.forEach((panel,index)=>{
 
 load();
 loadAdditionalData();
+
+document.addEventListener("DOMContentLoaded",()=>{
+  setTimeout(dedupeAllSiteDropdowns,0);
+  setTimeout(dedupeAllSiteDropdowns,250);
+});
 </script>
 </body>
 </html>

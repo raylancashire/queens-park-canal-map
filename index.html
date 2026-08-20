@@ -558,6 +558,79 @@ function normaliseSiteForSync(value) {
     .toLowerCase();
 }
 
+
+function canonicalSiteKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function canonicalSiteDisplay(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
+}
+
+function uniqueSitesFromRows(rows, siteGetter){
+  const seen = new Map();
+
+  rows.forEach(row=>{
+    const raw = siteGetter(row);
+    if(!raw) return;
+
+    const key = canonicalSiteKey(raw);
+    if(!key) return;
+
+    if(!seen.has(key)){
+      seen.set(key, {
+        key,
+        full: String(raw).trim(),
+        display: canonicalSiteDisplay(raw)
+      });
+    }
+  });
+
+  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
+}
+
+
+function dedupeSiteDropdown(select){
+  if(!select) return;
+
+  const options=[...select.options];
+  const seen=new Set();
+
+  options.forEach(option=>{
+    if(option.value==="all") return;
+
+    const key=canonicalSiteKey(option.value || option.textContent);
+    if(!key || seen.has(key)){
+      option.remove();
+      return;
+    }
+
+    seen.add(key);
+
+    /* Keep the existing value used by the synchronisation code, but make
+       the visible label consistent by removing the canal prefix. */
+    const countMatch=option.textContent.match(/\s+\(\d+\s+samples?\)\s*$/i);
+    const suffix=countMatch ? countMatch[0] : "";
+    option.textContent=canonicalSiteDisplay(option.value || option.textContent)+suffix;
+  });
+}
+
+function dedupeAllSiteDropdowns(){
+  document.querySelectorAll("select").forEach(select=>{
+    const siteOptions=[...select.options].filter(o=>o.value!=="all");
+    if(siteOptions.some(o=>canonicalSiteKey(o.value || o.textContent))){
+      dedupeSiteDropdown(select);
+    }
+  });
+}
+
 function publishSiteFocus(site) {
   const value = site || "all";
 
@@ -728,10 +801,15 @@ function getField(r, ...names) {
 }
 
 function getSite(r) {
-  return getField(r,
+  const raw = getField(r,
     "Site Name", "site_name", "Site", "site",
     "Sampling Site", "sampling_site"
   ) || "Sampling site";
+
+  return String(raw)
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
 }
 
 function getDate(r) {
@@ -1241,6 +1319,7 @@ async function loadData() {
     }
 
     const groups = {};
+    const groupSiteNames = {};
     let validRows = 0;
 
     for (const r of data) {
@@ -1254,9 +1333,12 @@ async function loadData() {
       validRows++;
 
       const site = getSite(r);
-      const key = site;
+      const key = canonicalSiteKey(site);
 
-      if (!groups[key]) groups[key] = [];
+      if (!groups[key]) {
+        groups[key] = [];
+        groupSiteNames[key] = String(site).trim();
+      }
       groups[key].push(r);
     }
 
@@ -1283,7 +1365,10 @@ async function loadData() {
       });
     });
 
-    const siteNames = Object.keys(groups).sort();
+    const siteKeys = Object.keys(groups).sort((a,b)=>
+      canonicalSiteDisplay(groupSiteNames[a]).localeCompare(canonicalSiteDisplay(groupSiteNames[b]))
+    );
+    const siteNames = siteKeys.map(key=>groupSiteNames[key]);
 
     const sel = document.getElementById("siteFilter");
 
@@ -1341,19 +1426,22 @@ async function loadData() {
       }
     }
 
-    siteNames.forEach(site => {
+    siteKeys.forEach(siteKey => {
+      const fullSite = groupSiteNames[siteKey];
+      const displaySite = canonicalSiteDisplay(fullSite);
       const opt = document.createElement("option");
-      const sampleCount = groups[site].length;
-      opt.value = site;
-      opt.textContent = `${site} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
+      const sampleCount = groups[siteKey].length;
+      opt.value = fullSite;
+      opt.textContent = `${displaySite} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
       sel.appendChild(opt);
     });
 
     const markers = [];
     const bounds = [];
 
-    for (const site of siteNames) {
-      const rows = groups[site];
+    for (const siteKey of siteKeys) {
+      const site = groupSiteNames[siteKey];
+      const rows = groups[siteKey];
       const r = rows[0];
 
       const lat = getLat(r);
@@ -1364,7 +1452,7 @@ async function loadData() {
         title: site
       }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
-      marker.site = site;
+      marker.site = canonicalSiteKey(site);
       marker.on("click", (e) => {
         if (e && e.originalEvent) {
           L.DomEvent.stopPropagation(e.originalEvent);
@@ -1385,9 +1473,10 @@ async function loadData() {
 
     sel.addEventListener("change", () => {
       const selected = sel.value;
+      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
 
       markers.forEach(marker => {
-        if (selected === "all" || marker.site === selected) {
+        if (selected === "all" || marker.site === selectedKey) {
           marker.addTo(map);
         } else {
           map.removeLayer(marker);
@@ -1395,7 +1484,7 @@ async function loadData() {
       });
 
       if (selected !== "all") {
-        const marker = markers.find(m => m.site === selected);
+        const marker = markers.find(m => m.site === selectedKey);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
           marker.openPopup();
@@ -1409,8 +1498,9 @@ async function loadData() {
 
     function resolveSyncedSite(value) {
       if (!value || value === "all") return "all";
-      const target = normaliseSiteForSync(value);
-      return siteNames.find(site => normaliseSiteForSync(site) === target) || "all";
+      const target = canonicalSiteKey(value);
+      const match = siteNames.find(site => canonicalSiteKey(site) === target);
+      return match || "all";
     }
 
     function applySyncedSite(value) {
@@ -1418,7 +1508,7 @@ async function loadData() {
       sel.value = selected;
 
       markers.forEach(marker => {
-        if (selected === "all" || marker.site === selected) {
+        if (selected === "all" || marker.site === selectedKey) {
           if (!map.hasLayer(marker)) marker.addTo(map);
         } else if (map.hasLayer(marker)) {
           map.removeLayer(marker);
@@ -1426,7 +1516,7 @@ async function loadData() {
       });
 
       if (selected !== "all") {
-        const marker = markers.find(m => m.site === selected);
+        const marker = markers.find(m => m.site === selectedKey);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
           marker.openPopup();
@@ -1439,8 +1529,8 @@ async function loadData() {
       }
 
       /* Update the map summary without republishing the same selection. */
-      if (selected !== "all" && groups[selected]) {
-        const rows = groups[selected];
+      if (selected !== "all" && groups[canonicalSiteKey(selected)]) {
+        const rows = groups[canonicalSiteKey(selected)];
         const latest = latestRowForRows(rows);
         siteCountEl.textContent = selected.replace(/^Grand Union Canal\s*-\s*/i, "");
         siteCountEl.classList.add("site-name");
@@ -1576,6 +1666,11 @@ map.on("moveend zoomend resize", ()=>{
 });
 
 loadData();
+
+document.addEventListener("DOMContentLoaded",()=>{
+  setTimeout(dedupeAllSiteDropdowns,0);
+  setTimeout(dedupeAllSiteDropdowns,250);
+});
 </script>
 </body>
 </html>
