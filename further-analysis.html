@@ -1380,6 +1380,32 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .sampling-frequency-note{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
 @media(max-width:600px){.sampling-frequency-site,.sampling-frequency-corner{min-width:125px;max-width:145px}.sampling-frequency-cell,.sampling-frequency-month{width:52px;min-width:52px}}
 
+
+.sampling-frequency-last-visits{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:8px;
+}
+.sampling-frequency-last-visit{
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  font-size:11px;
+  line-height:1.4;
+}
+.sampling-frequency-last-visit strong{
+  display:block;
+  margin-bottom:2px;
+  font-size:11px;
+  font-weight:850;
+}
+.sampling-frequency-last-visit span{
+  color:var(--muted);
+}
+
 </style>
 </head>
 <body>
@@ -1664,10 +1690,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
     <div id="samplingFrequencyHeatmap" class="sampling-frequency-heatmap"></div>
     <div id="samplingFrequencySummary" class="sampling-frequency-summary"></div>
+    <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
 
     <p class="sampling-frequency-note">
       Hover or focus a cell to see the survey date(s) recorded for that site and month.
-      When more than 12 months of data are available, the timeline shows the latest 12 months.
+      Days since last visit are measured against the latest sampling date in the dataset. When more than 12 months of data are available, the timeline shows the latest 12 months.
     </p>
   </div>
 </section>
@@ -4244,6 +4271,27 @@ function renderSamplingFrequency(){
   const visibleVisits=visits.filter(v=>monthSet.has(samplingFrequencyMonthKey(v.timestamp)));
   const range=`${samplingFrequencyLongMonth(months[0])} – ${samplingFrequencyLongMonth(months[months.length-1])}`;
   summary.innerHTML=`<strong>Monitoring coverage:</strong> ${sites.length} ${sites.length===1?"site":"sites"} · ${visibleVisits.length} ${visibleVisits.length===1?"sampling visit":"sampling visits"} · ${esc(range)}${visibleVisits.length!==visits.length?` · latest 12 months of ${visits.length} total visits`:""}`;
+
+  const lastVisits=document.getElementById("samplingFrequencyLastVisits");
+  if(lastVisits){
+    const referenceDate=visits[visits.length-1].timestamp;
+    const dayMs=24*60*60*1000;
+
+    lastVisits.innerHTML=sites.map(site=>{
+      const siteVisits=visits.filter(v=>v.site===site);
+      const latest=siteVisits[siteVisits.length-1];
+      const days=Math.max(0,Math.round((referenceDate-latest.timestamp)/dayMs));
+      const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+      const daysText=days===0
+        ? "Latest project sampling date"
+        : `${days} ${days===1?"day":"days"} since last visit`;
+
+      return `<div class="sampling-frequency-last-visit">
+        <strong>${esc(shortSite)}</strong>
+        <span>${esc(daysText)} · Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
+      </div>`;
+    }).join("");
+  }
 }
 
 let currentComparisonMetric="nitrate";
