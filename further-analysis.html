@@ -1520,6 +1520,70 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   display:none;
 }
 
+
+/* Refined sampling-frequency alignment */
+.sampling-frequency-grid{
+  column-gap:0;
+  row-gap:10px;
+}
+
+.sampling-frequency-month{
+  width:76px;
+  min-width:76px;
+  box-sizing:border-box;
+}
+
+.sampling-frequency-cell-wrap{
+  width:76px;
+  min-width:76px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+.sampling-frequency-cell{
+  width:58px;
+  min-width:58px;
+}
+
+.sampling-frequency-site{
+  align-self:stretch;
+  min-height:0;
+  height:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+/* The interval badge sits exactly halfway between the current and previous
+   58px cells: 9px side space + half of the 18px gap. */
+.sampling-frequency-between{
+  left:-9px;
+  top:15px;
+  transform:translateX(-50%);
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:68px;
+    min-width:68px;
+  }
+
+  .sampling-frequency-cell{
+    width:52px;
+    min-width:52px;
+  }
+
+  .sampling-frequency-between{
+    left:-8px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4385,7 +4449,7 @@ function renderSamplingFrequency(){
     if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
   });
 
-  const columns=`150px repeat(${months.length},58px)`;
+  const columns=`150px repeat(${months.length},76px)`;
   const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
     months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
 
