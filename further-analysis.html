@@ -1374,7 +1374,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .sampling-frequency-cell.frequency-2{background:#cfe5d5}
 .sampling-frequency-cell.frequency-3{background:#a8d0b3}
 .sampling-frequency-cell.frequency-4plus{background:#7db28b;color:#102719}
-.sampling-frequency-cell:hover,.sampling-frequency-cell:focus{outline:2px solid #17321f;outline-offset:1px}
+.sampling-frequency-cell{transition:background-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.sampling-frequency-cell:hover,.sampling-frequency-cell:focus{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+  outline:2px solid #17321f;
+  outline-offset:1px
+}
 .sampling-frequency-summary{margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#f8faf8;color:var(--ink);font-size:12px;line-height:1.5}
 .sampling-frequency-summary strong{font-weight:850}
 .sampling-frequency-note{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
@@ -1426,6 +1433,57 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .sampling-frequency-last-date{
   display:block;
   margin-top:3px;
+}
+
+
+.sampling-frequency-last-visit.linked-highlight{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+}
+
+
+.sampling-frequency-cell-wrap{
+  width:58px;
+  min-width:58px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
+}
+
+.sampling-frequency-date-lines{
+  min-height:24px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.3;
+  text-align:center;
+}
+
+.sampling-frequency-date-line{
+  display:block;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:block;
+  margin-top:1px;
+  color:#66746b;
+  font-size:8px;
+  line-height:1.25;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-cell-wrap{
+    width:52px;
+    min-width:52px;
+  }
+  .sampling-frequency-date-lines{
+    font-size:8px;
+  }
+  .sampling-frequency-gap{
+    font-size:7px;
+  }
 }
 
 </style>
@@ -1717,8 +1775,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
 
     <p class="sampling-frequency-note">
-      Hover or focus a cell to see the survey date(s) recorded for that site and month.
-      Days since last sample are calculated from the date each site's most recent sample was taken to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
+      The sample date is shown below each monthly frequency cell, together with the number of days since that site's previous sample.
+      Hover or focus a cell for the full survey date details. Days since last sample are calculated from each site's most recent sample date to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
     </p>
   </div>
 </section>
@@ -4269,6 +4327,25 @@ function renderSamplingFrequency(){
   const sites=[...new Set(visits.map(v=>v.site))].sort((a,b)=>a.localeCompare(b));
   const grouped={};
   sites.forEach(site=>{grouped[site]={};months.forEach(month=>grouped[site][month]=[])});
+
+  const siteIntervals={};
+  sites.forEach(site=>{
+    const siteVisits=visits
+      .filter(v=>v.site===site)
+      .sort((a,b)=>a.timestamp-b.timestamp);
+
+    siteIntervals[site]=new Map();
+
+    siteVisits.forEach((visit,index)=>{
+      const previous=index>0 ? siteVisits[index-1] : null;
+      const daysBetween=previous
+        ? Math.round((visit.timestamp-previous.timestamp)/(24*60*60*1000))
+        : null;
+
+      siteIntervals[site].set(visit.timestamp,daysBetween);
+    });
+  });
+
   visits.forEach(v=>{
     const month=samplingFrequencyMonthKey(v.timestamp);
     if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
@@ -4285,8 +4362,36 @@ function renderSamplingFrequency(){
         const dates=(grouped[site][month]||[]).sort((a,b)=>a-b),count=dates.length;
         const cls=count===0?"":count===1?" frequency-1":count===2?" frequency-2":count===3?" frequency-3":" frequency-4plus";
         const dateText=count?dates.map(samplingFrequencyDateLabel).join(", "):`No recorded visit in ${samplingFrequencyLongMonth(month)}`;
-        const aria=count?`${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`:`${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
-        return `<div class="sampling-frequency-cell${count?" has-visits":""}${cls}" tabindex="0" title="${esc(dateText)}" aria-label="${esc(aria)}">${count||"—"}</div>`;
+
+        const visibleDates=count
+          ? dates.map(ts=>{
+              const shortDate=new Intl.DateTimeFormat("en-GB",{
+                day:"numeric",
+                month:"short"
+              }).format(new Date(ts));
+
+              const gap=siteIntervals[site]?.get(ts);
+              const gapText=Number.isFinite(gap)
+                ? `${gap} ${gap===1?"day":"days"} since previous`
+                : "First recorded sample";
+
+              return `<span class="sampling-frequency-date-line">${esc(shortDate)}</span>
+                      <span class="sampling-frequency-gap">${esc(gapText)}</span>`;
+            }).join("")
+          : '<span class="sampling-frequency-date-line">—</span>';
+
+        const aria=count
+          ? `${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`
+          : `${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
+
+        return `<div class="sampling-frequency-cell-wrap">
+          <div class="sampling-frequency-cell${count?" has-visits":""}${cls}"
+            data-site="${esc(site)}"
+            tabindex="0"
+            title="${esc(dateText)}"
+            aria-label="${esc(aria)}">${count||"—"}</div>
+          <div class="sampling-frequency-date-lines">${visibleDates}</div>
+        </div>`;
       }).join("");
   }).join("");
 
@@ -4311,12 +4416,26 @@ function renderSamplingFrequency(){
         ? "Sampled today"
         : `${days} ${days===1?"day":"days"} since last sample`;
 
-      return `<div class="sampling-frequency-last-visit">
+      return `<div class="sampling-frequency-last-visit" data-site="${esc(site)}">
         <strong>${esc(shortSite)}</strong>
         <span>${esc(daysText)}</span>
         <span class="sampling-frequency-last-date">Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
       </div>`;
     }).join("");
+
+    const setLinkedLastSampleHighlight=(site,active)=>{
+      lastVisits.querySelectorAll(".sampling-frequency-last-visit").forEach(card=>{
+        const match=card.dataset.site===site;
+        if(match) card.classList.toggle("linked-highlight",active);
+      });
+    };
+
+    chart.querySelectorAll(".sampling-frequency-cell[data-site]").forEach(cell=>{
+      cell.addEventListener("mouseenter",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("mouseleave",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+      cell.addEventListener("focus",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("blur",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+    });
   }
 }
 
