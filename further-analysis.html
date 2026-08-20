@@ -1361,6 +1361,25 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .overall-site-summary-note{padding:9px 13px 11px;border-top:1px solid #e5ebe6;color:var(--muted);font-size:11px;line-height:1.45}
 @media(max-width:600px){.overall-site-summary-row{grid-template-columns:minmax(0,1fr) auto}.overall-site-summary-count{grid-column:1/-1}}
 
+
+.sampling-frequency-intro{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.sampling-frequency-heatmap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sampling-frequency-grid{display:grid;gap:5px;min-width:max-content;align-items:center}
+.sampling-frequency-corner,.sampling-frequency-month{min-width:58px;padding:4px 5px;color:var(--muted);font-size:10px;font-weight:750;text-align:center;white-space:nowrap}
+.sampling-frequency-corner{min-width:150px;text-align:left}
+.sampling-frequency-site{min-width:150px;max-width:190px;padding:7px 8px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.3}
+.sampling-frequency-cell{width:58px;min-width:58px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #dce5df;border-radius:6px;background:#f5f8f5;color:#68766d;font-size:11px;font-weight:850;box-sizing:border-box}
+.sampling-frequency-cell.has-visits{color:#17321f;border-color:#b8cdbd}
+.sampling-frequency-cell.frequency-1{background:#e8f3eb}
+.sampling-frequency-cell.frequency-2{background:#cfe5d5}
+.sampling-frequency-cell.frequency-3{background:#a8d0b3}
+.sampling-frequency-cell.frequency-4plus{background:#7db28b;color:#102719}
+.sampling-frequency-cell:hover,.sampling-frequency-cell:focus{outline:2px solid #17321f;outline-offset:1px}
+.sampling-frequency-summary{margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#f8faf8;color:var(--ink);font-size:12px;line-height:1.5}
+.sampling-frequency-summary strong{font-weight:850}
+.sampling-frequency-note{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
+@media(max-width:600px){.sampling-frequency-site,.sampling-frequency-corner{min-width:125px;max-width:145px}.sampling-frequency-cell,.sampling-frequency-month{width:52px;min-width:52px}}
+
 </style>
 </head>
 <body>
@@ -1625,6 +1644,33 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="relationshipSummary" class="relationship-summary"></div>
     </div>
   </section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="samplingFrequencyToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="samplingFrequencyContent">
+    <span>Sampling frequency over time</span>
+    <span id="samplingFrequencyIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="samplingFrequencyContent" class="outer-analysis-content" hidden>
+    <p class="sampling-frequency-intro">
+      A compact view of when each monitoring location has been sampled.
+      The numbers show sampling visits, not water-quality status.
+    </p>
+
+    <div id="samplingFrequencyHeatmap" class="sampling-frequency-heatmap"></div>
+    <div id="samplingFrequencySummary" class="sampling-frequency-summary"></div>
+
+    <p class="sampling-frequency-note">
+      Hover or focus a cell to see the survey date(s) recorded for that site and month.
+      When more than 12 months of data are available, the timeline shows the latest 12 months.
+    </p>
+  </div>
+</section>
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
@@ -4116,6 +4162,90 @@ function renderChangeSummary(){
 }
 
 
+
+function samplingFrequencyMonthKey(ts){
+  const d=new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function samplingFrequencyMonthLabel(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"short",year:"2-digit"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyLongMonth(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyDateLabel(ts){
+  return new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric"}).format(new Date(ts));
+}
+function samplingFrequencyMonths(firstTs,lastTs){
+  if(!firstTs||!lastTs)return[];
+  const first=new Date(firstTs),last=new Date(lastTs);
+  let d=new Date(first.getFullYear(),first.getMonth(),1);
+  const end=new Date(last.getFullYear(),last.getMonth(),1),months=[];
+  while(d<=end){
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+    d=new Date(d.getFullYear(),d.getMonth()+1,1);
+  }
+  return months.length>12?months.slice(-12):months;
+}
+function renderSamplingFrequency(){
+  const chart=document.getElementById("samplingFrequencyHeatmap");
+  const summary=document.getElementById("samplingFrequencySummary");
+  if(!chart||!summary)return;
+
+  const visitMap=new Map();
+  freshwaterDataForChanges.forEach(row=>{
+    const site=siteName(row),ts=sampleDateValue(row);
+    if(!site||!ts)return;
+    const d=new Date(ts);
+    const dayKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const key=`${site}||${dayKey}`;
+    if(!visitMap.has(key)){
+      visitMap.set(key,{site,timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()});
+    }
+  });
+
+  const visits=[...visitMap.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  if(!visits.length){
+    chart.innerHTML='<div class="site-comparison-empty">No sampling dates are available yet.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const months=samplingFrequencyMonths(visits[0].timestamp,visits[visits.length-1].timestamp);
+  const monthSet=new Set(months);
+  const sites=[...new Set(visits.map(v=>v.site))].sort((a,b)=>a.localeCompare(b));
+  const grouped={};
+  sites.forEach(site=>{grouped[site]={};months.forEach(month=>grouped[site][month]=[])});
+  visits.forEach(v=>{
+    const month=samplingFrequencyMonthKey(v.timestamp);
+    if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
+  });
+
+  const columns=`150px repeat(${months.length},58px)`;
+  const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
+    months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
+
+  const rows=sites.map(site=>{
+    const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    return `<div class="sampling-frequency-site">${esc(shortSite)}</div>`+
+      months.map(month=>{
+        const dates=(grouped[site][month]||[]).sort((a,b)=>a-b),count=dates.length;
+        const cls=count===0?"":count===1?" frequency-1":count===2?" frequency-2":count===3?" frequency-3":" frequency-4plus";
+        const dateText=count?dates.map(samplingFrequencyDateLabel).join(", "):`No recorded visit in ${samplingFrequencyLongMonth(month)}`;
+        const aria=count?`${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`:`${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
+        return `<div class="sampling-frequency-cell${count?" has-visits":""}${cls}" tabindex="0" title="${esc(dateText)}" aria-label="${esc(aria)}">${count||"—"}</div>`;
+      }).join("");
+  }).join("");
+
+  chart.innerHTML=`<div class="sampling-frequency-grid" style="grid-template-columns:${columns}">${headers}${rows}</div>`;
+
+  const visibleVisits=visits.filter(v=>monthSet.has(samplingFrequencyMonthKey(v.timestamp)));
+  const range=`${samplingFrequencyLongMonth(months[0])} – ${samplingFrequencyLongMonth(months[months.length-1])}`;
+  summary.innerHTML=`<strong>Monitoring coverage:</strong> ${sites.length} ${sites.length===1?"site":"sites"} · ${visibleVisits.length} ${visibleVisits.length===1?"sampling visit":"sampling visits"} · ${esc(range)}${visibleVisits.length!==visits.length?` · latest 12 months of ${visits.length} total visits`:""}`;
+}
+
 let currentComparisonMetric="nitrate";
 
 function latestMetricResultForSite(rows,metric){
@@ -4303,6 +4433,7 @@ async function load(){
     populateSeasonalSiteSelect();
     renderSeasonalPattern();
     renderRelationship();
+    renderSamplingFrequency();
 
     /*
      * Additional water-quality results are loaded separately because
@@ -4476,6 +4607,11 @@ const furtherPanels = [
     button:document.getElementById("relationshipToggle"),
     content:document.getElementById("relationshipContent"),
     icon:document.getElementById("relationshipIcon")
+  },
+  {
+    button:document.getElementById("samplingFrequencyToggle"),
+    content:document.getElementById("samplingFrequencyContent"),
+    icon:document.getElementById("samplingFrequencyIcon")
   }
 ];
 
@@ -4513,6 +4649,10 @@ function setFurtherPanel(index,open){
 
   if(open && index===6 && typeof renderRelationship==="function"){
     renderRelationship();
+  }
+
+  if(open && index===7 && typeof renderSamplingFrequency==="function"){
+    renderSamplingFrequency();
   }
 
   if(typeof notifyParentOfHeight==="function"){
