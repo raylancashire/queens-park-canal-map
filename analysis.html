@@ -647,6 +647,22 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   height:275px;
 }
 
+
+.site-comparison-summary{margin:12px 0 18px}
+.site-comparison-card{border:1px solid #dfe6e1;border-radius:10px;background:#f7faf7;overflow:hidden}
+.site-comparison-heading{padding:10px 12px 8px;color:#17321f;font-size:13px;font-weight:800}
+.site-comparison-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid #e5ebe6;font-size:12px}
+.site-comparison-row:nth-child(odd){background:rgba(255,255,255,.58)}
+.site-comparison-site{min-width:0;color:#17321f;font-weight:750}
+.site-comparison-rating{font-weight:800;white-space:nowrap}
+.site-comparison-count{color:#68766d;white-space:nowrap}
+.site-comparison-row.strongest{box-shadow:inset 4px 0 0 #39A96B}
+.site-comparison-row.watch{box-shadow:inset 4px 0 0 #F4B183}
+.site-comparison-tag{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:999px;background:#e9f4ed;color:#2f6b45;font-size:10px;font-weight:800;vertical-align:1px}
+.site-comparison-row.watch .site-comparison-tag{background:#fff0e5;color:#7b4a28}
+.site-comparison-note{padding:8px 12px 10px;border-top:1px solid #e5ebe6;color:#68766d;font-size:11px;line-height:1.45}
+@media(max-width:600px){.site-comparison-row{grid-template-columns:minmax(0,1fr) auto}.site-comparison-count{grid-column:1/-1}}
+
 </style>
 </head>
 <body>
@@ -787,6 +803,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <label for="changeSiteSelect">Sampling site:</label>
       <select id="changeSiteSelect"></select>
     </div>
+
+    <div id="siteComparisonSummary" class="site-comparison-summary" aria-live="polite"></div>
 
     <p class="change-note">
       Each point represents the recorded result for that survey date. Choose an individual site to follow one location over time, or choose All sites to compare the monitoring locations on the same chart.
@@ -1918,6 +1936,44 @@ function renderMetricChangeChart(containerId,site,metric){
   </div>`;
 }
 
+
+function siteComparisonScore(row,metric){
+  if(metric==="nitrate" || metric==="phosphate"){
+    const raw=metric==="nitrate" ? getNitrate(row) : getPhosphate(row);
+    const band=normaliseRange(raw);
+    const nums=(band.match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+    const value=nums.length>=2 ? (nums[0]+nums[1])/2 : (nums[0]??NaN);
+    if(!Number.isFinite(value)) return null;
+    if(metric==="nitrate"){
+      if(value<=0.5)return 5;if(value<=1.5)return 4;if(value<=3.5)return 3;if(value<=7.5)return 2;return 1;
+    }
+    if(value<=0.025)return 5;if(value<=0.075)return 4;if(value<=0.15)return 3;if(value<=0.3)return 2;return 1;
+  }
+  const value=comparisonMetricValue(row,"turbidity");
+  if(!Number.isFinite(value))return null;
+  if(value<=4)return 5;if(value<=8)return 4;if(value<=12)return 3;if(value<=20)return 2;return 1;
+}
+function siteComparisonRating(score){
+  if(score>=4.5)return"Excellent";if(score>=3.5)return"Good";if(score>=2.5)return"Fair";if(score>=1.5)return"Poor";return"Very Poor";
+}
+function buildSiteComparison(){
+  const target=document.getElementById("siteComparisonSummary");if(!target)return;
+  const sites=[...new Set(freshwaterDataForChanges.map(siteName).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const summaries=sites.map(site=>{
+    const rows=freshwaterDataForChanges.filter(r=>siteName(r)===site),scores=[];
+    rows.forEach(row=>["nitrate","phosphate","turbidity"].forEach(metric=>{const v=siteComparisonScore(row,metric);if(Number.isFinite(v))scores.push(v)}));
+    const score=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:NaN;
+    return{site,sampleCount:rows.length,score,rating:Number.isFinite(score)?siteComparisonRating(score):"No data"};
+  }).filter(x=>Number.isFinite(x.score)).sort((a,b)=>b.score-a.score||b.sampleCount-a.sampleCount||a.site.localeCompare(b.site));
+  if(!summaries.length){target.innerHTML="";return}
+  const strongest=summaries[0],watch=summaries.length>1?summaries[summaries.length-1]:null;
+  target.innerHTML=`<div class="site-comparison-card"><div class="site-comparison-heading">Site comparison</div>${summaries.map(item=>{
+    const best=item.site===strongest.site,warn=watch&&item.site===watch.site&&!best;
+    const tag=best?'<span class="site-comparison-tag">Strongest overall results</span>':warn?'<span class="site-comparison-tag">Results to watch</span>':"";
+    return`<div class="site-comparison-row${best?" strongest":warn?" watch":""}"><div class="site-comparison-site">${esc(item.site)}${tag}</div><div class="site-comparison-rating">${esc(item.rating)}</div><div class="site-comparison-count">${item.sampleCount} ${item.sampleCount===1?"sample":"samples"}</div></div>`;
+  }).join("")}<div class="site-comparison-note">Comparison uses the available FreshWater Watch nitrate, phosphate and turbidity results. It is a relative comparison of the monitored sites, not a formal water-quality classification.</div></div>`;
+}
+
 function renderSiteChangeCharts(){
   const select=document.getElementById("changeSiteSelect");
   if(!select) return;
@@ -1954,6 +2010,7 @@ function initialiseSiteChanges(){
     if(matching) select.value=matching.value;
   }
 
+  buildSiteComparison();
   renderSiteChangeCharts();
 }
 
