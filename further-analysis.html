@@ -1381,8 +1381,16 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 @media(max-width:600px){.sampling-frequency-site,.sampling-frequency-corner{min-width:125px;max-width:145px}.sampling-frequency-cell,.sampling-frequency-month{width:52px;min-width:52px}}
 
 
+.sampling-frequency-last-title{
+  margin:16px 0 8px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:850;
+  line-height:1.3;
+}
+
 .sampling-frequency-last-visits{
-  margin-top:10px;
+  margin-top:0;
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
   gap:8px;
@@ -1395,6 +1403,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   color:var(--ink);
   font-size:11px;
   line-height:1.4;
+  transition:background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.sampling-frequency-last-visit:hover,
+.sampling-frequency-last-visit:focus-within{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
 }
 .sampling-frequency-last-visit strong{
   display:block;
@@ -1404,6 +1420,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 .sampling-frequency-last-visit span{
   color:var(--muted);
+}
+
+
+.sampling-frequency-last-date{
+  display:block;
+  margin-top:3px;
 }
 
 </style>
@@ -1690,6 +1712,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
     <div id="samplingFrequencyHeatmap" class="sampling-frequency-heatmap"></div>
     <div id="samplingFrequencySummary" class="sampling-frequency-summary"></div>
+
+    <h3 class="sampling-frequency-last-title">Time since last sampled</h3>
     <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
 
     <p class="sampling-frequency-note">
@@ -4289,7 +4313,8 @@ function renderSamplingFrequency(){
 
       return `<div class="sampling-frequency-last-visit">
         <strong>${esc(shortSite)}</strong>
-        <span>${esc(daysText)} · Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
+        <span>${esc(daysText)}</span>
+        <span class="sampling-frequency-last-date">Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
       </div>`;
     }).join("");
   }
