@@ -496,17 +496,7 @@ select {
 }
 
 
-.canal-name-label {
-  background:rgba(255,255,255,.92);
-  color:#24556d;
-  border:1px solid rgba(47,111,143,.45);
-  border-radius:6px;
-  box-shadow:0 1px 4px rgba(0,0,0,.12);
-  padding:3px 7px;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
-}
+
 
 .canal-name-label::before {
   display:none;
@@ -582,6 +572,35 @@ function publishSiteFocus(site) {
   }
 }
 
+/*
+ * Optional deep-link site selection.
+ * Example:
+ *   index.html?site=Meanwhile%20Gardens
+ *
+ * The URL may use either the full CSV site name or the shorter
+ * display name without the "Grand Union Canal - " prefix.
+ */
+const requestedSiteFromURL =
+  new URLSearchParams(window.location.search).get("site");
+
+function normaliseSiteName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function resolveRequestedSite(siteNames) {
+  if (!requestedSiteFromURL) return "";
+
+  const requested = normaliseSiteName(requestedSiteFromURL);
+
+  return siteNames.find(site =>
+    normaliseSiteName(site) === requested
+  ) || "";
+}
+
 // Basemap choices
 const lightMap = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -608,63 +627,8 @@ const satelliteMap = L.tileLayer(
   }
 );
 
-/*
- * Grand Union Canal highlight for the Light basemap.
- * The line follows the monitored canal corridor through the current project area.
- * It is shown only when the Light basemap is active.
- */
-const grandUnionCanalOutline = L.polyline(
-  [
-    [51.52705, -0.2190],
-    [51.52667, -0.21528],  // Ladbroke Grove Bridge
-    [51.52642, -0.2115],
-    [51.52615, -0.20751],  // Half Penny Steps
-    [51.52515, -0.2052],
-    [51.52385, -0.2032],
-    [51.52285, -0.20223],  // Meanwhile Gardens
-    [51.52195, -0.2007]
-  ],
-  {
-    color:"#2f6f8f",
-    weight:9,
-    opacity:0.72,
-    lineCap:"round",
-    lineJoin:"round",
-    interactive:false
-  }
-);
-
-const grandUnionCanalLine = L.polyline(
-  grandUnionCanalOutline.getLatLngs(),
-  {
-    color:"#8fd0e5",
-    weight:5,
-    opacity:0.98,
-    lineCap:"round",
-    lineJoin:"round",
-    interactive:false
-  }
-);
-
-const grandUnionCanalLabel = L.tooltip({
-  permanent:true,
-  direction:"center",
-  className:"canal-name-label",
-  interactive:false,
-  opacity:0.95
-})
-.setContent("Grand Union Canal")
-.setLatLng([51.52525, -0.2070]);
-
-const grandUnionCanalLayer = L.layerGroup([
-  grandUnionCanalOutline,
-  grandUnionCanalLine,
-  grandUnionCanalLabel
-]);
-
 // Use the clean light map by default.
 lightMap.addTo(map);
-grandUnionCanalLayer.addTo(map);
 
 // Map type selector in the top-right corner.
 L.control.layers(
@@ -679,16 +643,6 @@ L.control.layers(
     collapsed:true
   }
 ).addTo(map);
-
-map.on("baselayerchange", function(event) {
-  if (event.layer === lightMap) {
-    if (!map.hasLayer(grandUnionCanalLayer)) {
-      grandUnionCanalLayer.addTo(map);
-    }
-  } else if (map.hasLayer(grandUnionCanalLayer)) {
-    map.removeLayer(grandUnionCanalLayer);
-  }
-});
 
 // Reset button: return the map to a view containing all sampling results.
 const ResetControl = L.Control.extend({
@@ -1457,34 +1411,84 @@ async function loadData() {
       map.fitBounds(defaultResultBounds, {padding:[25,25]});
     }
 
-    sel.addEventListener("change", () => {
-      const selected = sel.value;
+    function applySiteSelection(selected, openPopup = true) {
+      const validSelection =
+        selected && selected !== "all" && groups[selected]
+          ? selected
+          : "all";
+
+      sel.value = validSelection;
 
       markers.forEach(marker => {
-        if (selected === "all" || marker.site === selected) {
+        if (validSelection === "all" || marker.site === validSelection) {
           marker.addTo(map);
         } else {
           map.removeLayer(marker);
         }
       });
 
-      if (selected !== "all") {
-        const marker = markers.find(m => m.site === selected);
+      if (validSelection !== "all") {
+        const marker = markers.find(m => m.site === validSelection);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
-          marker.openPopup();
+
+          if (openPopup) {
+            marker.openPopup();
+
+            /*
+             * Keep a deep-linked popup fully inside the visible map.
+             * Measure the actual popup after Leaflet has rendered it,
+             * then move the map only by the amount needed.
+             */
+            window.setTimeout(
+              function () {
+                const popup = marker.getPopup();
+                const popupEl = popup && popup.getElement
+                  ? popup.getElement()
+                  : null;
+                const mapEl = map.getContainer();
+
+                if (!popupEl || !mapEl) return;
+
+                const popupRect = popupEl.getBoundingClientRect();
+                const mapRect = mapEl.getBoundingClientRect();
+
+                const topGap = 14;
+                const desiredTop = mapRect.top + topGap;
+
+                if (popupRect.top < desiredTop) {
+                  const overlap = desiredTop - popupRect.top;
+
+                  /*
+                   * Negative Y moves the map content downward,
+                   * bringing the popup down into view.
+                   */
+                  map.panBy(
+                    [0, -Math.ceil(overlap)],
+                    {
+                      animate: true,
+                      duration: 0.25
+                    }
+                  );
+                }
+              },
+              300
+            );
+          }
         }
       } else if (defaultResultBounds && defaultResultBounds.isValid()) {
         map.fitBounds(defaultResultBounds, {padding:[25,25]});
       }
 
-      updateSummary(selected);
+      updateSummary(validSelection);
+    }
+
+    sel.addEventListener("change", () => {
+      applySiteSelection(sel.value);
     });
 
     resetMapSummaryToAll = function() {
-      sel.value = "all";
-      markers.forEach(marker => marker.addTo(map));
-      updateSummary("all");
+      applySiteSelection("all", false);
     };
 
     map.on("click", () => {
@@ -1499,7 +1503,12 @@ async function loadData() {
     document.getElementById("recordCount").textContent =
       `${validRows} records loaded across ${siteNames.length} sites`;
 
-    updateSummary("all");
+    /*
+     * If a site was supplied in the URL, select it automatically.
+     * Otherwise retain the normal all-sites opening view.
+     */
+    const initialSite = resolveRequestedSite(siteNames);
+    applySiteSelection(initialSite || "all");
 
   } catch (err) {
     console.error(err);
