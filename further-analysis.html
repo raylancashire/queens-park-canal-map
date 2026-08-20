@@ -1584,6 +1584,59 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   }
 }
 
+
+/* Sampling-frequency interval placement */
+.sampling-frequency-month,
+.sampling-frequency-cell-wrap{
+  width:96px;
+  min-width:96px;
+}
+
+.sampling-frequency-cell-wrap{
+  align-items:center;
+}
+
+/* 58px cell centred in a 96px column leaves 19px each side.
+   The following sample's interval value is placed halfway through
+   the 38px space between the two neighbouring cells. */
+.sampling-frequency-between{
+  left:-19px;
+  top:17px;
+  transform:translate(-50%,-50%);
+  min-width:22px;
+  padding:2px 4px;
+  background:#fff;
+  border:0;
+  border-radius:999px;
+  box-shadow:none;
+  color:#66746b;
+  font-size:10px;
+  font-weight:850;
+  line-height:1;
+}
+
+/* Centre each site name against the complete row. */
+.sampling-frequency-site{
+  align-self:stretch;
+  display:flex;
+  align-items:center;
+  min-height:66px;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:84px;
+    min-width:84px;
+  }
+
+  .sampling-frequency-between{
+    left:-16px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4449,7 +4502,7 @@ function renderSamplingFrequency(){
     if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
   });
 
-  const columns=`150px repeat(${months.length},76px)`;
+  const columns=`150px repeat(${months.length},96px)`;
   const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
     months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
 
