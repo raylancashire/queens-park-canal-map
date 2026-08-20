@@ -2572,7 +2572,7 @@ function syncSeasonalSiteUI(){
 }
 
 function applySeasonalSiteFocus(site,{publish=false}={}){
-  currentFocusedSite=site||"all";
+  currentFocusedSite=canonicalSiteForSync(site||"all");
   syncSeasonalSiteUI();
 
   if(publish){
@@ -3164,6 +3164,30 @@ const siteSyncChannel=("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
   : null;
 
+function canonicalSiteForSync(site){
+  if(!site || site==="all") return "all";
+  const target=normaliseSiteForMatch(site);
+  const source=freshwaterDataForChanges.length ? freshwaterDataForChanges : freshwaterDataAll;
+  const match=source.find(row=>normaliseSiteForMatch(siteName(row))===target);
+  return match ? siteName(match) : site;
+}
+
+function syncAllSiteDropdowns(){
+  const ids=["snapshotSiteSelect","changeSummarySiteSelect","seasonalSiteSelect"];
+  ids.forEach(id=>{
+    const select=document.getElementById(id);
+    if(!select) return;
+    if(currentFocusedSite==="all"){
+      select.value="all";
+      return;
+    }
+    const match=[...select.options].find(
+      option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+    );
+    if(match) select.value=match.value;
+  });
+}
+
 function filterFreshwaterForSite(data,site){
   if(!site || site==="all") return data;
   const target=normaliseSiteForMatch(site);
@@ -3232,12 +3256,13 @@ function renderSampleAnalysisForFocusedSite(){
 }
 
 function setFocusedSite(site){
-  currentFocusedSite=site||"all";
+  currentFocusedSite=canonicalSiteForSync(site||"all");
 
   if(typeof renderSampleAnalysisForFocusedSite==="function"){
     renderSampleAnalysisForFocusedSite();
   }
 
+  syncAllSiteDropdowns();
   syncSeasonalSiteUI();
   syncSnapshotSiteUI();
   syncChangeSummarySiteUI();
@@ -3688,7 +3713,7 @@ function syncSnapshotSiteUI(){
 }
 
 function applySnapshotSiteFocus(site){
-  currentFocusedSite=site || "all";
+  currentFocusedSite=canonicalSiteForSync(site || "all");
   syncSnapshotSiteUI();
   syncSeasonalSiteUI();
 

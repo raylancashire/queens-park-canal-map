@@ -614,40 +614,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-color:#7fa38a;
 }
 
-
-.change-site-legend{
-  display:flex;
-  flex-wrap:wrap;
-  gap:7px 14px;
-  margin:4px 0 8px;
-  padding:8px 10px;
-  border:1px solid #dfe6e1;
-  border-radius:8px;
-  background:#f7faf7;
-}
-
-.change-site-key{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  color:#435248;
-  font-size:11px;
-  font-weight:700;
-}
-
-.change-site-key-line{
-  display:inline-block;
-  width:20px;
-  height:3px;
-  border-radius:2px;
-  flex:0 0 auto;
-}
-
-.change-line-svg-all{
-  height:275px;
-}
-
-
 </style>
 </head>
 <body>
@@ -749,17 +715,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="coliformPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="coliformTab" hidden>
     <h2>Coliform</h2>
-    <p class="sub">Coliform results per 100ml. A result at the upper limit of the test is displayed as &gt; 20 coliforms/100ml. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
+    <p class="sub">Total coliform colony results per 100 mL. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
     <div id="coliformChart"></div>
   </article>
 
   <article id="bodPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="bodTab" hidden>
     <h2>Biochemical Oxygen Demand (BOD)</h2>
-    <p class="sub">
-      Biochemical Oxygen Demand (BOD) indicates how much dissolved oxygen is used by microorganisms as organic matter in the water breaks down.
-      It is calculated here from the difference between the initial dissolved oxygen reading and the reading after five days.
-      Lower BOD generally indicates less biodegradable organic material and lower oxygen demand, while higher BOD can indicate greater organic pollution and increased pressure on dissolved oxygen levels.
-    </p>
+    <p class="sub">Recorded BOD results over time.</p>
     <div id="bodChart"></div>
   </article>
 
@@ -789,9 +751,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <select id="changeSiteSelect"></select>
     </div>
 
-
     <p class="change-note">
-      Each point represents the recorded result for that survey date. Choose an individual site to follow one location over time, or choose All sites to compare the monitoring locations on the same chart.
+      Each point represents the recorded result for that survey date at the selected site.
       Nitrate and phosphate are plotted using the midpoint of the FreshWater Watch result range.
       Turbidity is plotted in NTU using the recorded test value.
     </p>
@@ -1228,23 +1189,6 @@ function additionalAssessment(column,value){
   return null;
 }
 
-
-function formatAdditionalUKDate(date){
-  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return "Date not recorded";
-  return date.toLocaleDateString("en-GB",{
-    day:"numeric",
-    month:"long",
-    year:"numeric"
-  });
-}
-
-function addDays(date,days){
-  if(!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
-  const copy=new Date(date.getTime());
-  copy.setDate(copy.getDate()+days);
-  return copy;
-}
-
 function renderAdditionalSeries(containerId,data,column,unit){
   const el=document.getElementById(containerId);
 
@@ -1252,24 +1196,6 @@ function renderAdditionalSeries(containerId,data,column,unit){
     .map(row=>({
       value:parseAdditionalNumber(row[column]),
       temperature:parseAdditionalNumber(row["Temperature °C"]),
-      initialDO:parseAdditionalNumber(getField(
-        row,
-        "Initial Dissolved Oxygen ppm",
-        "Initial Dissolved Oxygen PPM",
-        "Dissolved Oxygen mg/L",
-        "Dissolved Oxygen PPM",
-        "Dissolved Oxygen ppm"
-      )),
-      fiveDayDO:parseAdditionalNumber(getField(
-        row,
-        "Final Dissolved Oxygen ppm",
-        "Final Dissolved Oxygen PPM",
-        "Dissolved Oxygen PPM (5days)",
-        "Dissolved Oxygen PPM (5 days)",
-        "Dissolved Oxygen ppm (5days)",
-        "Dissolved Oxygen mg/L (5days)",
-        "Dissolved Oxygen mg/L (5 days)"
-      )),
       date:parseUKDate(row["Date"],row["Time"]),
       label:additionalDateLabel(row),
       location:String(row["Location"]||"").trim()
@@ -1310,29 +1236,13 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     if(column==="Coliform"){
       const kit=coliformTestKit(p.value);
-      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${Number(p.value)>=20 ? "&gt; 20 coliforms/100ml" : esc(p.value)+" coliforms/100ml"}</strong></span>`;
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
       if(kit){
         extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
           ● Test-kit result: ${esc(kit.reading)}
         </span>`;
       }
       extraHtml+=`<span>Total coliform is a general microbial indicator. This result is not an official bathing-water classification; UK bathing-water classifications use E. coli and intestinal enterococci.</span>`;
-    }
-
-    if(column==="BOD mg/L" && Number.isFinite(p.initialDO) && Number.isFinite(p.fiveDayDO)){
-      const finalDate=addDays(p.date,5);
-      extraHtml=`<span style="margin-top:8px">
-          Initial dissolved oxygen — <strong>${esc(formatAdditionalUKDate(p.date))}: ${esc(p.initialDO)} ppm</strong>
-        </span>
-        <span>
-          Dissolved oxygen — five days later${finalDate ? ` (${esc(formatAdditionalUKDate(finalDate))})` : ""}:
-          <strong>${esc(p.fiveDayDO)} ppm</strong>
-        </span>
-        <span>
-          <strong style="font-size:20px;margin:8px 0 0">
-            ${esc(p.initialDO)} ppm − ${esc(p.fiveDayDO)} ppm = ${esc(p.value)} ppm BOD
-          </strong>
-        </span>`;
     }
 
     if(column==="Dissolved Oxygen mg/L"){
@@ -1439,78 +1349,10 @@ function renderAdditionalForFocusedSite(){
   renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
 }
 
-
-function normaliseAdditionalRow(row){
-  const copy={...row};
-
-  // Coliform: support both the older and current column headings.
-  if(!String(copy["Coliform"]??"").trim()){
-    copy["Coliform"]=getField(
-      row,
-      "Coliform (48 Hrs)",
-      "Coliform (48 hrs)",
-      "Coliform"
-    );
-  }
-
-  // Current dissolved oxygen result.
-  if(!String(copy["Dissolved Oxygen mg/L"]??"").trim()){
-    copy["Dissolved Oxygen mg/L"]=getField(
-      row,
-      "Initial Dissolved Oxygen ppm",
-      "Initial Dissolved Oxygen PPM",
-      "Dissolved Oxygen PPM",
-      "Dissolved Oxygen ppm",
-      "Dissolved Oxygen mg/L"
-    );
-  }
-
-  // BOD: use a directly supplied BOD value when present. Otherwise calculate
-  // BOD from initial DO minus the five-day DO result.
-  if(!String(copy["BOD mg/L"]??"").trim()){
-    const directBOD=getField(
-      row,
-      "BOD mg/L",
-      "BOD ppm",
-      "BOD"
-    );
-
-    if(directBOD){
-      copy["BOD mg/L"]=directBOD;
-    }else{
-      const initial=parseAdditionalNumber(getField(
-        row,
-        "Initial Dissolved Oxygen ppm",
-        "Initial Dissolved Oxygen PPM",
-        "Dissolved Oxygen PPM",
-        "Dissolved Oxygen ppm",
-        "Dissolved Oxygen mg/L"
-      ));
-
-      const afterFive=parseAdditionalNumber(getField(
-        row,
-        "Final Dissolved Oxygen ppm",
-        "Final Dissolved Oxygen PPM",
-        "Dissolved Oxygen PPM (5days)",
-        "Dissolved Oxygen PPM (5 days)",
-        "Dissolved Oxygen ppm (5days)",
-        "Dissolved Oxygen mg/L (5days)",
-        "Dissolved Oxygen mg/L (5 days)"
-      ));
-
-      if(Number.isFinite(initial) && Number.isFinite(afterFive)){
-        copy["BOD mg/L"]=String(initial-afterFive);
-      }
-    }
-  }
-
-  return copy;
-}
-
 async function loadAdditionalData(){
   try{
     const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
-    const data=parseCSV(raw).map(normaliseAdditionalRow);
+    const data=parseCSV(raw);
     additionalWaterQualityData=data;
     renderAdditionalForFocusedSite();
 
@@ -1537,6 +1379,13 @@ try {
 const siteSyncChannel=("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
   : null;
+
+function canonicalSiteForSync(site){
+  if(!site || site==="all") return "all";
+  const target=normaliseSiteForMatch(site);
+  const match=freshwaterDataAll.find(row=>normaliseSiteForMatch(siteName(row))===target);
+  return match ? siteName(match) : site;
+}
 
 function filterFreshwaterForSite(data,site){
   if(!site || site==="all") return data;
@@ -1598,7 +1447,7 @@ function renderSampleAnalysisForFocusedSite(){
 }
 
 function setFocusedSite(site){
-  currentFocusedSite=site||"all";
+  currentFocusedSite=canonicalSiteForSync(site||"all");
   renderSampleAnalysisForFocusedSite();
 }
 
@@ -1685,14 +1534,13 @@ function comparisonMetricValue(row,metric){
 
 function siteSurveyResults(site,metric){
   const rows = (!site || site==="all")
-    ? [...freshwaterDataForChanges]
+    ? freshwaterDataForChanges
     : freshwaterDataForChanges.filter(r=>siteName(r)===site);
 
   return rows
     .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
     .map(row=>({
       date:sampleDateLabel(row),
-      dateValue:sampleDateValue(row),
       value:comparisonMetricValue(row,metric),
       site:siteName(row)
     }))
@@ -1704,144 +1552,6 @@ function metricChartInfo(metric){
   if(metric==="phosphate") return {unit:"mg/L",decimals:3};
   if(metric==="turbidity") return {unit:"NTU",decimals:0};
   return {unit:"",decimals:2};
-}
-
-function renderAllSitesMetricChangeChart(containerId,metric){
-  const chart=document.getElementById(containerId);
-  if(!chart) return;
-
-  const points=siteSurveyResults("all",metric);
-  const info=metricChartInfo(metric);
-
-  if(!points.length){
-    chart.innerHTML='<div class="change-empty">No recorded results for this measure yet.</div>';
-    return;
-  }
-
-  const sites=[...new Set(points.map(p=>p.site))].sort((a,b)=>a.localeCompare(b));
-  const dates=[...new Set(
-    points.map(p=>JSON.stringify([p.dateValue,p.date]))
-  )]
-    .map(item=>JSON.parse(item))
-    .sort((a,b)=>a[0]-b[0]);
-
-  const dateIndex=new Map(dates.map((item,index)=>[item[0]+"|"+item[1],index]));
-
-  const palette=[
-    "#2f6b45",
-    "#376f9f",
-    "#9a5a2f",
-    "#76549b",
-    "#9b3f62",
-    "#3f7f7a",
-    "#7b6b2f",
-    "#5f6f64"
-  ];
-
-  const W=Math.max(620,dates.length*115);
-  const H=285;
-  const left=58,right=24,top=32,bottom=62;
-  const plotW=W-left-right;
-  const plotH=H-top-bottom;
-
-  const values=points.map(p=>p.value);
-  let minValue=Math.min(0,...values);
-  let maxValue=Math.max(...values);
-
-  if(maxValue===minValue){
-    maxValue=minValue+1;
-  }
-
-  const range=maxValue-minValue;
-  maxValue+=range*0.15;
-
-  const x=index=>dates.length===1
-    ? left+plotW/2
-    : left+(index/(dates.length-1))*plotW;
-
-  const y=value=>top+((maxValue-value)/(maxValue-minValue))*plotH;
-
-  const ticks=Array.from({length:5},(_,i)=>
-    minValue+((maxValue-minValue)*(i/4))
-  );
-
-  const grid=ticks.map(v=>`
-    <line x1="${left}" y1="${y(v)}" x2="${W-right}" y2="${y(v)}" class="change-grid"></line>
-    <text x="${left-7}" y="${y(v)+3}" text-anchor="end" class="change-axis-text">
-      ${v.toFixed(info.decimals)}
-    </text>
-  `).join("");
-
-  const dateLabels=dates.map((item,index)=>`
-    <text x="${x(index)}" y="${H-28}" text-anchor="middle" class="change-axis-text">
-      ${esc(item[1])}
-    </text>
-  `).join("");
-
-  const series=sites.map((site,siteIndex)=>{
-    const colour=palette[siteIndex%palette.length];
-
-    const sitePoints=points
-      .filter(p=>p.site===site)
-      .map(p=>({
-        ...p,
-        xIndex:dateIndex.get(p.dateValue+"|"+p.date)
-      }))
-      .filter(p=>Number.isFinite(p.xIndex));
-
-    if(!sitePoints.length) return "";
-
-    const path=sitePoints.map((p,i)=>
-      `${i===0?"M":"L"} ${x(p.xIndex).toFixed(1)} ${y(p.value).toFixed(1)}`
-    ).join(" ");
-
-    const marks=sitePoints.map(p=>`
-      <circle
-        cx="${x(p.xIndex)}"
-        cy="${y(p.value)}"
-        r="4.5"
-        fill="#ffffff"
-        stroke="${colour}"
-        stroke-width="2.5">
-        <title>${esc(site)} — ${esc(p.date)} — ${p.value.toFixed(info.decimals)} ${esc(info.unit)}</title>
-      </circle>
-    `).join("");
-
-    return `
-      <path
-        d="${path}"
-        fill="none"
-        stroke="${colour}"
-        stroke-width="2.5"
-        stroke-linejoin="round"
-        stroke-linecap="round"></path>
-      ${marks}
-    `;
-  }).join("");
-
-  const legend=sites.map((site,index)=>`
-    <span class="change-site-key">
-      <span class="change-site-key-line" style="background:${palette[index%palette.length]}"></span>
-      ${esc(site)}
-    </span>
-  `).join("");
-
-  chart.innerHTML=`
-    <div class="change-site-legend" aria-label="Sampling site legend">
-      ${legend}
-    </div>
-    <div class="change-line-wrap">
-      <svg class="change-line-svg change-line-svg-all" viewBox="0 0 ${W} ${H}" role="img"
-        aria-label="${esc(metric)} results over time for all sampling sites">
-        ${grid}
-        <text x="14" y="${top+plotH/2}" text-anchor="middle"
-          transform="rotate(-90 14 ${top+plotH/2})" class="change-axis-title">
-          ${esc(info.unit)}
-        </text>
-        ${series}
-        ${dateLabels}
-      </svg>
-    </div>`;
 }
 
 function renderMetricChangeChart(containerId,site,metric){
@@ -1920,17 +1630,17 @@ function renderMetricChangeChart(containerId,site,metric){
   </div>`;
 }
 
-
 function renderSiteChangeCharts(){
   const select=document.getElementById("changeSiteSelect");
   if(!select) return;
 
-  const site=select.value || "all";
+  const site=select.value;
 
-  if(site==="all"){
-    renderAllSitesMetricChangeChart("siteChangeNitrate","nitrate");
-    renderAllSitesMetricChangeChart("siteChangePhosphate","phosphate");
-    renderAllSitesMetricChangeChart("siteChangeTurbidity","turbidity");
+  if(!site || site==="all"){
+    const message='<div class="change-empty">Select a sampling site to view results over time.</div>';
+    document.getElementById("siteChangeNitrate").innerHTML=message;
+    document.getElementById("siteChangePhosphate").innerHTML=message;
+    document.getElementById("siteChangeTurbidity").innerHTML=message;
     return;
   }
 
@@ -2082,7 +1792,7 @@ document.getElementById("doTab").addEventListener("click",()=>setChartTab("disso
 
 
 document.getElementById("changeSiteSelect").addEventListener("change",()=>{
-  const site=document.getElementById("changeSiteSelect").value;
+  const site=canonicalSiteForSync(document.getElementById("changeSiteSelect").value);
   currentFocusedSite=site;
   renderSampleAnalysisForFocusedSite();
 

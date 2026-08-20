@@ -550,6 +550,14 @@ const siteSyncChannel = ("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
   : null;
 
+function normaliseSiteForSync(value) {
+  return String(value || "")
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function publishSiteFocus(site) {
   const value = site || "all";
 
@@ -1223,14 +1231,6 @@ async function fetchCSV() {
   throw lastError || new Error("Could not load freshwater.csv");
 }
 
-function normaliseSiteGroupingKey(site){
-  return String(site || "")
-    .trim()
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
 async function loadData() {
   try {
     const text = await fetchCSV();
@@ -1254,8 +1254,7 @@ async function loadData() {
       validRows++;
 
       const site = getSite(r);
-      // Group by the named sampling site, not by its GPS coordinates.
-      const key = normaliseSiteGroupingKey(site);
+      const key = site;
 
       if (!groups[key]) groups[key] = [];
       groups[key].push(r);
@@ -1284,10 +1283,7 @@ async function loadData() {
       });
     });
 
-    const siteKeys = Object.keys(groups).sort((a,b)=>
-      getSite(groups[a][0]).localeCompare(getSite(groups[b][0]))
-    );
-    const siteNames = siteKeys.map(key => getSite(groups[key][0]));
+    const siteNames = Object.keys(groups).sort();
 
     const sel = document.getElementById("siteFilter");
 
@@ -1345,11 +1341,10 @@ async function loadData() {
       }
     }
 
-    siteKeys.forEach(siteKey => {
-      const site = getSite(groups[siteKey][0]);
+    siteNames.forEach(site => {
       const opt = document.createElement("option");
-      const sampleCount = groups[siteKey].length;
-      opt.value = siteKey;
+      const sampleCount = groups[site].length;
+      opt.value = site;
       opt.textContent = `${site} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
       sel.appendChild(opt);
     });
@@ -1357,25 +1352,19 @@ async function loadData() {
     const markers = [];
     const bounds = [];
 
-    for (const siteKey of siteKeys) {
-      const rows = groups[siteKey];
+    for (const site of siteNames) {
+      const rows = groups[site];
       const r = rows[0];
-      const site = getSite(r);
 
-      // Use the mean GPS position for repeat surveys at the same named site.
-      const coords = rows
-        .map(row => [getLat(row), getLon(row)])
-        .filter(([lat,lon]) => Number.isFinite(lat) && Number.isFinite(lon));
-
-      const lat = coords.reduce((sum,p) => sum + p[0], 0) / coords.length;
-      const lon = coords.reduce((sum,p) => sum + p[1], 0) / coords.length;
+      const lat = getLat(r);
+      const lon = getLon(r);
 
       const marker = L.marker([lat, lon], {
         icon: markerIcon(r),
         title: site
       }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
-      marker.site = siteKey;
+      marker.site = site;
       marker.on("click", (e) => {
         if (e && e.originalEvent) {
           L.DomEvent.stopPropagation(e.originalEvent);
@@ -1417,6 +1406,79 @@ async function loadData() {
 
       updateSummary(selected);
     });
+
+    function resolveSyncedSite(value) {
+      if (!value || value === "all") return "all";
+      const target = normaliseSiteForSync(value);
+      return siteNames.find(site => normaliseSiteForSync(site) === target) || "all";
+    }
+
+    function applySyncedSite(value) {
+      const selected = resolveSyncedSite(value);
+      sel.value = selected;
+
+      markers.forEach(marker => {
+        if (selected === "all" || marker.site === selected) {
+          if (!map.hasLayer(marker)) marker.addTo(map);
+        } else if (map.hasLayer(marker)) {
+          map.removeLayer(marker);
+        }
+      });
+
+      if (selected !== "all") {
+        const marker = markers.find(m => m.site === selected);
+        if (marker) {
+          map.setView(marker.getLatLng(), 16);
+          marker.openPopup();
+        }
+      } else {
+        map.closePopup();
+        if (defaultResultBounds && defaultResultBounds.isValid()) {
+          map.fitBounds(defaultResultBounds, {padding:[25,25]});
+        }
+      }
+
+      /* Update the map summary without republishing the same selection. */
+      if (selected !== "all" && groups[selected]) {
+        const rows = groups[selected];
+        const latest = latestRowForRows(rows);
+        siteCountEl.textContent = selected.replace(/^Grand Union Canal\s*-\s*/i, "");
+        siteCountEl.classList.add("site-name");
+        siteCountLabelEl.textContent = "Sampling site";
+        sampleCountEl.textContent = rows.length;
+        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
+        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
+        latestDateLabelEl.textContent = "Latest sample at site";
+      } else {
+        const latest = latestRowForRows(data);
+        siteCountEl.textContent = siteNames.length;
+        siteCountEl.classList.remove("site-name");
+        siteCountLabelEl.textContent = "Sampling sites";
+        sampleCountEl.textContent = validRows;
+        sampleCountLabelEl.textContent = "Samples in dataset";
+        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
+        latestDateLabelEl.textContent = "Latest sample";
+      }
+    }
+
+    if (siteSyncChannel) {
+      siteSyncChannel.addEventListener("message", event => {
+        if (event.data && event.data.type === "site-focus") {
+          applySyncedSite(event.data.site);
+        }
+      });
+    }
+
+    window.addEventListener("storage", event => {
+      if (event.key === SITE_SYNC_KEY && event.newValue) {
+        applySyncedSite(event.newValue);
+      }
+    });
+
+    try {
+      const storedSite = localStorage.getItem(SITE_SYNC_KEY);
+      if (storedSite) applySyncedSite(storedSite);
+    } catch (e) {}
 
     resetMapSummaryToAll = function() {
       sel.value = "all";
