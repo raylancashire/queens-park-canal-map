@@ -1486,6 +1486,40 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   }
 }
 
+
+.sampling-frequency-site{
+  align-self:start;
+  min-height:62px;
+  display:flex;
+  align-items:center;
+}
+
+.sampling-frequency-cell-wrap{
+  position:relative;
+}
+
+.sampling-frequency-between{
+  position:absolute;
+  left:-8px;
+  top:15px;
+  transform:translateX(-50%);
+  z-index:2;
+  min-width:18px;
+  padding:1px 3px;
+  border-radius:999px;
+  background:#fff;
+  color:#66746b;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:none;
+}
+
 </style>
 </head>
 <body>
@@ -1775,7 +1809,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
 
     <p class="sampling-frequency-note">
-      The sample date is shown below each monthly frequency cell, together with the number of days since that site's previous sample.
+      The sample date is shown below each monthly frequency cell. Where consecutive samples are available, the small number between cells shows the number of days between samples.
       Hover or focus a cell for the full survey date details. Days since last sample are calculated from each site's most recent sample date to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
     </p>
   </div>
@@ -4369,14 +4403,7 @@ function renderSamplingFrequency(){
                 day:"numeric",
                 month:"short"
               }).format(new Date(ts));
-
-              const gap=siteIntervals[site]?.get(ts);
-              const gapText=Number.isFinite(gap)
-                ? `${gap} ${gap===1?"day":"days"} since previous`
-                : "First recorded sample";
-
-              return `<span class="sampling-frequency-date-line">${esc(shortDate)}</span>
-                      <span class="sampling-frequency-gap">${esc(gapText)}</span>`;
+              return `<span class="sampling-frequency-date-line">${esc(shortDate)}</span>`;
             }).join("")
           : '<span class="sampling-frequency-date-line">—</span>';
 
@@ -4384,7 +4411,17 @@ function renderSamplingFrequency(){
           ? `${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`
           : `${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
 
+        let intervalBadge="";
+        if(count){
+          const firstDate=dates[0];
+          const gap=siteIntervals[site]?.get(firstDate);
+          if(Number.isFinite(gap)){
+            intervalBadge=`<span class="sampling-frequency-between" title="${gap} ${gap===1?"day":"days"} since previous sample" aria-label="${gap} ${gap===1?"day":"days"} between samples">${gap}</span>`;
+          }
+        }
+
         return `<div class="sampling-frequency-cell-wrap">
+          ${intervalBadge}
           <div class="sampling-frequency-cell${count?" has-visits":""}${cls}"
             data-site="${esc(site)}"
             tabindex="0"
