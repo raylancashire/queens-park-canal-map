@@ -1345,276 +1345,21 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 
-/* Hover highlight for individual result cards */
-.snapshot-card,
-.change-summary-card,
-.site-consistency-table tbody tr,
-.site-comparison-table tbody tr{
-  transition:background-color .16s ease, box-shadow .16s ease, transform .16s ease;
-}
-
-.snapshot-card:hover,
-.change-summary-card:hover{
-  background:#f2f7f3;
-  box-shadow:0 5px 14px rgba(23,50,31,.10);
-  transform:translateY(-1px);
-}
-
-.site-consistency-table tbody tr:hover td,
-.site-comparison-table tbody tr:hover td{
-  background:#f2f7f3;
-}
-
-
-/* Preserve scientific capitalisation such as pH inside otherwise uppercase labels */
-.preserve-case{
-  text-transform:none !important;
-}
-
-
-/* Highlight the Overall Water Quality Snapshot period buttons on hover/focus */
-.snapshot-period-toggle button{
-  transition:background-color .16s ease, border-color .16s ease,
-             color .16s ease, box-shadow .16s ease, transform .16s ease;
-}
-.snapshot-period-toggle button:not(.active):hover,
-.snapshot-period-toggle button:not(.active):focus-visible{
-  background:#eef7f0;
-  border-color:#7fa38a;
-  color:#143823;
-  box-shadow:0 3px 8px rgba(30,70,42,.16);
-  transform:translateY(-1px);
-}
-
-/* Highlight only unselected Site Consistency indicator buttons */
-.site-consistency-toggle button{
-  transition:background-color .16s ease, border-color .16s ease,
-             color .16s ease, box-shadow .16s ease, transform .16s ease;
-}
-.site-consistency-toggle button:not(.active):hover,
-.site-consistency-toggle button:not(.active):focus-visible{
-  background:#eef7f0;
-  border-color:#7fa38a;
-  color:#143823;
-  box-shadow:0 3px 8px rgba(30,70,42,.16);
-  transform:translateY(-1px);
-}
-
-
-/* Key takeaway summaries */
-.key-takeaway{
-  margin:0 0 14px;
-  padding:10px 12px;
-  border-left:4px solid #5f8a69;
-  border-radius:0 8px 8px 0;
-  background:#f2f7f3;
-  color:#35483b;
-  font-size:12px;
-  line-height:1.5;
-}
-.key-takeaway-label{
-  display:block;
-  margin-bottom:2px;
-  color:#526158;
-  font-size:9px;
-  font-weight:850;
-  text-transform:uppercase;
-  letter-spacing:.06em;
-}
-
-/* Distinguish improved results without masking the indicator colour tab */
-.change-summary-card.improved{
-  background:#ffffff;
-  border-color:#b8d8bf;
-  box-shadow:inset 0 0 0 2px rgba(57,169,107,.18);
-}
-.change-summary-card.improved:hover{
-  background:#f4faf5;
-  border-color:#8fbe99;
-  box-shadow:
-    inset 0 0 0 2px rgba(57,169,107,.28),
-    0 5px 14px rgba(36,91,50,.14);
-}
-
-
-/* Interactive Overall Change words */
-.change-filter-word{
-  display:inline-block;
-  padding:1px 4px;
-  border-radius:4px;
-  font-weight:800;
-  cursor:default;
-  transition:background-color .15s ease, color .15s ease, box-shadow .15s ease;
-}
-.change-filter-word[data-status="improved"]:hover,
-.change-filter-word[data-status="improved"]:focus-visible{
-  background:#dff1e3;
-  color:#245b32;
-  box-shadow:0 0 0 2px rgba(36,91,50,.12);
-}
-.change-filter-word[data-status="stable"]:hover,
-.change-filter-word[data-status="stable"]:focus-visible{
-  background:#fff1b8;
-  color:#66520d;
-  box-shadow:0 0 0 2px rgba(102,82,13,.10);
-}
-.change-filter-word[data-status="worse"]:hover,
-.change-filter-word[data-status="worse"]:focus-visible{
-  background:#f8d8c9;
-  color:#7c3b18;
-  box-shadow:0 0 0 2px rgba(124,59,24,.10);
-}
-
-/* Cards highlighted from Overall Change words */
-.change-summary-card.word-highlight{
-  transform:translateY(-2px);
-  box-shadow:0 6px 16px rgba(23,50,31,.16);
-}
-.change-summary-card.word-highlight.improved{
-  background:#f0f8f2;
-  box-shadow:
-    inset 0 0 0 2px rgba(57,169,107,.28),
-    0 6px 16px rgba(36,91,50,.16);
-}
-.change-summary-card.word-highlight.stable{
-  background:#fff9df;
-  box-shadow:
-    inset 0 0 0 2px rgba(184,148,31,.22),
-    0 6px 16px rgba(102,82,13,.12);
-}
-.change-summary-card.word-highlight.worse{
-  background:#fff1ea;
-  box-shadow:
-    inset 0 0 0 2px rgba(176,83,40,.20),
-    0 6px 16px rgba(124,59,24,.12);
-}
-
-
-
-/* Change cards remain white normally: the top strip identifies the measurement */
-.change-summary-card.improved,
-.change-summary-card.stable,
-.change-summary-card.worse,
-.change-summary-card.neutral{
-  background:#fff;
-  border-color:#d8e2da;
-  box-shadow:none;
-}
-
-/* Ordinary card hover remains subtle and neutral */
-.change-summary-card.improved:hover,
-.change-summary-card.stable:hover,
-.change-summary-card.worse:hover,
-.change-summary-card.neutral:hover{
-  background:#f2f7f3;
-  border-color:#d8e2da;
-  box-shadow:0 5px 14px rgba(23,50,31,.10);
-}
-
-/* Hovering/focusing the Overall Change words temporarily highlights matching cards */
-.change-summary-card.word-highlight.improved,
-.change-summary-card.word-highlight.improved:hover{
-  background:#e8f5eb;
-  border-color:#b7d8bf;
-  box-shadow:0 6px 16px rgba(36,91,50,.14);
-}
-.change-summary-card.word-highlight.stable,
-.change-summary-card.word-highlight.stable:hover{
-  background:#fff7d6;
-  border-color:#e5d58d;
-  box-shadow:0 6px 16px rgba(102,82,13,.12);
-}
-.change-summary-card.word-highlight.worse,
-.change-summary-card.word-highlight.worse:hover{
-  background:#fbe7dc;
-  border-color:#e4b59d;
-  box-shadow:0 6px 16px rgba(124,59,24,.12);
-}
-
-
-/* Preserve each measurement's coloured top strip at all times */
-.change-summary-card,
-.change-summary-card.improved,
-.change-summary-card.stable,
-.change-summary-card.worse,
-.change-summary-card.neutral,
-.change-summary-card:hover,
-.change-summary-card.word-highlight{
-  border-top-color:var(--change-indicator,#2f6b45) !important;
-}
-
-/* Only the side/bottom borders should change during hover/highlight states */
-.change-summary-card.improved,
-.change-summary-card.stable,
-.change-summary-card.worse,
-.change-summary-card.neutral{
-  border-left-color:#d8e2da;
-  border-right-color:#d8e2da;
-  border-bottom-color:#d8e2da;
-}
-
-.change-summary-card.word-highlight.improved,
-.change-summary-card.word-highlight.improved:hover{
-  border-left-color:#b7d8bf;
-  border-right-color:#b7d8bf;
-  border-bottom-color:#b7d8bf;
-}
-.change-summary-card.word-highlight.stable,
-.change-summary-card.word-highlight.stable:hover{
-  border-left-color:#e5d58d;
-  border-right-color:#e5d58d;
-  border-bottom-color:#e5d58d;
-}
-.change-summary-card.word-highlight.worse,
-.change-summary-card.word-highlight.worse:hover{
-  border-left-color:#e4b59d;
-  border-right-color:#e4b59d;
-  border-bottom-color:#e4b59d;
-}
-
-
-/* Results to Watch */
-.results-watch{margin:0 0 16px}
-.results-watch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-.results-watch-title{color:#526158;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
-.results-watch-count{padding:3px 7px;border-radius:999px;background:#f0f3f1;color:#526158;font-size:9px;font-weight:800}
-.results-watch-grid{display:grid;gap:8px}
-.results-watch-item{padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--watch-colour,#a66a35);border-radius:8px;background:#fffaf5;transition:.15s ease}
-.results-watch-item:hover,.results-watch-item:focus-visible{background:#fff3e7;box-shadow:0 4px 12px rgba(91,62,35,.10);transform:translateY(-1px);outline:none}
-.results-watch-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
-.results-watch-name{color:var(--ink);font-size:11px;font-weight:850}
-.results-watch-value{color:var(--ink);font-size:13px;font-weight:850;text-align:right}
-.results-watch-reason{margin-top:4px;color:#66746b;font-size:10px;line-height:1.4}
-.results-watch-clear{padding:10px 12px;border:1px solid #cfe1d3;border-radius:8px;background:#f2f8f3;color:#31563b;font-size:11px}
-.snapshot-card.watch-highlight{background:#fff5e9!important;box-shadow:0 0 0 2px rgba(166,106,53,.20),0 5px 14px rgba(91,62,35,.12)!important;transform:translateY(-1px)}
-
-/* More breathing room around concluding Key Takeaway boxes */
-.key-takeaway{
-  margin-top:20px;
-  margin-bottom:10px;
-}
-@media(max-width:580px){
-  .key-takeaway{
-    margin-top:16px;
-    margin-bottom:8px;
-  }
-}
-
-
-/* Extra breathing room for Results to Watch in the Overall Water Quality Snapshot */
-#resultsWatch{
-  margin-top:24px;
-  margin-bottom:22px;
-}
-#resultsWatch .results-watch-head{
-  margin-bottom:10px;
-}
-@media(max-width:580px){
-  #resultsWatch{
-    margin-top:20px;
-    margin-bottom:18px;
-  }
-}
+.overall-site-comparison-summary{margin-top:18px}
+.overall-site-summary-card{border:1px solid var(--line);border-radius:10px;background:#f7faf7;overflow:hidden}
+.overall-site-summary-heading{padding:11px 13px 9px;color:var(--ink);font-size:14px;font-weight:800}
+.overall-site-summary-sub{padding:0 13px 10px;color:var(--muted);font-size:11px;line-height:1.45}
+.overall-site-summary-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 13px;border-top:1px solid #e5ebe6;font-size:12px}
+.overall-site-summary-row:nth-child(even){background:rgba(255,255,255,.58)}
+.overall-site-summary-row.strongest{box-shadow:inset 4px 0 0 #39A96B}
+.overall-site-summary-row.watch{box-shadow:inset 4px 0 0 #F4B183}
+.overall-site-summary-site{min-width:0;color:var(--ink);font-weight:750}
+.overall-site-summary-rating{font-weight:800;white-space:nowrap}
+.overall-site-summary-count{color:var(--muted);white-space:nowrap}
+.overall-site-summary-tag{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:999px;background:#e9f4ed;color:#2f6b45;font-size:10px;font-weight:800}
+.overall-site-summary-row.watch .overall-site-summary-tag{background:#fff0e5;color:#7b4a28}
+.overall-site-summary-note{padding:9px 13px 11px;border-top:1px solid #e5ebe6;color:var(--muted);font-size:11px;line-height:1.45}
+@media(max-width:600px){.overall-site-summary-row{grid-template-columns:minmax(0,1fr) auto}.overall-site-summary-count{grid-column:1/-1}}
 
 </style>
 </head>
@@ -1634,6 +1379,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <div id="snapshotContent" class="outer-analysis-content">
     <section id="overallSnapshot" class="snapshot-panel" aria-labelledby="snapshotTitle">
+      <div class="snapshot-kicker">Canal Watch · Further Analysis</div>
       <h2 id="snapshotTitle" class="snapshot-title">Overall Water Quality Snapshot</h2>
       <p class="snapshot-intro">
         A compact view of the available monitoring results. Choose all sites or an individual sampling site,
@@ -1658,17 +1404,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="snapshotGrid" class="snapshot-grid"></div>
-
-      <div id="resultsWatch" class="results-watch">
-        <div class="results-watch-head"><div class="results-watch-title">Results to Watch</div><div id="resultsWatchCount" class="results-watch-count"></div></div>
-        <div id="resultsWatchGrid" class="results-watch-grid"></div>
-      </div>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
-      </div>
-
+      <div id="snapshotSummary" class="snapshot-summary"></div>
       <div id="snapshotMeta" class="snapshot-meta"></div>
     </section>
   </div>
@@ -1691,7 +1427,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare the two most recent available survey dates for each indicator.
         FreshWater Watch and additional water-quality tests are compared separately when their sampling dates differ.
       </p>
-<div class="change-summary-controls">
+
+      <div class="change-summary-controls">
         <div class="change-summary-control">
           <label for="changeSummarySiteSelect">Location</label>
           <select id="changeSummarySiteSelect">
@@ -1709,12 +1446,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="changeAdditionalGrid" class="change-summary-grid"></div>
 
       <div id="changeOverallSummary" class="change-summary-overall"></div>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="changeTakeawayText">Summary will update when comparable surveys are available.</span>
-      </div>
-
     </div>
   </div>
 </section>
@@ -1734,7 +1465,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <p class="site-comparison-intro">
         Compare the latest recorded result from each sampling site.
       </p>
-<p class="site-comparison-intro">
+      <p class="site-comparison-intro">
         Nitrate and phosphate bars use the midpoint of the FreshWater Watch result range;
         the original result band is shown beside each site. Turbidity uses the recorded NTU value.
       </p>
@@ -1746,12 +1477,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
-      </div>
-
+      <div id="overallSiteComparisonSummary" class="overall-site-comparison-summary" aria-live="polite"></div>
     </div>
   </section>
 
@@ -1772,19 +1498,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Compare how stable each sampling site's results have been across repeated surveys.
         Consistency describes variation only; it does not mean that a consistently high result is environmentally desirable.
       </p>
-<div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
+
+      <div class="site-consistency-toggle" role="group" aria-label="Choose site consistency indicator">
         <button id="consistencyNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
         <button id="consistencyPhosphate" type="button" aria-pressed="false">Phosphate</button>
         <button id="consistencyTurbidity" type="button" aria-pressed="false">Turbidity</button>
       </div>
 
       <div id="siteConsistencyTable"></div>
-
-      <div class="key-takeaway">
-        <span class="key-takeaway-label">Key takeaway</span>
-        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
-      </div>
-
 
       <div class="site-consistency-summary">
         <div class="site-consistency-summary-card">
@@ -2611,7 +2332,7 @@ function renderSeasonalPattern(){
 
   if(!points.length){
     chart.innerHTML='<div class="site-comparison-empty">No data are available for this seasonal view yet.</div>';
-    if(summary) summary.textContent="";
+    summary.textContent="";
     return;
   }
 
@@ -3611,8 +3332,8 @@ function snapshotCard(metric,title,valueText,note,status){
     statusHtml=`<span class="snapshot-card-status" style="background:${style.background};color:${style.colour}">${esc(status.label)}</span>`;
   }
 
-  return `<article class="snapshot-card" data-indicator="${esc(metric)}" style="--snapshot-colour:${colour}">
-    <div class="snapshot-card-title${title==="pH" ? " preserve-case" : ""}">${esc(title)}</div>
+  return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
+    <div class="snapshot-card-title">${esc(title)}</div>
     <div class="snapshot-card-value">${esc(valueText)}</div>
     ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
     ${statusHtml}
@@ -3698,44 +3419,18 @@ async function loadSnapshotAdditionalData(){
   setTimeout(notifyParentOfHeight,40);
 }
 
-
-function watchReason(key,value){
-  if(!Number.isFinite(value)) return null;
-  if(key==="nitrate" && value>5) return "Nitrate is in the higher range and is worth monitoring.";
-  if(key==="phosphate" && value>0.5) return "Phosphate is in the higher range and is worth monitoring.";
-  if(key==="turbidity"){if(value>40)return "Turbidity is high, indicating reduced water clarity.";if(value>=14)return "Turbidity is moderately elevated and should continue to be monitored.";}
-  if(key==="ph"){const a=snapshotPHAssessment(value);if(a&&a.kind==="poor")return "pH is outside the preferred range.";}
-  if(key==="do"){const a=snapshotDOAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Dissolved Oxygen (DO) is below the more favourable range.";}
-  if(key==="bod"){const a=snapshotBODAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Biochemical Oxygen Demand (BOD) is elevated and is worth monitoring.";}
-  if(key==="coliform" && value>=20) return "Coliform is above the upper limit of the test.";
-  return null;
-}
-function watchLabel(key){return ({nitrate:"Nitrate",phosphate:"Phosphate",turbidity:"Turbidity",temperature:"Temperature",ph:"pH",do:"Dissolved Oxygen (DO)",bod:"Biochemical Oxygen Demand (BOD)",coliform:"Coliform"})[key]||key;}
-function watchValue(key,v){
-  if(key==="nitrate")return `${v.toFixed(2)} mg/L`;if(key==="phosphate")return `${v.toFixed(3)} mg/L`;if(key==="turbidity")return `${v.toFixed(0)} NTU`;if(key==="temperature")return `${v.toFixed(1)} °C`;if(key==="ph")return v.toFixed(1);if(key==="do"||key==="bod")return `${v.toFixed(1)} ppm`;if(key==="coliform")return v>=20?"> 20 coliforms/100ml":`${v.toFixed(0)} coliforms/100ml`;return String(v);
-}
-function setWatchHighlight(key,on){document.querySelectorAll(`.snapshot-card[data-indicator="${key}"]`).forEach(card=>card.classList.toggle("watch-highlight",on));}
-function renderResultsWatch(values){
-  const grid=document.getElementById("resultsWatchGrid"),count=document.getElementById("resultsWatchCount");if(!grid||!count)return;
-  const items=Object.entries(values).map(([key,value])=>({key,value,reason:watchReason(key,value)})).filter(x=>x.reason);
-  count.textContent=`${items.length} indicator${items.length===1?"":"s"}`;
-  if(!items.length){grid.innerHTML='<div class="results-watch-clear">✓ No results currently require particular attention.</div>';return;}
-  grid.innerHTML=items.map(x=>`<div class="results-watch-item" tabindex="0" data-watch-indicator="${esc(x.key)}" style="--watch-colour:${snapshotIndicatorColour(x.key)}"><div class="results-watch-row"><div class="results-watch-name">${esc(watchLabel(x.key))}</div><div class="results-watch-value">${esc(watchValue(x.key,x.value))}</div></div><div class="results-watch-reason">${esc(x.reason)}</div></div>`).join("");
-  grid.querySelectorAll(".results-watch-item").forEach(item=>{const key=item.dataset.watchIndicator;item.addEventListener("mouseenter",()=>setWatchHighlight(key,true));item.addEventListener("mouseleave",()=>setWatchHighlight(key,false));item.addEventListener("focus",()=>setWatchHighlight(key,true));item.addEventListener("blur",()=>setWatchHighlight(key,false));});
-}
-
 function renderSnapshot(){
   const grid=document.getElementById("snapshotGrid");
   const summary=document.getElementById("snapshotSummary");
   const meta=document.getElementById("snapshotMeta");
-  if(!grid || !meta || !freshwaterDataForChanges.length) return;
+  if(!grid || !summary || !meta || !freshwaterDataForChanges.length) return;
 
   const fwRows=snapshotFreshwaterScopeRows();
   const addRows=snapshotAdditionalScopeRows();
 
   if(!fwRows.length && !addRows.length){
     grid.innerHTML='<div class="snapshot-empty">No results are available for this location and period.</div>';
-    if(summary) summary.textContent="";
+    summary.textContent="";
     meta.textContent="";
     return;
   }
@@ -3745,7 +3440,7 @@ function renderSnapshot(){
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
 
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
-  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","pH"])));
+  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
   const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
     "Dissolved Oxygen PPM",
     "Dissolved Oxygen ppm",
@@ -3806,7 +3501,7 @@ function renderSnapshot(){
 
   if(Number.isFinite(bod)){
     cards.push(snapshotCard(
-      "bod","Biochemical Oxygen Demand (BOD)",`${bod.toFixed(1)} ppm`,
+      "bod","BOD",`${bod.toFixed(1)} ppm`,
       "Initial DO minus 5-day DO",
       snapshotBODAssessment(bod)
     ));
@@ -3814,7 +3509,7 @@ function renderSnapshot(){
 
   if(Number.isFinite(coliform)){
     cards.push(snapshotCard(
-      "coliform","Coliform",coliform>=20 ? "> 20 coliforms/100ml" : `${coliform.toFixed(0)} coliforms/100ml`,
+      "coliform","Coliform",coliform>=20 ? "> 20 coliform/100ml" : `${coliform.toFixed(0)} coliform/100ml`,
       "48-hour result",
       coliform===0
         ? {label:"None detected",kind:"good"}
@@ -3825,7 +3520,6 @@ function renderSnapshot(){
   grid.innerHTML=cards.length
     ? cards.join("")
     : '<div class="snapshot-empty">No usable measurements are available for this view.</div>';
-  renderResultsWatch({nitrate,phosphate,turbidity,temperature,ph,do:dissolvedOxygen,bod,coliform});
 
   const scope=currentFocusedSite==="all"
     ? "all monitoring sites"
@@ -3857,11 +3551,7 @@ function renderSnapshot(){
     if(da) narrative+=` Dissolved oxygen is assessed as ${da.label.toLowerCase()}.`;
   }
 
-  if(summary) summary.textContent=narrative;
-  const snapshotTakeaway=document.getElementById("snapshotTakeawayText");
-  if(snapshotTakeaway){
-    snapshotTakeaway.textContent=narrative;
-  }
+  summary.textContent=narrative;
 
   const fwLatest=fwRows.length
     ? Math.max(...fwRows.map(sampleDateValue).filter(Boolean))
@@ -3990,22 +3680,6 @@ function renderSiteConsistency(){
 
   const info=consistencyMetricInfo(currentConsistencyMetric);
   const rows=collectSiteConsistency(currentConsistencyMetric);
-  const consistencyTakeaway=document.getElementById("siteConsistencyTakeawayText");
-  if(consistencyTakeaway){
-    const usable=rows.filter(r=>r.count>=2 && Number.isFinite(r.cv));
-    const stableCount=usable.filter(r=>r.category.cls==="stable").length;
-    const variableCount=usable.filter(r=>r.category.cls==="variable").length;
-    const metricName=consistencyMetricInfo(currentConsistencyMetric).label;
-    if(!usable.length){
-      consistencyTakeaway.textContent="More repeated samples are needed before site consistency can be assessed.";
-    }else if(stableCount>usable.length/2){
-      consistencyTakeaway.textContent=`${metricName} results have remained relatively consistent at most monitoring locations.`;
-    }else if(variableCount>usable.length/2){
-      consistencyTakeaway.textContent=`${metricName} shows substantial variation across repeated surveys at several monitoring locations.`;
-    }else{
-      consistencyTakeaway.textContent=`${metricName} shows a mixture of stable and changing results across the monitoring locations.`;
-    }
-  }
 
   if(!rows.length){
     holder.innerHTML='<div class="site-comparison-empty">No site consistency data are available for this indicator yet.</div>';
@@ -4157,8 +3831,8 @@ function changeIndicatorInfo(key){
     temperature:{label:"Temperature",unit:"°C",decimals:1,neutralDirection:true},
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
-    bod:{label:"Biochemical Oxygen Demand (BOD)",unit:"ppm",decimals:1,lowerBetter:true},
-    coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
+    bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
+    coliform:{label:"Coliform",unit:"coliform/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
   return info[key];
 }
@@ -4169,8 +3843,8 @@ function changeFormatValue(key,value){
 
   if(key==="coliform"){
     return value>=20
-      ? "> 20 coliforms/100ml"
-      : `${value.toFixed(0)} coliforms/100ml`;
+      ? "> 20 coliform/100ml"
+      : `${value.toFixed(0)} coliform/100ml`;
   }
 
   return `${value.toFixed(info.decimals)}${info.unit ? " "+info.unit : ""}`;
@@ -4259,8 +3933,8 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
   const status=changeClassification(key,current,previous);
   const colour=snapshotIndicatorColour(key);
 
-  return `<article class="change-summary-card ${status.cls}" style="--change-indicator:${colour}">
-    <div class="change-summary-name${info.label==="pH" ? " preserve-case" : ""}">${esc(info.label)}</div>
+  return `<article class="change-summary-card" style="--change-indicator:${colour}">
+    <div class="change-summary-name">${esc(info.label)}</div>
 
     <div class="change-summary-values">
       <div class="change-summary-value">
@@ -4345,36 +4019,6 @@ function applyChangeSummarySiteFocus(site){
   setTimeout(notifyParentOfHeight,40);
 }
 
-
-function setChangeWordHighlight(status,on){
-  document.querySelectorAll(`.change-summary-card.${status}`).forEach(card=>{
-    card.classList.toggle("word-highlight",on);
-  });
-}
-
-function bindChangeWordHighlights(){
-  const overall=document.getElementById("changeOverallSummary");
-  if(!overall || overall.dataset.highlightBound==="true") return;
-  overall.dataset.highlightBound="true";
-
-  overall.addEventListener("mouseover",event=>{
-    const word=event.target.closest(".change-filter-word");
-    if(word) setChangeWordHighlight(word.dataset.status,true);
-  });
-  overall.addEventListener("mouseout",event=>{
-    const word=event.target.closest(".change-filter-word");
-    if(word) setChangeWordHighlight(word.dataset.status,false);
-  });
-  overall.addEventListener("focusin",event=>{
-    const word=event.target.closest(".change-filter-word");
-    if(word) setChangeWordHighlight(word.dataset.status,true);
-  });
-  overall.addEventListener("focusout",event=>{
-    const word=event.target.closest(".change-filter-word");
-    if(word) setChangeWordHighlight(word.dataset.status,false);
-  });
-}
-
 function renderChangeSummary(){
   const fwGrid=document.getElementById("changeFreshwaterGrid");
   const addGrid=document.getElementById("changeAdditionalGrid");
@@ -4409,7 +4053,7 @@ function renderChangeSummary(){
     : '<div class="change-summary-empty">No FreshWater Watch comparison is available for this location yet.</div>';
 
   const tempGetter=r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"]);
-  const phGetter=r=>snapshotFirstNumber(r,["pH","pH"]);
+  const phGetter=r=>snapshotFirstNumber(r,["pH","PH"]);
   const doGetter=r=>snapshotFirstNumber(r,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
@@ -4463,27 +4107,11 @@ function renderChangeSummary(){
   const stable=outcomes.filter(x=>x.cls==="stable").length;
   const worse=outcomes.filter(x=>x.cls==="worse").length;
 
-  const changeTakeaway=document.getElementById("changeTakeawayText");
-  bindChangeWordHighlights();
   if(outcomes.length){
     overall.innerHTML=
-      `<strong>Overall change:</strong> ${improved} <span class="change-filter-word" data-status="improved" tabindex="0">improved</span>, ${stable} remained broadly <span class="change-filter-word" data-status="stable" tabindex="0">stable</span> and ${worse} <span class="change-filter-word" data-status="worse" tabindex="0">deteriorated</span> among indicators with comparable previous results.`;
-    if(changeTakeaway){
-      if(worse===0 && improved>0){
-        changeTakeaway.textContent="Comparable indicators are stable or improving, with no deterioration identified since the previous survey.";
-      }else if(improved>worse){
-        changeTakeaway.textContent="More comparable indicators have improved than deteriorated since the previous survey.";
-      }else if(worse>improved){
-        changeTakeaway.textContent="Several comparable indicators have moved in a less favourable direction and are worth monitoring.";
-      }else{
-        changeTakeaway.textContent="Changes since the previous survey are mixed, with improvements and deteriorations broadly balanced.";
-      }
-    }
+      `<strong>Overall change:</strong> ${improved} improved, ${stable} remained broadly stable and ${worse} deteriorated among indicators with comparable previous results.`;
   }else{
     overall.textContent="More repeated surveys are needed before an overall change summary can be calculated.";
-    if(changeTakeaway){
-      changeTakeaway.textContent="More repeated surveys are needed before a meaningful change summary can be produced.";
-    }
   }
 }
 
@@ -4555,6 +4183,37 @@ function comparisonDisplay(metric,result){
   };
 }
 
+
+function overallSiteMetricScore(row,metric){
+  if(metric==="nitrate"||metric==="phosphate"){
+    const raw=metric==="nitrate"?getNitrate(row):getPhosphate(row);
+    const nums=(String(normaliseRange(raw)).match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+    const v=nums.length>=2?(nums[0]+nums[1])/2:(nums[0]??NaN);
+    if(!Number.isFinite(v))return null;
+    if(metric==="nitrate"){if(v<=0.5)return 5;if(v<=1.5)return 4;if(v<=3.5)return 3;if(v<=7.5)return 2;return 1}
+    if(v<=0.025)return 5;if(v<=0.075)return 4;if(v<=0.15)return 3;if(v<=0.3)return 2;return 1
+  }
+  const v=comparisonMetricValue(row,"turbidity");
+  if(!Number.isFinite(v))return null;
+  if(v<=4)return 5;if(v<=8)return 4;if(v<=12)return 3;if(v<=20)return 2;return 1
+}
+function overallSiteRating(s){if(s>=4.5)return"Excellent";if(s>=3.5)return"Good";if(s>=2.5)return"Fair";if(s>=1.5)return"Poor";return"Very Poor"}
+function renderOverallSiteComparisonSummary(){
+  const target=document.getElementById("overallSiteComparisonSummary");if(!target||!freshwaterDataForChanges.length)return;
+  const groups={};freshwaterDataForChanges.forEach(r=>{const s=siteName(r);if(s)(groups[s]||=[]).push(r)});
+  const items=Object.entries(groups).map(([site,rows])=>{
+    const scores=[];rows.forEach(r=>["nitrate","phosphate","turbidity"].forEach(m=>{const v=overallSiteMetricScore(r,m);if(Number.isFinite(v))scores.push(v)}));
+    const score=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:NaN;
+    return{site,count:rows.length,score,rating:Number.isFinite(score)?overallSiteRating(score):"No data"};
+  }).filter(x=>Number.isFinite(x.score)).sort((a,b)=>b.score-a.score||b.count-a.count||a.site.localeCompare(b.site));
+  if(!items.length){target.innerHTML="";return}
+  const best=items[0],watch=items.length>1?items[items.length-1]:null;
+  target.innerHTML=`<div class="overall-site-summary-card"><div class="overall-site-summary-heading">Overall site comparison</div>
+  <div class="overall-site-summary-sub">Based on the available nitrate, phosphate and turbidity results across the monitoring period.</div>
+  ${items.map(x=>{const b=x.site===best.site,w=watch&&x.site===watch.site&&!b;const name=x.site.replace(/^Grand Union Canal\s*-\s*/i,"");const tag=b?'<span class="overall-site-summary-tag">Strongest overall results</span>':w?'<span class="overall-site-summary-tag">Results to watch</span>':"";return`<div class="overall-site-summary-row${b?" strongest":w?" watch":""}"><div class="overall-site-summary-site">${esc(name)}${tag}</div><div class="overall-site-summary-rating">${esc(x.rating)}</div><div class="overall-site-summary-count">${x.count} ${x.count===1?"sample":"samples"}</div></div>`}).join("")}
+  <div class="overall-site-summary-note">This is a relative comparison of the monitored sites using the available FreshWater Watch results, not a formal water-quality classification.</div></div>`;
+}
+
 function renderSiteComparison(){
   const chart=document.getElementById("siteComparisonChart");
   if(!chart || !freshwaterDataForChanges.length) return;
@@ -4574,13 +4233,7 @@ function renderSiteComparison(){
     .sort((a,b)=>a.result.value-b.result.value);
 
   if(!results.length){
-    const comparisonTakeaway=document.getElementById("siteComparisonTakeawayText");
-  if(comparisonTakeaway){
-    const metricLabel=currentComparisonMetric==="nitrate"?"Nitrate":currentComparisonMetric==="phosphate"?"Phosphate":"Turbidity";
-    comparisonTakeaway.textContent=`${metricLabel} comparison shows how the latest recorded result differs between monitoring locations.`;
-  }
-
-  chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
+    chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
     return;
   }
 
@@ -4644,6 +4297,7 @@ async function load(){
     renderChangeSummary();
 
     renderSiteComparison();
+  renderOverallSiteComparisonSummary();
     renderSiteConsistency();
     renderProjectTrend();
     populateSeasonalSiteSelect();
