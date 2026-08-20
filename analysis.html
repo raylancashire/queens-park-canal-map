@@ -1189,12 +1189,80 @@ function additionalAssessment(column,value){
   return null;
 }
 
+
+function additionalColumnValue(row,column){
+  if(column==="Temperature °C"){
+    return getField(row,"Temperature °C","Temperature C","Temperature");
+  }
+
+  if(column==="pH"){
+    return getField(row,"pH","PH");
+  }
+
+  if(column==="Coliform"){
+    return getField(
+      row,
+      "Coliform",
+      "Coliform (48 Hrs)",
+      "Coliform (48 hrs)",
+      "Total Coliform",
+      "Total coliform"
+    );
+  }
+
+  if(column==="Dissolved Oxygen mg/L"){
+    return getField(
+      row,
+      "Dissolved Oxygen mg/L",
+      "Dissolved Oxygen PPM",
+      "Dissolved Oxygen ppm",
+      "Dissolved Oxygen",
+      "DO mg/L",
+      "DO ppm"
+    );
+  }
+
+  if(column==="BOD mg/L"){
+    const direct=getField(
+      row,
+      "BOD mg/L",
+      "BOD",
+      "Biochemical Oxygen Demand",
+      "Biochemical Oxygen Demand (BOD)"
+    );
+    if(direct!=="") return direct;
+
+    const initial=parseAdditionalNumber(getField(
+      row,
+      "Initial Dissolved Oxygen mg/L",
+      "Initial Dissolved Oxygen PPM",
+      "Initial DO mg/L",
+      "Initial DO"
+    ));
+
+    const final=parseAdditionalNumber(getField(
+      row,
+      "5 Day Dissolved Oxygen mg/L",
+      "5-Day Dissolved Oxygen mg/L",
+      "Final Dissolved Oxygen mg/L",
+      "Final DO mg/L",
+      "Final DO"
+    ));
+
+    if(Number.isFinite(initial) && Number.isFinite(final)){
+      return String(initial-final);
+    }
+  }
+
+  return row[column] ?? "";
+}
+
 function renderAdditionalSeries(containerId,data,column,unit){
   const el=document.getElementById(containerId);
 
   const points=data
     .map(row=>({
-      value:parseAdditionalNumber(row[column]),
+      value:parseAdditionalNumber(additionalColumnValue(row,column)),
       temperature:parseAdditionalNumber(row["Temperature °C"]),
       date:parseUKDate(row["Date"],row["Time"]),
       label:additionalDateLabel(row),
@@ -1335,7 +1403,7 @@ function filterAdditionalForSite(data,site){
   if(!site || site==="all") return data;
   const target=normaliseSiteForMatch(site);
   return data.filter(row=>{
-    const location=getField(row,"Location","Site Name","Site","Sampling Site");
+    const location=getField(row,"Location","Site Name","site_name","Site","Sampling Site","sampling_site");
     return normaliseSiteForMatch(location)===target;
   });
 }
