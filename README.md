@@ -596,8 +596,15 @@ Current features include:
 - A **Monitoring coverage** summary showing the number of sites, sampling visits and the date range represented
 - A rolling **latest 12 months** view once the dataset contains more than 12 months of records
 - A **Days since last sample** summary for each site
-- The most recent sample date displayed alongside the days-since value
+- The most recent sample date displayed on its own line beneath the days-since value
 - Days since last sample calculated dynamically from each site's latest recorded sample date to the current date
+- Sample dates displayed directly beneath the compact monthly frequency cells
+- The number of calendar days between consecutive samples displayed as a compact number centred between the relevant sampling cells
+- Wider spacing between month columns so the between-sample interval remains visually distinct from either sample
+- Standard pale-green hover/focus highlighting on the compact sampling-frequency cells
+- Linked highlighting: hovering or focusing a frequency cell also highlights the corresponding **Time since last sampled** site card
+- A **Time since last sampled** heading above the latest-sample site cards
+- Sampling-site names and the **Sampling site** column heading centred within the site column for clearer alignment with the frequency cells
 
 Sampling visits are deduplicated by site and calendar date so duplicate source rows do not inflate the frequency count.
 
@@ -723,6 +730,12 @@ The following Canal Watch refinements were made or confirmed on **20 August 2026
 12. Added an automatic rolling **latest 12 months** view for longer datasets.
 13. Added **Days since last sample** for each monitoring site.
 14. Changed the days-since calculation to use the number of calendar days from each site's latest sample date to the current date.
+15. Added sample dates directly beneath the monthly sampling-frequency cells.
+16. Added compact **days between samples** values positioned between consecutive sampling cells.
+17. Refined month-column spacing so the between-sample values can be centred clearly between cells.
+18. Added standard pale-green hover/focus highlighting to the compact frequency cells and linked this to the corresponding **Time since last sampled** card.
+19. Added the **Time since last sampled** heading and placed each site's last-sampled date on its own line.
+20. Centred the sampling-site names and **Sampling site** heading within the site column to improve alignment with the timeline cells.
 
 These refinements keep the analysis functions grouped more logically while avoiding unnecessary visual clutter on the main Canal Watch map.
 
