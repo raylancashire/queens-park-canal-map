@@ -580,6 +580,31 @@ This makes **All sites** a genuine comparison view while retaining the individua
 
 ---
 
+## Sampling frequency over time
+
+A compact **Sampling frequency over time** panel has been added to `further-analysis.html`.
+
+The panel is designed to show the continuity and coverage of the monitoring programme rather than water-quality status.
+
+Current features include:
+
+- One row for each sampling location
+- Calendar months shown across the timeline
+- The number of sampling visits recorded for each site and month
+- Progressively stronger cell shading as monthly visit frequency increases, while retaining the numeric count for accessibility
+- Hover / keyboard-focus details showing the actual sampling date or dates for each cell
+- A **Monitoring coverage** summary showing the number of sites, sampling visits and the date range represented
+- A rolling **latest 12 months** view once the dataset contains more than 12 months of records
+- A **Days since last sample** summary for each site
+- The most recent sample date displayed alongside the days-since value
+- Days since last sample calculated dynamically from each site's latest recorded sample date to the current date
+
+Sampling visits are deduplicated by site and calendar date so duplicate source rows do not inflate the frequency count.
+
+The panel explicitly states that the heatmap represents **sampling frequency, not water-quality status**.
+
+---
+
 ## Canal Watch Updates widget
 
 A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
@@ -692,6 +717,12 @@ The following Canal Watch refinements were made or confirmed on **20 August 2026
 6. Tested a highlighted and labelled **Grand Union Canal** route on the Light map.
 7. Reverted the dedicated canal overlay after testing because it obscured too much of the underlying canal and map detail.
 8. Retained the previous clean Light-map presentation as the preferred current map view.
+9. Added a compact **Sampling frequency over time** heatmap to `further-analysis.html`.
+10. Added monthly sampling-visit counts for each monitoring site, including hover/focus access to the recorded survey dates.
+11. Added a **Monitoring coverage** summary showing site count, sampling visits and the monitoring date range.
+12. Added an automatic rolling **latest 12 months** view for longer datasets.
+13. Added **Days since last sample** for each monitoring site.
+14. Changed the days-since calculation to use the number of calendar days from each site's latest sample date to the current date.
 
 These refinements keep the analysis functions grouped more logically while avoiding unnecessary visual clutter on the main Canal Watch map.
 
