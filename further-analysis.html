@@ -1694,7 +1694,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
     <p class="sampling-frequency-note">
       Hover or focus a cell to see the survey date(s) recorded for that site and month.
-      Days since last visit are measured against the latest sampling date in the dataset. When more than 12 months of data are available, the timeline shows the latest 12 months.
+      Days since last sample are calculated from the date each site's most recent sample was taken to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
     </p>
   </div>
 </section>
@@ -4274,17 +4274,18 @@ function renderSamplingFrequency(){
 
   const lastVisits=document.getElementById("samplingFrequencyLastVisits");
   if(lastVisits){
-    const referenceDate=visits[visits.length-1].timestamp;
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
     const dayMs=24*60*60*1000;
 
     lastVisits.innerHTML=sites.map(site=>{
       const siteVisits=visits.filter(v=>v.site===site);
       const latest=siteVisits[siteVisits.length-1];
-      const days=Math.max(0,Math.round((referenceDate-latest.timestamp)/dayMs));
+      const days=Math.max(0,Math.floor((today-latest.timestamp)/dayMs));
       const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
       const daysText=days===0
-        ? "Latest project sampling date"
-        : `${days} ${days===1?"day":"days"} since last visit`;
+        ? "Sampled today"
+        : `${days} ${days===1?"day":"days"} since last sample`;
 
       return `<div class="sampling-frequency-last-visit">
         <strong>${esc(shortSite)}</strong>
