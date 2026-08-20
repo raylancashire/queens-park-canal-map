@@ -1,1607 +1,344 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Queen's Park Canal – Water Quality Monitoring</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-:root {
-  --green:#006400;
-  --emerald:#00a86b;
-  --fair:#ffd966;
-  --poor:#f4b183;
-  --ink:#17321f;
-  --muted:#5f6f64;
-  --line:#dfe7e1;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  color:var(--ink);
-  background:#f4f7f4;
-}
-.header {
-  background:#fff;
-  padding:20px 20px 14px;
-  border-bottom:1px solid var(--line);
-  position:sticky;
-  top:0;
-  z-index:5000;
-}
-.header h1 { margin:0 0 5px; font-size:24px; }
-.header p { margin:0; color:var(--muted); font-size:14px; line-height:1.45; }
-.controls {
-  background:#fff;
-  padding:12px 20px;
-  border-bottom:1px solid var(--line);
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-  position:sticky;
-  top:72px;
-  z-index:4999;
-}
-.controls label { font-size:13px; font-weight:600; }
-select {
-  padding:9px 34px 9px 10px;
-  border:1px solid #cbd7ce;
-  border-radius:6px;
-  background:white;
-  width:auto;
-  max-width:100%;
-  field-sizing:content;
-}
-
-
-#map { height:590px; width:100%; position:relative; z-index:1; overflow:hidden; }
-
-.bottom-stats {
-  display:grid;
-  grid-template-columns:1fr 1fr 1.6fr;
-  gap:16px;
-  margin:0 4px;
-}
-.bottom-stat {
-  background:#fff;
-  border:2px solid #dce5df;
-  border-radius:16px;
-  padding:10px 16px 9px;
-  min-height:72px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-.bottom-stat strong {
-  display:block;
-  font-size:24px;
-  line-height:1.05;
-  color:#143823;
-  font-weight:750;
-  white-space:nowrap;
-}
-#siteCount.site-name {
-  font-size:18px;
-  line-height:1.15;
-  white-space:normal;
-  overflow-wrap:anywhere;
-}
-
-.bottom-stat span {
-  display:block;
-  margin-top:4px;
-  font-size:13px;
-  line-height:1.1;
-  color:#617065;
-}
-@media(max-width:750px) {
-  .bottom-stats {
-    grid-template-columns:1fr;
-    gap:10px;
-  }
-  .bottom-stat {
-    min-height:auto;
-    padding:14px 18px;
-  }
-  .bottom-stat strong {
-    font-size:27px;
-  }
-  .bottom-stat span {
-    margin-top:6px;
-    font-size:13px;
-  }
-}
-
-.below {
-  background:#fff;
-  padding:12px 20px;
-  border-top:1px solid var(--line);
-}
-.stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-.stat {
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:10px 14px;
-  min-width:145px;
-}
-.stat strong { display:block; font-size:19px; }
-.stat span { color:var(--muted); font-size:12px; }
-.legend {
-  background:#fff;
-  padding:11px 13px;
-  line-height:24px;
-  box-shadow:0 1px 5px rgba(0,0,0,.25);
-  border-radius:7px;
-}
-.key { display:inline-flex; align-items:center; gap:6px; }
-
-.legend-symbol {
-  width:16px;
-  height:16px;
-  display:inline-block;
-  border:2px solid #222;
-  flex:0 0 auto;
-}
-.legend-symbol.circle {
-  border-radius:50%;
-}
-.legend-symbol.diamond {
-  transform:rotate(45deg);
-  width:14px;
-  height:14px;
-  margin:0 2px;
-}
-.legend-symbol.square {
-  border-radius:1px;
-}
-.legend-symbol.triangle {
-  width:0;
-  height:0;
-  border-left:8px solid transparent;
-  border-right:8px solid transparent;
-  border-bottom-width:15px;
-  border-bottom-style:solid;
-  border-top:0;
-  background:transparent !important;
-  border-radius:0;
-}
-.keyshape { width:16px; height:16px; display:inline-block; border:1.5px solid #333; }
-.circle { border-radius:50%; }
-
-.mini-pin {
-  width:14px;
-  height:14px;
-  display:inline-block;
-  background:var(--pin-colour);
-  border:1.5px solid rgba(40,40,40,.7);
-  border-radius:50% 50% 50% 0;
-  transform:rotate(-45deg);
-  position:relative;
-  margin:0 3px 0 2px;
-}
-.mini-pin::after {
-  content:"";
-  position:absolute;
-  width:4px;
-  height:4px;
-  background:#fff;
-  border-radius:50%;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-}
-
-.diamond { transform:rotate(45deg); width:13px; height:13px; margin:0 2px; }
-.triangle {
-  width:0; height:0;
-  border-left:8px solid transparent;
-  border-right:8px solid transparent;
-  border-bottom:15px solid #ffd966;
-  border-top:0;
-}
-.square { border-radius:2px; }
-
-.fww-marker {
-  background:transparent !important;
-  border:0 !important;
-}
-.fww-pin {
-  width:28px;
-  height:28px;
-  background:var(--pin-colour);
-  border:2px solid rgba(40,40,40,.7);
-  border-radius:50% 50% 50% 0;
-  transform:rotate(-45deg);
-  box-shadow:0 2px 4px rgba(0,0,0,.35);
-  position:relative;
-}
-.fww-pin-dot {
-  position:absolute;
-  width:9px;
-  height:9px;
-  background:#fff;
-  border-radius:50%;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 0 1px rgba(0,0,0,.12);
-}
-
-.popup {
-  font-size:14px;
-  line-height:1.45;
-  color:#17251c;
-}
-.popup h3 {
-  margin:0 0 6px;
-  font-size:18px;
-  line-height:1.3;
-}
-.site-photo {
-  display:block;
-  width:100%;
-  max-width:300px;
-  height:150px;
-  object-fit:cover;
-  border-radius:7px;
-  margin:6px 0 9px;
-  border:1px solid #dfe7e1;
-}
-
-.popup .date {
-  color:#435248;
-  font-size:14px;
-  margin-bottom:10px;
-}
-.popup table {
-  border-collapse:collapse;
-  width:100%;
-  font-size:14px;
-}
-.popup td {
-  padding:7px 4px;
-  border-bottom:1px solid #dfe7e1;
-  vertical-align:top;
-}
-.popup td:first-child {
-  font-weight:700;
-  width:40%;
-}
-.result {
-  font-size:14px;
-  font-weight:700;
-}
-.nutrient-level {
-  display:inline-block;
-  margin-left:6px;
-  padding:2px 6px;
-  border:2px solid #222;
-  border-radius:4px;
-  font-size:12px;
-  line-height:1.2;
-  font-weight:700;
-  color:#111;
-  background:#fff;
-}
-.nutrient-good::before {
-  content:"● ";
-}
-.nutrient-moderate::before {
-  content:"▲ ";
-}
-.nutrient-poor::before {
-  content:"■ ";
-}
-
-.current-results-heading {
-  margin:4px 0 3px;
-  font-size:12px;
-  font-weight:700;
-  color:#17251c;
-}
-.turbidity-row td {
-  padding-top:4px;
-  padding-bottom:4px;
-}
-.turbidity-result {
-  font-size:13px;
-  font-weight:600;
-}
-.turbidity-level {
-  display:inline-block;
-  margin-left:6px;
-  padding:2px 6px;
-  border:1px solid #222;
-  border-radius:4px;
-  font-size:12px;
-  line-height:1.2;
-  font-weight:700;
-  color:#111;
-  background:#fff;
-}
-.turbidity-excellent::before {
-  content:"● ";
-}
-.turbidity-fair::before {
-  content:"▲ ";
-}
-.turbidity-poor::before {
-  content:"■ ";
-}
-.turbidity-not-assessed::before {
-  content:"○ ";
-}
-
-
-.history {
-  margin-top:12px;
-  max-height:220px;
-  overflow:auto;
-}
-.history table {
-  font-size:13px;
-}
-.history th {
-  text-align:left;
-  padding:6px 4px;
-  border-bottom:2px solid #bfcac2;
-  font-weight:700;
-  color:#17251c;
-}
-.history-symbol {
-  transform-origin:center;
-  margin:0 auto !important;
-}
-.assessment-col {
-  width:20px;
-  min-width:20px;
-  max-width:20px;
-  padding-left:1px !important;
-  padding-right:3px !important;
-  text-align:center !important;
-}
-.history-level {
-  display:block;
-  margin-top:2px;
-  font-size:11px;
-  font-weight:700;
-  color:#28362d;
-}
-.history-turbidity {
-  font-weight:600;
-  white-space:nowrap;
-}
-
-.sr-only {
-  position:absolute;
-  width:1px;
-  height:1px;
-  padding:0;
-  margin:-1px;
-  overflow:hidden;
-  clip:rect(0,0,0,0);
-  white-space:nowrap;
-  border:0;
-}
-.assessment-status {
-  display:inline-block;
-  margin:5px 0 7px;
-  padding:3px 7px;
-  border:1px solid #2f3b33;
-  border-radius:4px;
-  font-size:12px;
-  font-weight:700;
-  background:#fff;
-}
-.assessment-symbol {
-  display:inline-block;
-  width:10px;
-  height:10px;
-  border:1px solid #222;
-  margin-right:7px;
-  vertical-align:-1px;
-}
-.assessment-symbol.circle { border-radius:50%; }
-.assessment-symbol.diamond { transform:rotate(45deg); margin-right:9px; }
-.assessment-symbol.square { border-radius:1px; }
-.assessment-symbol.triangle {
-  width:0;
-  height:0;
-  border-left:7px solid transparent;
-  border-right:7px solid transparent;
-  border-bottom-width:13px;
-  border-bottom-style:solid;
-  border-top:0;
-  margin-right:7px;
-  border-radius:0;
-}
-.badge {
-  display:inline-block;
-  padding:4px 8px;
-  border-radius:12px;
-  font-size:13px;
-  font-weight:700;
-  color:#111;
-}
-.error {
-  background:#fff3f3;
-  color:#8b1e1e;
-  padding:12px 20px;
-  font-size:13px;
-}
-.footer-note { color:#66746b; font-size:11px; margin-top:12px; }
-@media(max-width:600px) {
-  .header h1 { font-size:20px; }
-  #map { height:520px; }
-  .stat { min-width:120px; }
-}
-
-.reset-map-control a.reset-map-button {
-  width:30px;
-  height:30px;
-  line-height:30px;
-  text-align:center;
-  font-size:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  color:#17251c;
-  background:#fff;
-  text-decoration:none;
-}
-.reset-map-control a.reset-map-button:hover,
-.reset-map-control a.reset-map-button:focus {
-  background:#f2f5f2;
-  color:#000;
-}
-
-
-.turbidity-excellent::before {
-  content:"● ";
-  color:#006400;
-}
-.turbidity-fair::before {
-  content:"▲ ";
-  color:#b38f00;
-}
-.turbidity-poor::before {
-  content:"■ ";
-  color:#c00000;
-}
-.turbidity-not-assessed::before {
-  content:"● ";
-  color:#777777;
-}
-
-
-/* Slide the Assessment panel out of the way only when a popup overlaps it. */
-.leaflet-control.legend{
-  transition:transform .28s ease, opacity .22s ease, visibility 0s linear .22s;
-  will-change:transform;
-}
-
-.leaflet-control.legend:not(.assessment-shifted){
-  visibility:visible;
-  transition-delay:0s;
-}
-
-.leaflet-control.legend.assessment-shifted{
-  transform:translateX(calc(100% + 36px));
-  opacity:0;
-  pointer-events:none;
-  visibility:hidden;
-}
-
-
-
-
-.canal-name-label::before {
-  display:none;
-}
-
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Queen's Park Canal Water Quality Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { margin:0; padding:0; font-family:Arial, Helvetica, sans-serif; background:#f5f7f5; color:#203126; }
+    .page { max-width:1200px; margin:0 auto; background:white; }
+    header { padding:18px 18px 12px; }
+    h1 { margin:0 0 6px; font-size:24px; }
+    header p { margin:0; color:#607066; line-height:1.4; }
+    .toolbar { padding:10px 18px 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .toolbar label { font-weight:700; font-size:14px; }
+    .toolbar select { padding:8px 10px; border:1px solid #cbd4cd; border-radius:6px; background:white; min-width:250px; }
+    #status { color:#607066; font-size:13px; }
+    #error { display:none; margin:0 18px 12px; padding:10px 12px; background:#fff0f0; color:#8b1d1d; border:1px solid #efcaca; border-radius:6px; }
+    #map { width:100%; height:610px; }
+    .summary { display:flex; gap:10px; flex-wrap:wrap; padding:14px 18px 18px; border-top:1px solid #e3e9e4; }
+    .card { min-width:145px; padding:10px 12px; border:1px solid #dfe6e1; border-radius:8px; background:#fff; }
+    .card strong { display:block; font-size:20px; }
+    .card span { color:#69776e; font-size:12px; }
+    .leaflet-popup-content { margin:12px 14px; min-width:290px; }
+    .popup-title { font-size:17px; font-weight:700; margin-bottom:3px; }
+    .popup-date { color:#68766d; font-size:12px; margin-bottom:9px; }
+    .assessment { display:inline-block; border-radius:12px; padding:3px 8px; font-weight:700; font-size:11px; margin-bottom:8px; }
+    .results { width:100%; border-collapse:collapse; font-size:13px; }
+    .results td { padding:5px 3px; border-bottom:1px solid #edf1ee; vertical-align:top; }
+    .results td:first-child { font-weight:700; width:42%; }
+    .history-wrap { margin-top:12px; max-height:220px; overflow:auto; }
+    .history-title { font-weight:700; font-size:12px; margin-bottom:5px; }
+    .history { width:100%; border-collapse:collapse; font-size:11px; }
+    .history th, .history td { text-align:left; padding:5px 4px; border-bottom:1px solid #e9eeea; }
+    .history th { position:sticky; top:0; background:#fff; }
+    .note { margin-top:9px; font-size:12px; line-height:1.35; }
+    .legend { background:#fff; padding:9px 11px; border-radius:6px; box-shadow:0 1px 5px rgba(0,0,0,.25); line-height:20px; font-size:12px; }
+    .dot { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; border:1px solid #333; vertical-align:-1px; }
+    @media (max-width:650px) {
+      h1 { font-size:20px; }
+      #map { height:520px; }
+      .toolbar select { width:100%; min-width:0; }
+      .leaflet-popup-content { min-width:240px; max-width:260px; }
+    }
+  </style>
 </head>
 <body>
+<div class="page">
+  <header>
+    <h1>Queen's Park Canal Water Quality</h1>
+    <p>FreshWater Watch citizen-science results for canal sampling sites around Queen's Park.</p>
+  </header>
 
-<section class="header">
-  <h1>Queen's Park Canal – Water Quality Monitoring</h1>
-  <p>Greener Canalside / FreshWater Watch project and citizen-science results from the Grand Union Canal.</p>
-</section>
-
-<section class="controls">
-  <label for="siteFilter">Sampling site:</label>
-  <select id="siteFilter"><option value="all">All sites</option></select>
-  <span id="recordCount" style="font-size:13px;color:#5f6f64;">Loading data…</span>
-</section>
-
-
-
-<div id="error" class="error" style="display:none;"></div>
-<div id="map"></div>
-
-<section class="below">
-  <div class="bottom-stats">
-    <div class="bottom-stat">
-      <strong id="siteCount">0</strong>
-      <span id="siteCountLabel">Sampling sites</span>
-    </div>
-    <div class="bottom-stat">
-      <strong id="sampleCount">0</strong>
-      <span id="sampleCountLabel">Samples in dataset</span>
-    </div>
-    <div class="bottom-stat latest">
-      <strong id="latestDate">—</strong>
-      <span id="latestDateLabel">Latest sample</span>
-    </div>
+  <div class="toolbar">
+    <label for="siteFilter">Sampling site:</label>
+    <select id="siteFilter"><option value="all">All sites</option></select>
+    <span id="status">Loading freshwater.csv…</span>
   </div>
-</section>
+
+  <div id="error"></div>
+  <div id="map"></div>
+
+  <div class="summary">
+    <div class="card"><strong id="siteCount">0</strong><span>sampling sites</span></div>
+    <div class="card"><strong id="sampleCount">0</strong><span>sample records</span></div>
+    <div class="card"><strong id="latestDate">—</strong><span>latest sample</span></div>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const CSV_SOURCES = [
-  "freshwater.csv",
-  "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"
-];
+const RELATIVE_CSV = "freshwater.csv";
+const RAW_CSV = "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv";
 
-const map = L.map("map").setView([51.5250, -0.2085], 14);
+const map = L.map("map").setView([51.525, -0.2085], 14);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
 
-// Stores the default view containing all loaded sampling-result markers.
-let defaultResultBounds = null;
-let resetMapSummaryToAll = function() {};
-
-const SITE_SYNC_KEY = "qpt-canal-site-selection";
-const siteSyncChannel = ("BroadcastChannel" in window)
-  ? new BroadcastChannel("qpt-canal-site-focus")
-  : null;
-
-function publishSiteFocus(site) {
-  const value = site || "all";
-
-  try {
-    localStorage.setItem(SITE_SYNC_KEY, value);
-  } catch (e) {}
-
-  if (siteSyncChannel) {
-    siteSyncChannel.postMessage({
-      type: "site-focus",
-      site: value
-    });
-  }
-}
-
-/*
- * Optional deep-link site selection.
- * Example:
- *   index.html?site=Meanwhile%20Gardens
- *
- * The URL may use either the full CSV site name or the shorter
- * display name without the "Grand Union Canal - " prefix.
- */
-const requestedSiteFromURL =
-  new URLSearchParams(window.location.search).get("site");
-
-function normaliseSiteName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-function resolveRequestedSite(siteNames) {
-  if (!requestedSiteFromURL) return "";
-
-  const requested = normaliseSiteName(requestedSiteFromURL);
-
-  return siteNames.find(site =>
-    normaliseSiteName(site) === requested
-  ) || "";
-}
-
-// Basemap choices
-const lightMap = L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-  {
-    maxZoom:20,
-    subdomains:"abcd",
-    attribution:"&copy; OpenStreetMap contributors &copy; CARTO"
-  }
-);
-
-const streetMap = L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    maxZoom:19,
-    attribution:"&copy; OpenStreetMap contributors"
-  }
-);
-
-const satelliteMap = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  {
-    maxZoom:19,
-    attribution:"Tiles &copy; Esri"
-  }
-);
-
-// Use the clean light map by default.
-lightMap.addTo(map);
-
-// Map type selector in the top-right corner.
-L.control.layers(
-  {
-    "Light": lightMap,
-    "Street": streetMap,
-    "Satellite": satelliteMap
-  },
-  null,
-  {
-    position:"topright",
-    collapsed:true
-  }
-).addTo(map);
-
-// Reset button: return the map to a view containing all sampling results.
-const ResetControl = L.Control.extend({
-  options: { position: "topleft" },
-
-  onAdd: function() {
-    const container = L.DomUtil.create("div", "leaflet-bar reset-map-control");
-    const button = L.DomUtil.create("a", "reset-map-button", container);
-
-    button.href = "#";
-    button.title = "Home – show all sampling results";
-    button.setAttribute("role", "button");
-    button.setAttribute("aria-label", "Home – show all sampling results");
-    button.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" style="vertical-align:middle;">
-        <path d="M3 11.2 12 3l9 8.2v9.3a.5.5 0 0 1-.5.5h-5.7v-6.2H9.2V21H3.5a.5.5 0 0 1-.5-.5z"
-              fill="currentColor"></path>
-      </svg>
-    `;
-
-    L.DomEvent.disableClickPropagation(container);
-    L.DomEvent.on(button, "click", function(e) {
-      L.DomEvent.preventDefault(e);
-      map.closePopup();
-      resetMapSummaryToAll();
-
-      if (defaultResultBounds && defaultResultBounds.isValid()) {
-        map.fitBounds(defaultResultBounds, {
-          padding:[25,25],
-          maxZoom:16
-        });
-      }
-    });
-
-    return container;
-  }
-});
-
-map.addControl(new ResetControl());
-
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, m =>
-    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])
-  );
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>\"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '\"':"&quot;", "'":"&#039;"
+  })[ch]);
 }
 
 function parseCSV(text) {
   const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-
+  let row = [], field = "", inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    const next = text[i + 1];
-
-    if (quoted) {
-      if (ch === '"' && next === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') {
-        quoted = false;
-      } else {
-        field += ch;
-      }
+    if (inQuotes) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else field += ch;
     } else {
-      if (ch === '"') {
-        quoted = true;
-      } else if (ch === ',') {
-        row.push(field);
-        field = "";
-      } else if (ch === '\r' || ch === '\n') {
-        if (ch === '\r' && next === '\n') i++;
-        row.push(field);
-        field = "";
-        if (row.some(v => String(v).trim() !== "")) rows.push(row);
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { row.push(field); field = ""; }
+      else if (ch === '\n') {
+        row.push(field.replace(/\r$/, "")); field = "";
+        if (row.some(v => v !== "")) rows.push(row);
         row = [];
-      } else {
-        field += ch;
-      }
+      } else field += ch;
     }
   }
-
-  row.push(field);
-  if (row.some(v => String(v).trim() !== "")) rows.push(row);
-
+  row.push(field.replace(/\r$/, ""));
+  if (row.some(v => v !== "")) rows.push(row);
   if (!rows.length) return [];
 
-  const headers = rows[0].map(h => String(h).trim().replace(/^\uFEFF/, ""));
-
-  return rows.slice(1).map(r => {
+  const headers = rows[0].map(h => h.trim().replace(/^\uFEFF/, ""));
+  return rows.slice(1).map(values => {
     const obj = {};
-    headers.forEach((h, i) => {
-      obj[h] = (r[i] ?? "").trim();
-    });
+    headers.forEach((h, i) => obj[h] = (values[i] ?? "").trim());
     return obj;
   });
 }
 
-function getField(r, ...names) {
-  for (const name of names) {
-    if (Object.prototype.hasOwnProperty.call(r, name)) {
-      const v = r[name];
-      if (v !== undefined && v !== null && String(v).trim() !== "") {
-        return String(v).trim();
-      }
-    }
-  }
-  return "";
+function normaliseSiteKey(site){
+  return String(site || "")
+    .trim()
+    .replace(/\s+/g," ")
+    .replace(/\s*-\s*/g," - ")
+    .toLowerCase();
 }
 
-function getSite(r) {
-  return getField(r,
-    "Site Name", "site_name", "Site", "site",
-    "Sampling Site", "sampling_site"
-  ) || "Sampling site";
+function val(row, key) {
+  const v = row[key];
+  if (v == null) return "";
+  const s = String(v).trim();
+  return (s.toLowerCase() === "nan" || s.toLowerCase() === "null") ? "" : s;
 }
 
-function getDate(r) {
-  return getField(r,
-    "Sample Date", "sample_date", "Date", "date"
-  );
+function parseFreshwaterDate(text) {
+  if (!text) return new Date(0);
+  const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2]));
+  const d = new Date(text);
+  return isNaN(d) ? new Date(0) : d;
 }
 
-function getTime(r) {
-  return getField(r,
-    "Sample Time", "sample_time", "Time", "time"
-  );
+function formatDate(text) {
+  const d = parseFreshwaterDate(text);
+  if (!d.getTime()) return text || "Date not recorded";
+  return d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
 }
 
-function getNitrate(r) {
-  return getField(r,
-    "Nitrate (mg/L)", "chemical_nitrate",
-    "Nitrate", "nitrate"
-  );
+function assessment(row) {
+  const t = (val(row, "feedback_eng") || val(row, "feedback_core")).toLowerCase();
+  if (t.includes("very good") || t.includes("excellent")) return {label:"Very good", colour:"#006400"};
+  if (t.includes("good ecological")) return {label:"Good", colour:"#00a86b"};
+  if (t.includes("moderate")) return {label:"Moderate", colour:"#ffd966"};
+  if (t.includes("poor")) return {label:"Poor", colour:"#f4b183"};
+  return {label:"Assessment not available", colour:"#999999"};
 }
 
-function getPhosphate(r) {
-  return getField(r,
-    "Phosphate (mg/L)", "chemical_phosphate",
-    "Phosphate", "phosphate"
-  );
-}
-
-function getNitrateMid(r) {
-  return getField(r, "nitrate_mid", "Nitrate Mid", "Nitrate Midpoint");
-}
-
-function getPhosphateMid(r) {
-  return getField(r, "phosphate_mid", "Phosphate Mid", "Phosphate Midpoint");
-}
-
-function getLat(r) {
-  return parseFloat(getField(r,
-    "y", "Y", "Latitude", "latitude", "lat", "Lat"
-  ));
-}
-
-function getLon(r) {
-  return parseFloat(getField(r,
-    "x", "X", "Longitude", "longitude", "lon", "Lon", "lng", "Lng"
-  ));
-}
-
-function getNotes(r) {
-  return getField(r, "notes", "Notes", "note", "Note");
-}
-
-function getTurbidity(r) {
-  // First try the known FreshWater Watch headings.
-  const direct = getField(r,
-    "Water quality - Secchi Tube (Turbidity)",
-    "Water quality - Secchi Tube (Turbidity):",
-    "Water Turbidity",
-    "Water Turbidity (cm)",
-    "water_turbidity",
-    "optical_secchi_turbidity",
-    "Turbidity",
-    "Turbidity (cm)",
-    "Secchi Turbidity",
-    "Optical Secchi Turbidity"
-  );
-
-  if (direct) return direct;
-
-  // Fallback: tolerate small wording, spacing or punctuation changes in exports.
-  for (const key of Object.keys(r)) {
-    const normalised = key.toLowerCase().replace(/\s+/g, " ").trim();
-
-    if (
-      normalised.includes("secchi tube") ||
-      normalised.includes("turbidity")
-    ) {
-      const value = r[key];
-      if (value !== undefined && value !== null && String(value).trim() !== "") {
-        return String(value).trim();
-      }
-    }
-  }
-
-  return "";
-}
-
-function getWaterColour(r) {
-  return getField(r,
-    "optical_colour",
-    "Water Colour",
-    "Water Color"
-  );
-}
-
-function getFeedback(r) {
-  return getField(r,
-    "feedback_eng", "Feedback", "feedback_core"
-  );
-}
-
-function assessment(r) {
-  const text = (
-    getField(r, "Assessment", "assessment") + " " +
-    getFeedback(r)
-  ).toLowerCase();
-
-  if (text.includes("excellent") || text.includes("very good")) {
-    return ["Excellent", "#006400", "circle"];
-  }
-  if (text.includes("good")) {
-    return ["Good", "#00a86b", "diamond"];
-  }
-  if (text.includes("fair") || text.includes("moderate")) {
-    return ["Fair", "#ffd966", "triangle"];
-  }
-  if (text.includes("poor")) {
-    return ["Poor", "#c00000", "square"];
-  }
-  return ["Not yet assessed", "#777777", "circle"];
-}
-
-function assessmentStatusHTML(r) {
-  const [label, colour, shape] = assessment(r);
-
-  let symbolStyle = `background:${colour};`;
-  if (shape === "triangle") {
-    symbolStyle = `background:transparent;border-bottom-color:${colour};`;
-  }
-
-  return `<div class="assessment-status" aria-label="Water quality assessment: ${esc(label)}">
-    <span class="assessment-symbol ${esc(shape)}" style="${symbolStyle}" aria-hidden="true"></span>
-    Water quality assessment: ${esc(label)}
-  </div>`;
-}
-
-function historyAssessmentSymbol(r) {
-  const [, colour, shape] = assessment(r);
-
-  let symbolStyle = `background:${colour};`;
-  if (shape === "triangle") {
-    symbolStyle = `background:transparent;border-bottom-color:${colour};`;
-  }
-
-  return `<span class="history-symbol assessment-symbol ${esc(shape)}"
-    style="${symbolStyle}"
-    aria-label="${esc(assessment(r)[0])}"
-    title="${esc(assessment(r)[0])}"></span>`;
-}
-
-function markerIcon(r) {
-  const [label, colour] = assessment(r);
-
-  const html = `
-    <div class="fww-pin" style="--pin-colour:${colour}" title="${esc(label)}">
-      <span class="fww-pin-dot"></span>
-    </div>
-  `;
-
+function markerIcon(row) {
+  const a = assessment(row);
   return L.divIcon({
-    className: "fww-marker",
-    html: html,
-    iconSize: [30, 42],
-    iconAnchor: [15, 40],
-    popupAnchor: [0, -36]
+    className: "",
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:${a.colour};border:2px solid #2d3a31;box-shadow:0 1px 3px rgba(0,0,0,.35)"></div>`,
+    iconSize: [24,24], iconAnchor: [12,12], popupAnchor: [0,-10]
   });
 }
 
-function getTurbiditySortOrder(r) {
-  return getField(r,
-    "sort_order_turbidity",
-    "Sort Order Turbidity",
-    "sort order turbidity"
-  );
-}
+function popupHTML(records) {
+  const latest = records[0];
+  const a = assessment(latest);
+  const nitrate = val(latest, "Nitrate (mg/L)") || "—";
+  const phosphate = val(latest, "Phosphate (mg/L)") || "—";
+  const nitrateMid = val(latest, "nitrate_mid");
+  const phosphateMid = val(latest, "phosphate_mid");
+  const turbidity = val(latest, "Water quality - Secchi Tube (Turbidity)");
+  const colour = val(latest, "Estimate the water colour");
+  const notes = val(latest, "Notes (e.g. please list any aquatic mammals observed)");
 
-function turbidityAssessment(rawValue, sortOrder="") {
-  const value = String(rawValue || "").replaceAll("_", " ").trim().toUpperCase();
-  const rank = parseInt(sortOrder, 10);
+  const history = records.map(r => `
+    <tr>
+      <td>${escapeHTML(formatDate(val(r, "Sample Date")))}</td>
+      <td>${escapeHTML(val(r, "Nitrate (mg/L)") || "—")}</td>
+      <td>${escapeHTML(val(r, "Phosphate (mg/L)") || "—")}</td>
+    </tr>`).join("");
 
-  // FreshWater Watch turbidity ranking used by this project:
-  // <14 NTU  = Excellent / Very clear
-  // 14–40 NTU = Fair / Moderately turbid
-  // >40 NTU   = Poor / Highly turbid
-  // Not tested = Not assessed
-
-  if (!value && !Number.isFinite(rank)) {
-    return "Not assessed";
-  }
-
-  // Prefer FreshWater Watch's sort order when it is present.
-  if (rank === 1) return "Excellent / Very clear";
-  if (rank === 2) return "Fair / Moderately turbid";
-  if (rank >= 3) return "Poor / Highly turbid";
-
-  // Fallback to the turbidity text itself.
-  if (value.includes("<14")) return "Excellent / Very clear";
-
-  if (
-    value.includes("14-40") ||
-    value.includes("14–40") ||
-    value.includes("14 TO 40")
-  ) {
-    return "Fair / Moderately turbid";
-  }
-
-  if (value.includes(">40")) return "Poor / Highly turbid";
-
-  const numbers = value.match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
-
-  if (
-    numbers.length >= 2 &&
-    Math.min(...numbers) >= 14 &&
-    Math.max(...numbers) <= 40
-  ) {
-    return "Fair / Moderately turbid";
-  }
-
-  if (numbers.length && Math.max(...numbers) > 40) {
-    return "Poor / Highly turbid";
-  }
-
-  return "Not assessed";
-}
-
-function turbidityAssessmentClass(label) {
-  if (label.startsWith("Excellent")) return "turbidity-excellent";
-  if (label.startsWith("Fair")) return "turbidity-fair";
-  if (label.startsWith("Poor")) return "turbidity-poor";
-  return "turbidity-not-assessed";
-}
-
-function nutrientLevel(type, midpoint) {
-  const value = parseFloat(midpoint);
-  if (!Number.isFinite(value)) return "";
-
-  if (type === "nitrate") {
-    if (value > 2.0) return "Poor";
-    if (value > 1.0) return "Moderate";
-    return "Good";
-  }
-
-  if (type === "phosphate") {
-    if (value > 0.2) return "Poor";
-    if (value > 0.1) return "Moderate";
-    return "Good";
-  }
-
-  return "";
-}
-
-function nutrientLevelClass(level) {
-  if (level === "Good") return "nutrient-good";
-  if (level === "Moderate") return "nutrient-moderate";
-  if (level === "Poor") return "nutrient-poor";
-  return "";
-}
-
-function normaliseNutrientRange(rawValue) {
-  if (rawValue === undefined || rawValue === null) return "";
-
-  const value = String(rawValue).trim();
-  if (!value) return "";
-
-  // Spreadsheet software can automatically turn ranges such as
-  // 1-2 and 5-10 into dates such as 01-Feb and 05-Oct.
-  // Convert those accidental date-looking values back to nutrient ranges.
-  const monthNumbers = {
-    jan:1, feb:2, mar:3, apr:4, may:5, jun:6,
-    jul:7, aug:8, sep:9, oct:10, nov:11, dec:12
-  };
-
-  const m = value.match(/^0?(\d{1,2})[-\s]([A-Za-z]{3,9})$/);
-  if (m) {
-    const first = parseInt(m[1], 10);
-    const monthKey = m[2].slice(0,3).toLowerCase();
-    const second = monthNumbers[monthKey];
-
-    if (Number.isFinite(first) && second) {
-      return `${first}-${second}`;
-    }
-  }
-
-  return value;
-}
-
-function nutrientResultRow(label, type, range, midpoint) {
-  if (!range) return "";
-
-  range = normaliseNutrientRange(range);
-  const level = nutrientLevel(type, midpoint);
-  const mid = midpoint
-    ? ` <span style="font-weight:400;color:#435248;">(midpoint ${esc(midpoint)})</span>`
-    : "";
-
-  const levelHTML = level
-    ? ` <span class="nutrient-level ${nutrientLevelClass(level)}">${esc(level)}</span>`
-    : "";
-
-  return `<tr>
-    <td>${esc(label)}</td>
-    <td class="result">${esc(range)}${mid}${levelHTML}</td>
-  </tr>`;
-}
-
-function resultRow(label, range, midpoint) {
-  if (!range) return "";
-  const mid = midpoint
-    ? ` <span style="font-weight:400;color:#66746b;">(midpoint ${esc(midpoint)})</span>`
-    : "";
-  return `<tr><td>${label}</td><td class="result">${esc(range)}${mid}</td></tr>`;
-}
-
-function toDateValue(text) {
-  if (!text) return 0;
-
-  const parsed = Date.parse(text);
-  if (!Number.isNaN(parsed)) return parsed;
-
-  const m = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m) {
-    return new Date(Number(m[3]), Number(m[2])-1, Number(m[1])).getTime();
-  }
-
-  return 0;
-}
-
-function formatUKDate(text) {
-  if (!text) return "";
-
-  const m = String(text).trim().match(
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
-  );
-
-  if (m) {
-    const month = Number(m[1]);
-    const day = Number(m[2]);
-    const year = m[3];
-    return `${String(day).padStart(2,"0")}/${String(month).padStart(2,"0")}/${year}`;
-  }
-
-  return text;
-}
-
-function formatSampleTime(text) {
-  if (!text) return "";
-
-  const m = String(text).trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return text;
-
-  let hour = Number(m[1]);
-  const minute = m[2];
-  const ampm = hour >= 12 ? "PM" : "AM";
-
-  hour = hour % 12;
-  if (hour === 0) hour = 12;
-
-  return `${hour}:${minute} ${ampm}`;
-}
-
-function sampleDateTime(r) {
-  const d = formatUKDate(getDate(r));
-  const t = formatSampleTime(getTime(r));
-  return [d, t].filter(Boolean).join(" ");
-}
-
-function sitePhotoSlug(siteName) {
-  return String(siteName || "")
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .toLowerCase()
-    .trim()
-    .replace(/['’]/g, "")
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function sitePhotoHTML(siteName) {
-  const slug = sitePhotoSlug(siteName);
-  if (!slug) return "";
-
-  const src = `images/${slug}.jpg`;
-  const alt = `View of ${siteName} sampling site`;
-
-  return `<img
-    class="site-photo"
-    src="${esc(src)}"
-    alt="${esc(alt)}"
-    loading="lazy"
-    onerror="this.style.display='none';"
-  >`;
-}
-
-function popup(rows) {
-  const r = rows[0];
-  const [assessmentLabel, assessmentColour] = assessment(r);
-
-  const nitrate = getNitrate(r);
-  const phosphate = getPhosphate(r);
-  const nitrateMid = getNitrateMid(r);
-  const phosphateMid = getPhosphateMid(r);
-  const turbidity = getTurbidity(r);
-  const waterColour = getWaterColour(r);
-  const notes = getNotes(r);
-  const feedback = getFeedback(r);
-
-  const history = rows.map(x => {
-    const historyDateTime = [
-      formatUKDate(getDate(x)),
-      formatSampleTime(getTime(x))
-    ].filter(Boolean).join(" ");
-
-    const historyTurbidity = getTurbidity(x);
-
-    const nitrateLevel = nutrientLevel("nitrate", getNitrateMid(x));
-    const phosphateLevel = nutrientLevel("phosphate", getPhosphateMid(x));
-
-    return `<tr>
-      <td>${esc(historyDateTime || "—")}</td>
-      <td class="assessment-col">${historyAssessmentSymbol(x)}</td>
-      <td>
-        ${esc(normaliseNutrientRange(getNitrate(x)) || "—")}
-        ${nitrateLevel ? `<span class="history-level">${esc(nitrateLevel)}</span>` : ""}
-      </td>
-      <td>
-        ${esc(normaliseNutrientRange(getPhosphate(x)) || "—")}
-        ${phosphateLevel ? `<span class="history-level">${esc(phosphateLevel)}</span>` : ""}
-      </td>
-      <td class="history-turbidity">
-        ${historyTurbidity ? esc(historyTurbidity.replaceAll("_"," ")) : "Not taken"}
-        <span class="history-level">${esc(turbidityAssessment(historyTurbidity, getTurbiditySortOrder(x)))}</span>
-      </td>
-    </tr>`;
-  }).join("");
-
-  return `<div class="popup">
-    <h3>${esc(getSite(r))}</h3>
-    ${sitePhotoHTML(getSite(r))}
-    <div class="date">
-      ${getDate(r) ? "Latest sample: " + esc(sampleDateTime(r)) : ""}
-    </div>
-
-    ${assessmentStatusHTML(r)}
-
-    <div class="current-results-heading">Latest sample results</div>
-    <table>
-      ${nutrientResultRow("Nitrate", "nitrate", nitrate, nitrateMid)}
-      ${nutrientResultRow("Phosphate", "phosphate", phosphate, phosphateMid)}
-      <tr class="turbidity-row">
-        <td>Turbidity</td>
-        <td class="result turbidity-result">
-          ${turbidity ? esc(turbidity.replaceAll("_"," ")) : "Not taken"}
-          <span class="turbidity-level ${turbidityAssessmentClass(turbidityAssessment(turbidity, getTurbiditySortOrder(r)))}">${esc(turbidityAssessment(turbidity, getTurbiditySortOrder(r)))}</span>
-        </td>
-      </tr>
-      ${waterColour ? `<tr><td>Water colour</td><td>${esc(waterColour)}</td></tr>` : ""}
+  return `
+    <div class="popup-title">${escapeHTML(val(latest, "Site Name") || "Sampling site")}</div>
+    <div class="popup-date">Latest sample: ${escapeHTML(formatDate(val(latest, "Sample Date")))}${val(latest, "Sample Time") ? " at " + escapeHTML(val(latest, "Sample Time")) : ""}</div>
+    <span class="assessment" style="background:${a.colour};${a.colour === '#ffd966' || a.colour === '#f4b183' ? 'color:#222' : 'color:#fff'}">${escapeHTML(a.label)}</span>
+    <table class="results">
+      <tr><td>Nitrate</td><td><strong>${escapeHTML(nitrate)} mg/L</strong>${nitrateMid ? `<br><small>midpoint ${escapeHTML(nitrateMid)}</small>` : ""}</td></tr>
+      <tr><td>Phosphate</td><td><strong>${escapeHTML(phosphate)} mg/L</strong>${phosphateMid ? `<br><small>midpoint ${escapeHTML(phosphateMid)}</small>` : ""}</td></tr>
+      ${turbidity ? `<tr><td>Turbidity</td><td>${escapeHTML(turbidity)}</td></tr>` : ""}
+      ${colour ? `<tr><td>Water colour</td><td>${escapeHTML(colour)}</td></tr>` : ""}
     </table>
-
-    ${notes ? `<div style="margin-top:9px;"><strong>Notes:</strong><br>${esc(notes)}</div>` : ""}
-    ${feedback ? `<div style="margin-top:9px;font-size:11px;color:#5f6f64;">${esc(feedback)}</div>` : ""}
-
-    <div class="history">
-      <div style="margin-bottom:5px;font-weight:700;font-size:12px;">
-        Previous samples (${rows.length} ${rows.length === 1 ? "sample" : "samples"})
-      </div>
-      <table>
-        <thead>
-          <tr><th scope="col">Date &amp; time</th><th scope="col" class="assessment-col"><span class="sr-only">Assessment</span></th><th scope="col">Nitrate</th><th scope="col">Phosphate</th><th scope="col">Turbidity</th></tr>
-        </thead>
+    ${notes ? `<div class="note"><strong>Notes:</strong> ${escapeHTML(notes)}</div>` : ""}
+    <div class="history-wrap">
+      <div class="history-title">Results over time (${records.length} sample${records.length === 1 ? "" : "s"})</div>
+      <table class="history">
+        <thead><tr><th>Date</th><th>Nitrate</th><th>Phosphate</th></tr></thead>
         <tbody>${history}</tbody>
       </table>
-    </div>
-  </div>`;
-}
-
-function showError(message) {
-  const el = document.getElementById("error");
-  el.textContent = message;
-  el.style.display = "block";
+    </div>`;
 }
 
 async function fetchCSV() {
-  let lastError = null;
-
-  for (const url of CSV_SOURCES) {
+  const urls = [RELATIVE_CSV, RAW_CSV];
+  let lastError;
+  for (const url of urls) {
     try {
-      const response = await fetch(url, {cache:"no-store"});
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      const response = await fetch(url, { cache:"no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.text();
-    } catch (err) {
-      lastError = err;
-    }
+    } catch (e) { lastError = e; }
   }
-
-  throw lastError || new Error("Could not load freshwater.csv");
+  throw lastError || new Error("CSV could not be loaded");
 }
 
-async function loadData() {
+async function loadMapData() {
   try {
     const text = await fetchCSV();
     const data = parseCSV(text);
+    if (!data.length) throw new Error("The CSV contains no data rows.");
 
-    if (!data.length) {
-      throw new Error("freshwater.csv contains no data rows.");
-    }
+    /*
+     * Group repeated surveys by SITE NAME only.
+     * GPS readings can drift slightly between visits to the same named site,
+     * so coordinates are deliberately not used as part of the grouping key.
+     */
+    const grouped = {};
+    const siteDisplayNames = {};
 
-    const groups = {};
-    let validRows = 0;
+    for (const row of data) {
+      const site = val(row, "Site Name");
+      const lat = parseFloat(val(row, "y"));
+      const lon = parseFloat(val(row, "x"));
 
-    for (const r of data) {
-      const lat = getLat(r);
-      const lon = getLon(r);
+      if (!site || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
 
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-        continue;
+      const siteKey = normaliseSiteKey(site);
+
+      if (!grouped[siteKey]) {
+        grouped[siteKey] = [];
+        siteDisplayNames[siteKey] = site.trim();
       }
 
-      validRows++;
-
-      const site = getSite(r);
-      const key = site;
-
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(r);
+      grouped[siteKey].push(row);
     }
 
-    if (!validRows) {
-      const headers = Object.keys(data[0] || {}).join(", ");
-      throw new Error(
-        "No map records with valid coordinates were found. " +
-        "The CSV was read successfully, but no numeric latitude/longitude values were detected. " +
-        "Detected headings: " + headers
+    Object.values(grouped).forEach(records => {
+      records.sort((a,b) =>
+        parseFreshwaterDate(val(b, "Sample Date")) -
+        parseFreshwaterDate(val(a, "Sample Date"))
       );
-    }
-
-    Object.values(groups).forEach(rows => {
-      rows.sort((a,b) => {
-        const dateDiff = toDateValue(getDate(b)) - toDateValue(getDate(a));
-        if (dateDiff !== 0) return dateDiff;
-
-        const timeToMinutes = t => {
-          const m = String(getTime(t) || "").match(/^(\d{1,2}):(\d{2})$/);
-          return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
-        };
-
-        return timeToMinutes(b) - timeToMinutes(a);
-      });
     });
 
-    const siteNames = Object.keys(groups).sort();
-
-    const sel = document.getElementById("siteFilter");
-
-    const siteCountEl = document.getElementById("siteCount");
-    const siteCountLabelEl = document.getElementById("siteCountLabel");
-    const sampleCountEl = document.getElementById("sampleCount");
-    const sampleCountLabelEl = document.getElementById("sampleCountLabel");
-    const latestDateEl = document.getElementById("latestDate");
-    const latestDateLabelEl = document.getElementById("latestDateLabel");
-
-    function latestRowForRows(rows) {
-      const datedRows = rows
-        .map(r => ({
-          row:r,
-          dateValue:toDateValue(getDate(r)),
-          timeValue:(() => {
-            const m = String(getTime(r) || "").match(/^(\d{1,2}):(\d{2})$/);
-            return m ? Number(m[1]) * 60 + Number(m[2]) : 0;
-          })()
-        }))
-        .filter(d => d.dateValue > 0)
-        .sort((a,b) => (a.dateValue - b.dateValue) || (a.timeValue - b.timeValue));
-
-      return datedRows.length ? datedRows[datedRows.length - 1].row : null;
-    }
-
-    function updateSummary(selectedSite) {
-      publishSiteFocus(selectedSite || "all");
-
-      if (selectedSite && selectedSite !== "all" && groups[selectedSite]) {
-        const rows = groups[selectedSite];
-        const latest = latestRowForRows(rows);
-
-        siteCountEl.textContent = selectedSite.replace(/^Grand Union Canal\s*-\s*/i, "");
-        siteCountEl.classList.add("site-name");
-        siteCountLabelEl.textContent = "Sampling site";
-
-        sampleCountEl.textContent = rows.length;
-        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
-
-        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
-        latestDateLabelEl.textContent = "Latest sample at site";
-      } else {
-        const latest = latestRowForRows(data);
-
-        siteCountEl.textContent = siteNames.length;
-        siteCountEl.classList.remove("site-name");
-        siteCountLabelEl.textContent = "Sampling sites";
-
-        sampleCountEl.textContent = validRows;
-        sampleCountLabelEl.textContent = "Samples in dataset";
-
-        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
-        latestDateLabelEl.textContent = "Latest sample";
-      }
-    }
-
-    siteNames.forEach(site => {
-      const opt = document.createElement("option");
-      const sampleCount = groups[site].length;
-      opt.value = site;
-      opt.textContent = `${site} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
-      sel.appendChild(opt);
-    });
-
+    const siteFilter = document.getElementById("siteFilter");
     const markers = [];
     const bounds = [];
 
-    for (const site of siteNames) {
-      const rows = groups[site];
-      const r = rows[0];
+    Object.keys(grouped)
+      .sort((a,b)=>siteDisplayNames[a].localeCompare(siteDisplayNames[b]))
+      .forEach(siteKey => {
+        const records = grouped[siteKey];
+        const latest = records[0];
+        const site = siteDisplayNames[siteKey];
 
-      const lat = getLat(r);
-      const lon = getLon(r);
+        // Use the mean position of all GPS readings for this named site.
+        const coords = records
+          .map(r => [parseFloat(val(r,"y")), parseFloat(val(r,"x"))])
+          .filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
 
-      const marker = L.marker([lat, lon], {
-        icon: markerIcon(r),
-        title: site
-      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
+        const lat = coords.reduce((s,p) => s + p[0], 0) / coords.length;
+        const lon = coords.reduce((s,p) => s + p[1], 0) / coords.length;
 
-      marker.site = site;
-      marker.on("click", (e) => {
-        if (e && e.originalEvent) {
-          L.DomEvent.stopPropagation(e.originalEvent);
-        }
-        sel.value = site;
-        updateSummary(site);
+        const marker = L.marker([lat, lon], {
+          icon: markerIcon(latest),
+          title: site
+        })
+          .bindPopup(popupHTML(records), { maxWidth: 420 })
+          .addTo(map);
+
+        marker.siteName = siteKey;
+        markers.push(marker);
+        bounds.push([lat, lon]);
+
+        const option = document.createElement("option");
+        option.value = siteKey;
+        option.textContent = `${site} (${records.length})`;
+        siteFilter.appendChild(option);
       });
-      marker.addTo(map);
 
-      markers.push(marker);
-      bounds.push([lat, lon]);
-    }
+    if (bounds.length) map.fitBounds(bounds, { padding:[30,30], maxZoom:15 });
 
-    if (bounds.length) {
-      defaultResultBounds = L.latLngBounds(bounds);
-      map.fitBounds(defaultResultBounds, {padding:[25,25]});
-    }
-
-    function applySiteSelection(selected, openPopup = true) {
-      const validSelection =
-        selected && selected !== "all" && groups[selected]
-          ? selected
-          : "all";
-
-      sel.value = validSelection;
-
+    siteFilter.addEventListener("change", () => {
+      const chosen = siteFilter.value;
       markers.forEach(marker => {
-        if (validSelection === "all" || marker.site === validSelection) {
-          marker.addTo(map);
-        } else {
+        if (chosen === "all" || marker.siteName === chosen) {
+          if (!map.hasLayer(marker)) marker.addTo(map);
+        } else if (map.hasLayer(marker)) {
           map.removeLayer(marker);
         }
       });
 
-      if (validSelection !== "all") {
-        const marker = markers.find(m => m.site === validSelection);
+      if (chosen === "all") {
+        if (bounds.length) map.fitBounds(bounds, { padding:[30,30], maxZoom:15 });
+      } else {
+        const marker = markers.find(m => m.siteName === chosen);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
-
-          if (openPopup) {
-            marker.openPopup();
-
-            /*
-             * Keep a deep-linked popup fully inside the visible map.
-             * Measure the actual popup after Leaflet has rendered it,
-             * then move the map only by the amount needed.
-             */
-            window.setTimeout(
-              function () {
-                const popup = marker.getPopup();
-                const popupEl = popup && popup.getElement
-                  ? popup.getElement()
-                  : null;
-                const mapEl = map.getContainer();
-
-                if (!popupEl || !mapEl) return;
-
-                const popupRect = popupEl.getBoundingClientRect();
-                const mapRect = mapEl.getBoundingClientRect();
-
-                const topGap = 14;
-                const desiredTop = mapRect.top + topGap;
-
-                if (popupRect.top < desiredTop) {
-                  const overlap = desiredTop - popupRect.top;
-
-                  /*
-                   * Negative Y moves the map content downward,
-                   * bringing the popup down into view.
-                   */
-                  map.panBy(
-                    [0, -Math.ceil(overlap)],
-                    {
-                      animate: true,
-                      duration: 0.25
-                    }
-                  );
-                }
-              },
-              300
-            );
-          }
+          marker.openPopup();
         }
-      } else if (defaultResultBounds && defaultResultBounds.isValid()) {
-        map.fitBounds(defaultResultBounds, {padding:[25,25]});
-      }
-
-      updateSummary(validSelection);
-    }
-
-    sel.addEventListener("change", () => {
-      applySiteSelection(sel.value);
-    });
-
-    resetMapSummaryToAll = function() {
-      applySiteSelection("all", false);
-    };
-
-    map.on("click", () => {
-      map.closePopup();
-      resetMapSummaryToAll();
-
-      if (defaultResultBounds && defaultResultBounds.isValid()) {
-        map.fitBounds(defaultResultBounds, {padding:[25,25]});
       }
     });
 
-    document.getElementById("recordCount").textContent =
-      `${validRows} records loaded across ${siteNames.length} sites`;
-
-    /*
-     * If a site was supplied in the URL, select it automatically.
-     * Otherwise retain the normal all-sites opening view.
-     */
-    const initialSite = resolveRequestedSite(siteNames);
-    applySiteSelection(initialSite || "all");
-
+    document.getElementById("siteCount").textContent = Object.keys(grouped).length;
+    document.getElementById("sampleCount").textContent = data.length;
+    const allDates = data.map(r => parseFreshwaterDate(val(r,"Sample Date"))).filter(d => d.getTime());
+    allDates.sort((a,b) => b-a);
+    document.getElementById("latestDate").textContent = allDates.length ? allDates[0].toLocaleDateString("en-GB") : "—";
+    document.getElementById("status").textContent = `${data.length} records loaded across ${Object.keys(grouped).length} sites`;
   } catch (err) {
     console.error(err);
-    document.getElementById("recordCount").textContent = "Data loading error";
-    showError(err.message);
+    document.getElementById("status").textContent = "Data loading error";
+    const box = document.getElementById("error");
+    box.style.display = "block";
+    box.textContent = "Could not load the FreshWater Watch CSV. Check that freshwater.csv is in the same GitHub repository as index.html. Details: " + err.message;
   }
 }
 
-let assessmentLegendEl = null;
-
-const legend = L.control({position:"bottomright"});
-legend.onAdd = () => {
-  const d = L.DomUtil.create("div","legend");
-  assessmentLegendEl = d;
-  d.innerHTML =
-    "<strong>Assessment</strong><br>" +
-    '<span class="key"><span class="legend-symbol circle" style="background:#006400"></span>Excellent</span><br>' +
-    '<span class="key"><span class="legend-symbol diamond" style="background:#00a86b"></span>Good</span><br>' +
-    '<span class="key"><span class="legend-symbol triangle" style="border-bottom-color:#ffd966"></span>Fair</span><br>' +
-    '<span class="key"><span class="legend-symbol square" style="background:#c00000"></span>Poor</span><br>' +
-    '<span class="key"><span class="legend-symbol circle" style="background:#777"></span>Not yet assessed</span>';
-  return d;
+const legend = L.control({ position:"bottomright" });
+legend.onAdd = function() {
+  const div = L.DomUtil.create("div", "legend");
+  div.innerHTML = `
+    <strong>Ecological status</strong><br>
+    <span class="dot" style="background:#006400"></span>Very good<br>
+    <span class="dot" style="background:#00a86b"></span>Good<br>
+    <span class="dot" style="background:#ffd966"></span>Moderate<br>
+    <span class="dot" style="background:#f4b183"></span>Poor`;
+  return div;
 };
 legend.addTo(map);
 
-function rectanglesOverlap(a,b){
-  return !(
-    a.right <= b.left ||
-    a.left >= b.right ||
-    a.bottom <= b.top ||
-    a.top >= b.bottom
-  );
-}
-
-function updateAssessmentLegendForPopup(){
-  if(!assessmentLegendEl) return;
-
-  const popupEl = map.getContainer().querySelector(".leaflet-popup");
-  if(!popupEl){
-    assessmentLegendEl.classList.remove("assessment-shifted");
-    return;
-  }
-
-  // Measure both elements in their normal positions.
-  assessmentLegendEl.classList.remove("assessment-shifted");
-
-  requestAnimationFrame(()=>{
-    if(!assessmentLegendEl || !popupEl.isConnected) return;
-
-    const popupRect = popupEl.getBoundingClientRect();
-    const legendRect = assessmentLegendEl.getBoundingClientRect();
-
-    if(rectanglesOverlap(popupRect, legendRect)){
-      assessmentLegendEl.classList.add("assessment-shifted");
-    }
-  });
-}
-
-map.on("popupopen", ()=>{
-  // Leaflet may still be finishing its auto-pan when popupopen fires.
-  setTimeout(updateAssessmentLegendForPopup, 40);
-  setTimeout(updateAssessmentLegendForPopup, 180);
-});
-
-map.on("popupclose", ()=>{
-  if(assessmentLegendEl){
-    assessmentLegendEl.classList.remove("assessment-shifted");
-  }
-});
-
-map.on("moveend zoomend resize", ()=>{
-  if(map.getContainer().querySelector(".leaflet-popup")){
-    updateAssessmentLegendForPopup();
-  }
-});
-
-loadData();
+loadMapData();
 </script>
 </body>
 </html>
-
-<style>
-.leaflet-popup-pane {
-  z-index:700 !important;
-}
-</style>
-
-<style>
-html, body {
-  scroll-behavior:auto;
-}
-.leaflet-container:focus,
-.leaflet-interactive:focus {
-  outline:none;
-}
-</style>
