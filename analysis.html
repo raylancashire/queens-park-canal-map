@@ -1364,19 +1364,36 @@ function dedupeAllSiteDropdowns(){
 }
 
 
+
+function siteKeyForFocus(value){
+  return String(value || "")
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .trim()
+    .replace(/\s+/g," ")
+    .toLowerCase();
+}
+
+function siteDisplayForFocus(value){
+  return String(value || "")
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .trim()
+    .replace(/\s+/g," ");
+}
+
+function canonicalSiteFromData(value){
+  if(!value || value==="all") return "all";
+
+  const target=siteKeyForFocus(value);
+  const match=freshwaterDataAll.find(row=>siteKeyForFocus(siteName(row))===target);
+
+  return match ? siteDisplayForFocus(siteName(match)) : siteDisplayForFocus(value);
+}
+
 function filterFreshwaterForSite(data,site){
-  /*
-   * A FreshWater Watch survey row is one sample.
-   * Site names are matched after removing the optional
-   * "Grand Union Canal -" prefix, so repeated surveys at the same
-   * named location are counted together even when their GPS positions differ.
-   */
   if(!site || site==="all") return data;
 
-  const target=normaliseSiteForMatch(site);
-  return data.filter(row=>
-    normaliseSiteForMatch(siteName(row))===target
-  );
+  const target=siteKeyForFocus(site);
+  return data.filter(row=>siteKeyForFocus(siteName(row))===target);
 }
 
 function sampleCountForSite(site){
@@ -1439,7 +1456,10 @@ function renderSampleAnalysisForFocusedSite(){
 }
 
 function setFocusedSite(site){
-  currentFocusedSite=canonicalSiteForSync(site||"all");
+  currentFocusedSite=(site==="all" || !site)
+    ? "all"
+    : canonicalSiteFromData(site);
+
   renderSampleAnalysisForFocusedSite();
 }
 
@@ -1862,20 +1882,34 @@ function initialiseSiteChanges(){
   const select=document.getElementById("changeSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))].sort((a,b)=>a.localeCompare(b));
+  const uniqueSites=new Map();
+
+  freshwaterDataForChanges.forEach(row=>{
+    const raw=siteName(row);
+    const key=siteKeyForFocus(raw);
+    if(!key) return;
+    if(!uniqueSites.has(key)){
+      uniqueSites.set(key,siteDisplayForFocus(raw));
+    }
+  });
+
+  const sites=[...uniqueSites.values()].sort((a,b)=>a.localeCompare(b));
+
   select.innerHTML=
-    `<option value="all">All sites</option>` +
-    sites.map(site=>`<option value="${esc(site)}">${esc(String(site).replace(/^Grand Union Canal\\s*-\\s*/i,""))}</option>`).join("");
+    `<option value="all">All sites</option>`+
+    sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
 
-  select.value=currentFocusedSite==="all" ? "all" : currentFocusedSite;
+  const wanted=currentFocusedSite==="all"
+    ? "all"
+    : canonicalSiteFromData(currentFocusedSite);
 
-  if(select.value!==currentFocusedSite && currentFocusedSite!=="all"){
-    const matching=[...select.options].find(
-      o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
-    );
-    if(matching) select.value=matching.value;
-  }
+  const match=[...select.options].find(option=>
+    option.value==="all"
+      ? wanted==="all"
+      : siteKeyForFocus(option.value)===siteKeyForFocus(wanted)
+  );
 
+  select.value=match ? match.value : "all";
   renderSiteChangeCharts();
 }
 
@@ -1884,6 +1918,11 @@ async function load(){try{
 
  freshwaterDataAll=data;
  freshwaterDataForChanges=data;
+
+ if(currentFocusedSite!=="all"){
+   currentFocusedSite=canonicalSiteFromData(currentFocusedSite);
+ }
+
  initialiseSiteChanges();
  renderSampleAnalysisForFocusedSite();
 
@@ -2001,17 +2040,24 @@ document.getElementById("doTab").addEventListener("click",()=>setChartTab("disso
 
 
 document.getElementById("changeSiteSelect").addEventListener("change",()=>{
-  const rawSite=document.getElementById("changeSiteSelect").value;
-  const site=rawSite==="all" ? "all" : canonicalSiteForSync(rawSite);
-  currentFocusedSite=site;
+  const select=document.getElementById("changeSiteSelect");
+  const rawSite=select.value;
+
+  currentFocusedSite=rawSite==="all"
+    ? "all"
+    : canonicalSiteFromData(rawSite);
+
   renderSampleAnalysisForFocusedSite();
 
-  try {
-    localStorage.setItem(SITE_SYNC_KEY,site);
-  } catch(e) {}
+  try{
+    localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+  }catch(e){}
 
   if(siteSyncChannel){
-    siteSyncChannel.postMessage({type:"site-focus",site});
+    siteSyncChannel.postMessage({
+      type:"site-focus",
+      site:currentFocusedSite
+    });
   }
 
   renderSiteChangeCharts();
@@ -2072,10 +2118,6 @@ accordionPanels.forEach((panel,index)=>{
 load();
 loadAdditionalData();
 
-document.addEventListener("DOMContentLoaded",()=>{
-  setTimeout(dedupeAllSiteDropdowns,0);
-  setTimeout(dedupeAllSiteDropdowns,250);
-});
 </script>
 </body>
 </html>
