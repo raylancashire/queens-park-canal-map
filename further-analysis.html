@@ -4057,7 +4057,7 @@ function consistencyTypicalDescription(metric,label){
     if(label==="High turbidity") return "The site's average turbidity is above 40 NTU.";
   }
 
-  return "Typical level is based on the site's average result across its usable samples.";
+  return "Typical level is based on the site's average result across its usable results for this indicator.";
 }
 
 function collectSiteConsistency(metric){
@@ -4114,7 +4114,7 @@ function renderSiteConsistency(){
       <thead>
         <tr>
           <th>Site</th>
-          <th>Samples</th>
+          <th>Results used</th>
           <th>Consistency</th>
           <th>Typical level</th>
           <th>Range</th>

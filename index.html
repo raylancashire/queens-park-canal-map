@@ -1309,6 +1309,24 @@ async function fetchCSV() {
   throw lastError || new Error("Could not load freshwater.csv");
 }
 
+
+function uniqueMapSampleRows(rows){
+  const seen=new Set();
+  return rows.filter(row=>{
+    const site=getSite(row);
+    const date=getField(row,"Sample Date","Date","sample_date");
+    const time=getField(row,"Sample Time","Time","sample_time");
+    const id=getField(row,"GlobalID","ObjectID","Sample ID","SampleID");
+    const key=id
+      ? `id:${id}`
+      : `sample:${canonicalSiteKey(site)}|${String(date).trim()}|${String(time).trim()}`;
+
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function loadData() {
   try {
     const text = await fetchCSV();
@@ -1321,8 +1339,9 @@ async function loadData() {
     const groups = {};
     const groupSiteNames = {};
     let validRows = 0;
+    const uniqueData = uniqueMapSampleRows(data);
 
-    for (const r of data) {
+    for (const r of uniqueData) {
       const lat = getLat(r);
       const lon = getLon(r);
 
@@ -1412,14 +1431,14 @@ async function loadData() {
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample at site";
       } else {
-        const latest = latestRowForRows(data);
+        const latest = latestRowForRows(uniqueData);
 
         siteCountEl.textContent = siteNames.length;
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
 
         sampleCountEl.textContent = validRows;
-        sampleCountLabelEl.textContent = "Samples in dataset";
+        sampleCountLabelEl.textContent = "Samples in view";
 
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample";
@@ -1540,12 +1559,12 @@ async function loadData() {
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample at site";
       } else {
-        const latest = latestRowForRows(data);
+        const latest = latestRowForRows(uniqueData);
         siteCountEl.textContent = siteNames.length;
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
         sampleCountEl.textContent = validRows;
-        sampleCountLabelEl.textContent = "Samples in dataset";
+        sampleCountLabelEl.textContent = "Samples in view";
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample";
       }
