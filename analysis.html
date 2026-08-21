@@ -1373,6 +1373,12 @@ function siteKeyForFocus(value){
     .toLowerCase();
 }
 
+function normaliseSiteForMatch(value){
+  return siteKeyForFocus(value);
+}
+
+
+
 function siteDisplayForFocus(value){
   return String(value || "")
     .replace(/^Grand Union Canal\s*-\s*/i,"")
@@ -1422,7 +1428,7 @@ function renderSampleAnalysisForFocusedSite(){
   const tVals=tRaw.filter(v=>turbidityScaleKey(v));
 
   /* Samples in view = all survey rows for the selected named site. */
-  document.getElementById("totalSamples").textContent=sampleCountForSite(currentFocusedSite);
+  document.getElementById("totalSamples").textContent=data.length;
   document.getElementById("nitrateResults").textContent=nVals.length;
   document.getElementById("phosphateResults").textContent=pVals.length;
   document.getElementById("turbidityResults").textContent=tVals.length;
