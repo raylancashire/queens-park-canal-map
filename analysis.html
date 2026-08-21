@@ -1190,6 +1190,154 @@ function additionalAssessment(column,value){
 }
 
 
+function renderAdditionalSeries(containerId,data,column,unit){
+  const el=document.getElementById(containerId);
+
+  const points=data
+    .map(row=>({
+      value:parseAdditionalNumber(row[column]),
+      temperature:parseAdditionalNumber(row["Temperature °C"]),
+      date:parseUKDate(row["Date"],row["Time"]),
+      label:additionalDateLabel(row),
+      location:String(row["Location"]||"").trim()
+    }))
+    .filter(p=>Number.isFinite(p.value))
+    .sort((a,b)=>(a.date?.getTime()||0)-(b.date?.getTime()||0));
+
+  if(!points.length){
+    el.innerHTML='<div class="no-results">No results recorded yet.</div>';
+    return;
+  }
+
+  const unitText=unit ? ` ${unit}` : "";
+
+  if(points.length===1){
+    const p=points[0];
+    const assessment=additionalAssessment(column,p.value);
+    const assessmentHtml=assessment
+      ? `<span class="result-assessment" style="background:${assessment.colour};color:${assessment.text}">${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}</span>`
+      : "";
+
+    let extraHtml="";
+
+    if(column==="pH"){
+      const kit=phTestKit(p.value);
+      const nature=phNature(p.value);
+
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit reading: ${esc(kit.reading)}
+        </span>`;
+      }
+
+      if(nature){
+        extraHtml+=`<span><strong style="font-size:20px;margin:8px 0 0">${esc(nature)}</strong></span>`;
+      }
+    }
+
+    if(column==="Coliform"){
+      const kit=coliformTestKit(p.value);
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${Number(p.value)>=20 ? "&gt; 20 coliforms/100ml" : esc(p.value)+" coliforms/100ml"}</strong></span>`;
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit result: ${esc(kit.reading)}
+        </span>`;
+      }
+      extraHtml+=`<span>Total coliform is a general microbial indicator. This result is not an official bathing-water classification; UK bathing-water classifications use E. coli and intestinal enterococci.</span>`;
+    }
+
+    if(column==="Dissolved Oxygen mg/L"){
+      const saturation=dissolvedOxygenPercentSaturation(p.value,p.temperature);
+      const kit=dissolvedOxygenTestKit(p.value);
+
+      extraHtml=`<span style="margin-top:8px">${esc(p.value)} mg/L ≈ ${esc(p.value)} ppm</span>`;
+
+      if(kit){
+        extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
+          ● Test-kit reading: ${esc(kit.reading)}
+        </span>`;
+      }
+
+      if(Number.isFinite(saturation)){
+        extraHtml+=`<span><strong style="font-size:20px;margin:8px 0 0">${Math.round(saturation)}% saturation</strong></span>`;
+        if(Number.isFinite(p.temperature)){
+          extraHtml+=`<span>Based on ${esc(p.temperature)} °C water temperature</span>`;
+        }
+      }
+    }
+
+    el.innerHTML=`<div class="single-result">
+      <div>
+        <strong>${esc(p.value)}${esc(unitText)}</strong>
+        <span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span>
+        ${extraHtml}
+        ${assessmentHtml}
+      </div>
+    </div>`;
+    return;
+  }
+
+  const max=Math.max(...points.map(p=>p.value),1);
+  el.innerHTML=`<div class="series-chart">`+
+    points.map(p=>{
+      const height=Math.max(3,(p.value/max)*100);
+      const assessment=additionalAssessment(column,p.value);
+      let kit=null;
+      let phNatureText="";
+      if(column==="pH"){
+        kit=phTestKit(p.value);
+        const nature=phNature(p.value);
+        if(nature) phNatureText=`<br><span style="font-weight:700">${esc(nature)}</span>`;
+      }
+      if(column==="Coliform") kit=coliformTestKit(p.value);
+      if(column==="Dissolved Oxygen mg/L") kit=dissolvedOxygenTestKit(p.value);
+      const displayColour=kit ? kit.colour : (assessment ? assessment.colour : null);
+      const barStyle=displayColour ? `height:${height}%;background:${displayColour}` : `height:${height}%`;
+      const assessmentText=assessment ? `<br><span style="font-weight:700">${esc(assessment.label)}</span>` : "";
+      let saturationText="";
+      if(column==="Dissolved Oxygen mg/L"){
+        const saturation=dissolvedOxygenPercentSaturation(p.value,p.temperature);
+        if(Number.isFinite(saturation)){
+          saturationText=`<br><span style="font-weight:700">${Math.round(saturation)}% saturation</span>`;
+        }
+      }
+      return `<div class="series-row">
+        <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
+        <div class="series-track"><div class="series-fill" style="${barStyle}"></div></div>
+        <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}${phNatureText}${saturationText}${assessmentText}</div>
+      </div>`;
+    }).join("")+
+    `</div>`;
+}
+
+function filterAdditionalForSite(data,site){
+  if(!site || site==="all") return data;
+
+  const target=siteKeyForFocus(site);
+  return data.filter(row=>{
+    const location=getField(
+      row,
+      "Location",
+      "Site Name",
+      "site_name",
+      "Site",
+      "Sampling Site",
+      "sampling_site"
+    );
+    return siteKeyForFocus(location)===target;
+  });
+}
+
+function renderAdditionalForFocusedSite(){
+  const data=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite);
+
+  renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
+  renderAdditionalSeries("phChart",data,"pH","");
+  renderAdditionalSeries("coliformChart",data,"Coliform","");
+  renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
+  renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
+}
+
 function normaliseAdditionalRow(row){
   const copy={...row};
 
@@ -1475,6 +1623,10 @@ function applySharedSiteSelection(site){
   }
 
   renderSampleAnalysisForFocusedSite();
+
+  if(additionalWaterQualityData.length){
+    renderAdditionalForFocusedSite();
+  }
 }
 
 function refreshSharedSiteSelection(){
