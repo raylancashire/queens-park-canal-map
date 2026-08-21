@@ -1364,32 +1364,23 @@ function dedupeAllSiteDropdowns(){
 }
 
 
-function uniqueSampleRows(rows){
-  const seen=new Set();
-  return rows.filter((row,index)=>{
-    const site=typeof siteName==="function" ? siteName(row) : getField(row,"Site Name","site_name","Site");
-    const date=getField(row,"Sample Date","Date","sample_date");
-    const time=getField(row,"Sample Time","Time","sample_time");
-    const id=getField(row,"GlobalID","ObjectID","Sample ID","SampleID");
+function filterFreshwaterForSite(data,site){
+  /*
+   * A FreshWater Watch survey row is one sample.
+   * Site names are matched after removing the optional
+   * "Grand Union Canal -" prefix, so repeated surveys at the same
+   * named location are counted together even when their GPS positions differ.
+   */
+  if(!site || site==="all") return data;
 
-    /* Prefer a survey ID where available, otherwise identify a sample by
-       canonical site + date + time. This prevents accidental duplicate rows
-       from inflating the displayed sample count. */
-    const key=id
-      ? `id:${id}`
-      : `sample:${normaliseSiteForMatch(site)}|${String(date).trim()}|${String(time).trim()}`;
-
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const target=normaliseSiteForMatch(site);
+  return data.filter(row=>
+    normaliseSiteForMatch(siteName(row))===target
+  );
 }
 
-function filterFreshwaterForSite(data,site){
-  const rows=(!site || site==="all")
-    ? data
-    : data.filter(row=>normaliseSiteForMatch(siteName(row))===normaliseSiteForMatch(site));
-  return uniqueSampleRows(rows);
+function sampleCountForSite(site){
+  return filterFreshwaterForSite(freshwaterDataAll,site).length;
 }
 
 function updateScopeText(site,rows){
@@ -1402,7 +1393,8 @@ function updateScopeText(site,rows){
   }
 
   const shortSite=String(site).replace(/^Grand Union Canal\s*-\s*/i,"");
-  el.textContent=`Site-focused analysis for ${shortSite}, based on ${rows.length} ${rows.length===1?"sample":"samples"}.`;
+  const count=sampleCountForSite(site);
+  el.textContent=`Site-focused analysis for ${shortSite}, based on ${count} ${count===1?"sample":"samples"}.`;
 }
 
 function renderSampleAnalysisForFocusedSite(){
@@ -1412,7 +1404,8 @@ function renderSampleAnalysisForFocusedSite(){
   const tRaw=data.map(getTurbidity).filter(Boolean);
   const tVals=tRaw.filter(v=>turbidityScaleKey(v));
 
-  document.getElementById("totalSamples").textContent=data.length;
+  /* Samples in view = all survey rows for the selected named site. */
+  document.getElementById("totalSamples").textContent=sampleCountForSite(currentFocusedSite);
   document.getElementById("nitrateResults").textContent=nVals.length;
   document.getElementById("phosphateResults").textContent=pVals.length;
   document.getElementById("turbidityResults").textContent=tVals.length;
