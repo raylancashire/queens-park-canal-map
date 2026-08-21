@@ -1681,6 +1681,19 @@ map.on("popupclose", ()=>{
   if(assessmentLegendEl){
     assessmentLegendEl.classList.remove("assessment-shifted");
   }
+
+  /*
+   * If the visitor closes/deselects the active sampling-point popup,
+   * return the shared site filter to All sites. Use a zero-delay check
+   * so opening a different marker (which closes the previous popup first)
+   * does not briefly reset the selection.
+   */
+  setTimeout(()=>{
+    const openPopup=map.getContainer().querySelector(".leaflet-popup");
+    if(!openPopup){
+      resetMapSummaryToAll();
+    }
+  },0);
 });
 
 map.on("moveend zoomend resize", ()=>{
