@@ -1408,9 +1408,14 @@ async function loadAdditionalData(){
 
     setTimeout(notifyParentOfHeight,80);
   }catch(e){
+    console.error("Additional water-quality data error:",e);
+
     ["temperatureChart","phChart","coliformChart","bodChart","doChart"].forEach(id=>{
       const el=document.getElementById(id);
-      if(el) el.innerHTML='<div class="no-results">Additional water-quality data could not be loaded.</div>';
+      if(el){
+        el.innerHTML=
+          '<div class="no-results">Additional water-quality data could not be loaded.</div>';
+      }
     });
   }
 }
@@ -1418,6 +1423,23 @@ async function loadAdditionalData(){
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
 
 let freshwaterDataForChanges=[];
+
+async function fetchFromSources(sources){
+  let lastError;
+
+  for(const url of sources){
+    try{
+      const response=await fetch(url,{cache:"no-store"});
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.text();
+    }catch(error){
+      lastError=error;
+    }
+  }
+
+  throw lastError || new Error("Could not load data source");
+}
+
 let additionalWaterQualityData=[];
 let freshwaterDataAll=[];
 const SITE_SYNC_KEY="qpt-canal-site-selection";
