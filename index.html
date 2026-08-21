@@ -1414,26 +1414,32 @@ async function loadData() {
       return datedRows.length ? datedRows[datedRows.length - 1].row : null;
     }
 
-    function updateSummary(selectedSite) {
-      publishSiteFocus(selectedSite || "all");
+    function updateSummary(selectedSite, publish=true) {
+      const selected = selectedSite || "all";
+      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
 
-      if (selectedSite && selectedSite !== "all" && groups[selectedSite]) {
-        const rows = groups[selectedSite];
+      if (publish) {
+        publishSiteFocus(selected);
+      }
+
+      if (selectedKey !== "all" && groups[selectedKey]) {
+        const rows = groups[selectedKey];
         const latest = latestRowForRows(rows);
+        const displayName = canonicalSiteDisplay(groupSiteNames[selectedKey] || selected);
 
-        siteCountEl.textContent = selectedSite.replace(/^Grand Union Canal\s*-\s*/i, "");
+        siteCountEl.textContent = displayName;
         siteCountEl.classList.add("site-name");
         siteCountLabelEl.textContent = "Sampling site";
 
         sampleCountEl.textContent = rows.length;
-        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
+        sampleCountLabelEl.textContent = "Samples in view";
 
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample at site";
       } else {
         const latest = latestRowForRows(uniqueData);
 
-        siteCountEl.textContent = siteNames.length;
+        siteCountEl.textContent = siteKeys.length;
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
 
@@ -1524,17 +1530,27 @@ async function loadData() {
 
     function applySyncedSite(value) {
       const selected = resolveSyncedSite(value);
-      sel.value = selected;
+      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
+
+      /* Keep the map dropdown aligned with the external selection. */
+      if (selected === "all") {
+        sel.value = "all";
+      } else {
+        const option = [...sel.options].find(
+          opt => opt.value !== "all" && canonicalSiteKey(opt.value) === selectedKey
+        );
+        sel.value = option ? option.value : "all";
+      }
 
       markers.forEach(marker => {
-        if (selected === "all" || marker.site === selectedKey) {
+        if (selectedKey === "all" || marker.site === selectedKey) {
           if (!map.hasLayer(marker)) marker.addTo(map);
         } else if (map.hasLayer(marker)) {
           map.removeLayer(marker);
         }
       });
 
-      if (selected !== "all") {
+      if (selectedKey !== "all") {
         const marker = markers.find(m => m.site === selectedKey);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
@@ -1547,27 +1563,9 @@ async function loadData() {
         }
       }
 
-      /* Update the map summary without republishing the same selection. */
-      if (selected !== "all" && groups[canonicalSiteKey(selected)]) {
-        const rows = groups[canonicalSiteKey(selected)];
-        const latest = latestRowForRows(rows);
-        siteCountEl.textContent = selected.replace(/^Grand Union Canal\s*-\s*/i, "");
-        siteCountEl.classList.add("site-name");
-        siteCountLabelEl.textContent = "Sampling site";
-        sampleCountEl.textContent = rows.length;
-        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
-        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
-        latestDateLabelEl.textContent = "Latest sample at site";
-      } else {
-        const latest = latestRowForRows(uniqueData);
-        siteCountEl.textContent = siteNames.length;
-        siteCountEl.classList.remove("site-name");
-        siteCountLabelEl.textContent = "Sampling sites";
-        sampleCountEl.textContent = validRows;
-        sampleCountLabelEl.textContent = "Samples in view";
-        latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
-        latestDateLabelEl.textContent = "Latest sample";
-      }
+      /* External synchronisation must update the cards without broadcasting
+         the same selection back again. */
+      updateSummary(selected, false);
     }
 
     if (siteSyncChannel) {
@@ -1592,7 +1590,7 @@ async function loadData() {
     resetMapSummaryToAll = function() {
       sel.value = "all";
       markers.forEach(marker => marker.addTo(map));
-      updateSummary("all");
+      updateSummary("all", true);
     };
 
     map.on("click", () => {
@@ -1607,7 +1605,14 @@ async function loadData() {
     document.getElementById("recordCount").textContent =
       `${validRows} records loaded across ${siteNames.length} sites`;
 
-    updateSummary("all");
+    let hadStoredSelection = false;
+    try {
+      hadStoredSelection = !!localStorage.getItem(SITE_SYNC_KEY);
+    } catch (e) {}
+
+    if (!hadStoredSelection) {
+      updateSummary("all", false);
+    }
 
   } catch (err) {
     console.error(err);
