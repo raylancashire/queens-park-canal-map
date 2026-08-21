@@ -1484,12 +1484,12 @@ async function loadData() {
         }
 
         const siteKey = canonicalSiteKey(site);
-        const currentKey = sel.value === "all" ? "all" : canonicalSiteKey(sel.value);
-        const popupAlreadyOpen = marker.isPopupOpen();
+        const currentKey = sel.value === "all"
+          ? "all"
+          : canonicalSiteKey(sel.value);
 
-        /* Clicking the active point again deselects it and restores All sites. */
-        if (currentKey === siteKey && popupAlreadyOpen) {
-          marker.closePopup();
+        if (currentKey === siteKey) {
+          map.closePopup();
           resetMapSummaryToAll();
 
           if (defaultResultBounds && defaultResultBounds.isValid()) {
@@ -1501,6 +1501,7 @@ async function loadData() {
         const matchingOption = [...sel.options].find(
           opt => opt.value !== "all" && canonicalSiteKey(opt.value) === siteKey
         );
+
         sel.value = matchingOption ? matchingOption.value : site;
         updateSummary(site);
       });
