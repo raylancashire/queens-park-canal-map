@@ -1455,27 +1455,59 @@ function renderSampleAnalysisForFocusedSite(){
   requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,50));
 }
 
-function setFocusedSite(site){
-  currentFocusedSite=(site==="all" || !site)
-    ? "all"
-    : canonicalSiteFromData(site);
+
+function applySharedSiteSelection(site){
+  const requested=site || "all";
+
+  if(requested==="all"){
+    currentFocusedSite="all";
+  }else if(freshwaterDataAll.length){
+    currentFocusedSite=canonicalSiteFromData(requested);
+  }else{
+    /* Data may still be loading; keep the requested display name until load() completes. */
+    currentFocusedSite=siteDisplayForFocus(requested);
+  }
 
   renderSampleAnalysisForFocusedSite();
+}
+
+function refreshSharedSiteSelection(){
+  try{
+    const stored=localStorage.getItem(SITE_SYNC_KEY) || "all";
+
+    if(siteKeyForFocus(stored)!==siteKeyForFocus(currentFocusedSite) ||
+       (stored==="all")!==(currentFocusedSite==="all")){
+      applySharedSiteSelection(stored);
+    }
+  }catch(e){}
+}
+
+function setFocusedSite(site){
+  applySharedSiteSelection(site);
 }
 
 if(siteSyncChannel){
   siteSyncChannel.addEventListener("message",event=>{
     if(event.data && event.data.type==="site-focus"){
-      setFocusedSite(event.data.site);
+      applySharedSiteSelection(event.data.site);
     }
   });
 }
 
 window.addEventListener("storage",event=>{
   if(event.key===SITE_SYNC_KEY && event.newValue){
-    setFocusedSite(event.newValue);
+    applySharedSiteSelection(event.newValue);
   }
 });
+
+/* Embedded browsers can occasionally delay BroadcastChannel/storage events.
+   Re-check the shared selection when this iframe becomes active and at a
+   lightweight interval so Sample Analysis always follows the map selection. */
+window.addEventListener("focus",refreshSharedSiteSelection);
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden) refreshSharedSiteSelection();
+});
+setInterval(refreshSharedSiteSelection,750);
 
 function sampleDateValue(row){
   const raw=String(getField(row,"Sample Date","sample_date")||"").trim();
@@ -1919,8 +1951,13 @@ async function load(){try{
  freshwaterDataAll=data;
  freshwaterDataForChanges=data;
 
- if(currentFocusedSite!=="all"){
-   currentFocusedSite=canonicalSiteFromData(currentFocusedSite);
+ try{
+   const stored=localStorage.getItem(SITE_SYNC_KEY) || currentFocusedSite || "all";
+   currentFocusedSite=stored==="all" ? "all" : canonicalSiteFromData(stored);
+ }catch(e){
+   if(currentFocusedSite!=="all"){
+     currentFocusedSite=canonicalSiteFromData(currentFocusedSite);
+   }
  }
 
  initialiseSiteChanges();
