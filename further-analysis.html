@@ -1693,6 +1693,49 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   }
 }
 
+
+/* Pale-green interaction highlight: Snapshot buttons + Site Consistency controls/rows */
+#snapshotSiteSelect:hover,
+#snapshotSiteSelect:focus,
+#snapshotMetricSelect:hover,
+#snapshotMetricSelect:focus,
+.snapshot-controls button:hover,
+.snapshot-controls button:focus-visible,
+.snapshot-button:hover,
+.snapshot-button:focus-visible,
+.site-consistency button:hover,
+.site-consistency button:focus-visible,
+.consistency-controls button:hover,
+.consistency-controls button:focus-visible,
+.consistency-button:hover,
+.consistency-button:focus-visible,
+.consistency-metric-button:hover,
+.consistency-metric-button:focus-visible,
+.consistency-row:hover,
+.consistency-line:hover,
+.site-consistency-row:hover,
+.site-consistency-line:hover,
+#consistencyTable tbody tr:hover{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+#snapshotSiteSelect,
+#snapshotMetricSelect,
+.snapshot-controls button,
+.snapshot-button,
+.site-consistency button,
+.consistency-controls button,
+.consistency-button,
+.consistency-metric-button,
+.consistency-row,
+.consistency-line,
+.site-consistency-row,
+.site-consistency-line,
+#consistencyTable tbody tr{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
 </style>
 </head>
 <body>
