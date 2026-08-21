@@ -333,6 +333,11 @@ The map is intended to provide an accessible public view of sampling results ove
 
 ## Maintenance
 
+### Site-name matching rule
+
+For map and analysis filtering, sampling sites should be identified by a **normalised site name rather than GPS coordinates**. The optional `Grand Union Canal -` prefix is ignored when matching locations, while the shorter site name is used for display. This prevents small GPS differences or prefixed/unprefixed names from creating duplicate sampling locations.
+
+
 For routine updates, only `freshwater.csv` should normally need replacing.
 
 If the FreshWater Watch export format changes substantially, the field-name mappings in `index.html` may need to be updated.
@@ -664,6 +669,7 @@ Accessibility improvements now include:
 - Distinct assessment symbols
 - Keyboard-accessible hover/focus effects
 - Hover highlighting of result cards and table rows
+- A consistent pale-green hover/focus treatment across Sample Analysis, Overall Water Quality Snapshot, Change Since Previous Survey and Site Consistency controls/results
 - Selected controls remain visually distinct
 - Unselected controls highlight on mouse hover and keyboard focus
 - pH is written using correct scientific capitalisation
@@ -709,6 +715,36 @@ The following Canal Watch visual-condition and blog-filter changes were develope
 9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
 
 These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
+
+---
+
+## Update — 21 August 2026
+
+The following Canal Watch map, Sample Analysis and Further Analysis changes were developed or refined on **21 August 2026**:
+
+1. Standardised sampling-site identity around the **site name rather than GPS coordinates**, so repeat surveys at the same named location are treated as one sampling site even when recorded coordinates vary slightly.
+2. Normalised site-name matching so entries with and without the **`Grand Union Canal -`** prefix resolve to the same location.
+3. Refined site dropdown generation to remove duplicate site entries while retaining consistent site names across the map and analysis pages.
+4. Improved cross-page site synchronisation between the **map**, **Sample Analysis**, **Overall Water Quality Snapshot**, **Change Since Previous Survey** and other site-aware analysis controls.
+5. Corrected the map summary cards so **Sampling site**, **Samples in view** and **Latest sample at site** reflect the currently selected location.
+6. Updated **Samples in view** in Sample Analysis so an individual site shows the number of FreshWater Watch samples recorded for that named area.
+7. Restored the **All sites** view in **Results over time by site**, including the multi-site nitrate, phosphate and turbidity comparison charts.
+8. Refined map-pin selection behaviour so site focus can return to **All sites** when a selected point is deselected, the popup is closed, or the map is reset.
+9. Restored the Sample Analysis site-focus logic after the site-name processing changes, using one canonical site-matching rule across the relevant filters.
+10. Restored the **Additional water-quality testing** data-loading and rendering path in `analysis.html`.
+11. Restored display of **Temperature, pH, Coliform, Biochemical Oxygen Demand (BOD)** and **Dissolved Oxygen (DO)** results where data is available.
+12. Added compatibility for alternative additional-test column headings, including dissolved-oxygen and coliform variants.
+13. Retained BOD support using a directly recorded BOD value where available, with calculation from initial and five-day dissolved oxygen where the required readings are present.
+14. Restored the missing shared data-fetch helper used by `additional-water-quality.csv`.
+15. Set **Sample Analysis** to open initially on **All sites**, while still allowing later site selections from the map or analysis controls to focus the data.
+16. Standardised the **pale-green hover/focus treatment** across Sample Analysis result cards and analysis controls.
+17. Extended the same pale-green hover/focus treatment to the **Overall Water Quality Snapshot** result panels and controls.
+18. Extended pale-green hover/focus highlighting to **Change Since Previous Survey** result panels.
+19. Extended pale-green hover/focus highlighting to **Site Consistency** controls and result rows/lines.
+20. Clarified the Site Consistency count label from **Samples** to **Results used**, because the figure represents usable results for the selected indicator rather than every survey row.
+21. Continued to preserve keyboard-focus styling and written labels so hover colour remains a supplementary interaction cue rather than the only indication of state.
+
+These changes consolidate the site-name and site-selection logic after several rounds of refinement, while keeping the map, Sample Analysis and Further Analysis visually and behaviourally consistent.
 
 ---
 
