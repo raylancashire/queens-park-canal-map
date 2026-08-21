@@ -1648,6 +1648,51 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   text-align:center;
 }
 
+
+/* Standard pale-green hover/focus highlight for Snapshot and Change panels */
+.snapshot-card,
+.change-card,
+.snapshot-result,
+.change-result,
+.results-watch-item,
+.snapshot-control,
+.change-summary-card{
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease;
+}
+
+.snapshot-card:hover,
+.snapshot-card:focus-within,
+.change-card:hover,
+.change-card:focus-within,
+.snapshot-result:hover,
+.snapshot-result:focus-within,
+.change-result:hover,
+.change-result:focus-within,
+.results-watch-item:hover,
+.results-watch-item:focus-within,
+.snapshot-control:hover,
+.snapshot-control:focus-within,
+.change-summary-card:hover,
+.change-summary-card:focus-within{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+}
+
+@media (hover:none){
+  .snapshot-card:hover,
+  .change-card:hover,
+  .snapshot-result:hover,
+  .change-result:hover,
+  .results-watch-item:hover,
+  .snapshot-control:hover,
+  .change-summary-card:hover{
+    background:inherit;
+  }
+}
+
 </style>
 </head>
 <body>
