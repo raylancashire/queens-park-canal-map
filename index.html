@@ -1482,7 +1482,26 @@ async function loadData() {
         if (e && e.originalEvent) {
           L.DomEvent.stopPropagation(e.originalEvent);
         }
-        sel.value = site;
+
+        const siteKey = canonicalSiteKey(site);
+        const currentKey = sel.value === "all" ? "all" : canonicalSiteKey(sel.value);
+        const popupAlreadyOpen = marker.isPopupOpen();
+
+        /* Clicking the active point again deselects it and restores All sites. */
+        if (currentKey === siteKey && popupAlreadyOpen) {
+          marker.closePopup();
+          resetMapSummaryToAll();
+
+          if (defaultResultBounds && defaultResultBounds.isValid()) {
+            map.fitBounds(defaultResultBounds, {padding:[25,25]});
+          }
+          return;
+        }
+
+        const matchingOption = [...sel.options].find(
+          opt => opt.value !== "all" && canonicalSiteKey(opt.value) === siteKey
+        );
+        sel.value = matchingOption ? matchingOption.value : site;
         updateSummary(site);
       });
       marker.addTo(map);
@@ -1690,10 +1709,14 @@ map.on("popupclose", ()=>{
    */
   setTimeout(()=>{
     const openPopup=map.getContainer().querySelector(".leaflet-popup");
-    if(!openPopup){
+    if(!openPopup && sel.value !== "all"){
       resetMapSummaryToAll();
+
+      if (defaultResultBounds && defaultResultBounds.isValid()) {
+        map.fitBounds(defaultResultBounds, {padding:[25,25]});
+      }
     }
-  },0);
+  },20);
 });
 
 map.on("moveend zoomend resize", ()=>{
