@@ -1736,6 +1736,40 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
 
+
+/* Correct Site Consistency hover/focus targets */
+.site-consistency-toggle button:not(.active):hover,
+.site-consistency-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
+.site-consistency-table tbody tr:hover > td,
+.site-consistency-table tbody tr:focus-within > td{
+  background:#eef7ef !important;
+}
+
+.site-consistency-summary-card:hover,
+.site-consistency-summary-card:focus-within{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+.site-consistency-toggle button,
+.site-consistency-table tbody td,
+.site-consistency-summary-card{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+/* Keep the selected consistency indicator visually selected. */
+.site-consistency-toggle button.active:hover,
+.site-consistency-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+}
+
 </style>
 </head>
 <body>
