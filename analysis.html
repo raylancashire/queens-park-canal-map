@@ -614,6 +614,40 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-color:#7fa38a;
 }
 
+
+/* Standard Canal Watch pale-green interaction highlight */
+.stat,
+.chart-card,
+.outer-analysis-toggle,
+.site-change-controls,
+.change-metric-section{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+.stat:hover,
+.stat:focus-within,
+.chart-card:hover,
+.chart-card:focus-within,
+.outer-analysis-toggle:hover,
+.outer-analysis-toggle:focus-visible,
+.site-change-controls:hover,
+.site-change-controls:focus-within,
+.change-metric-section:hover,
+.change-metric-section:focus-within{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+}
+
+@media (hover:none){
+  .stat:hover,
+  .chart-card:hover,
+  .outer-analysis-toggle:hover,
+  .site-change-controls:hover,
+  .change-metric-section:hover{
+    background:inherit;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1445,9 +1479,10 @@ let freshwaterDataAll=[];
 const SITE_SYNC_KEY="qpt-canal-site-selection";
 let currentFocusedSite="all";
 
-try {
-  currentFocusedSite=localStorage.getItem(SITE_SYNC_KEY)||"all";
-} catch(e) {}
+/* Initial view should always open on All sites.
+   A later map/snapshot selection can still focus the analysis through
+   BroadcastChannel/storage synchronisation. */
+currentFocusedSite="all";
 
 const siteSyncChannel=("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
@@ -2131,14 +2166,7 @@ async function load(){try{
  freshwaterDataAll=data;
  freshwaterDataForChanges=data;
 
- try{
-   const stored=localStorage.getItem(SITE_SYNC_KEY) || currentFocusedSite || "all";
-   currentFocusedSite=stored==="all" ? "all" : canonicalSiteFromData(stored);
- }catch(e){
-   if(currentFocusedSite!=="all"){
-     currentFocusedSite=canonicalSiteFromData(currentFocusedSite);
-   }
- }
+ currentFocusedSite="all";
 
  initialiseSiteChanges();
  renderSampleAnalysisForFocusedSite();
