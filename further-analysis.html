@@ -4031,9 +4031,26 @@ function renderSnapshot(){
   }
 
   if(Number.isFinite(dissolvedOxygen)){
+    /*
+     * Dissolved oxygen saturation depends on water temperature.
+     * Use the temperature from the same snapshot scope to convert the
+     * measured DO concentration to an approximate saturation percentage.
+     */
+    const doSaturation=Number.isFinite(temperature)
+      ? dissolvedOxygenPercentSaturation(dissolvedOxygen,temperature)
+      : null;
+
+    const doValue=Number.isFinite(doSaturation)
+      ? `${Math.round(doSaturation)}% saturation`
+      : `${dissolvedOxygen.toFixed(1)} ppm`;
+
+    const doNote=Number.isFinite(doSaturation)
+      ? `${dissolvedOxygen.toFixed(1)} ppm at ${temperature.toFixed(1)} °C`
+      : (currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result");
+
     cards.push(snapshotCard(
-      "do","Dissolved Oxygen (DO)",`${dissolvedOxygen.toFixed(1)} ppm`,
-      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result",
+      "do","Dissolved Oxygen (DO)",doValue,
+      doNote,
       snapshotDOAssessment(dissolvedOxygen)
     ));
   }
@@ -4467,6 +4484,58 @@ function changeDeltaText(key,current,previous){
   return text;
 }
 
+function changeDOCard(current,previous,currentTemp,previousTemp,currentDate,previousDate,note){
+  const status=changeClassification("do",current,previous);
+  const colour=snapshotIndicatorColour("do");
+
+  const currentSat=Number.isFinite(current) && Number.isFinite(currentTemp)
+    ? dissolvedOxygenPercentSaturation(current,currentTemp) : null;
+  const previousSat=Number.isFinite(previous) && Number.isFinite(previousTemp)
+    ? dissolvedOxygenPercentSaturation(previous,previousTemp) : null;
+
+  const previousValue=Number.isFinite(previousSat)
+    ? `${Math.round(previousSat)}% saturation` : changeFormatValue("do",previous);
+  const currentValue=Number.isFinite(currentSat)
+    ? `${Math.round(currentSat)}% saturation` : changeFormatValue("do",current);
+
+  const previousDetail=Number.isFinite(previous) && Number.isFinite(previousTemp)
+    ? `${previous.toFixed(1)} ppm at ${previousTemp.toFixed(1)} °C` : "";
+  const currentDetail=Number.isFinite(current) && Number.isFinite(currentTemp)
+    ? `${current.toFixed(1)} ppm at ${currentTemp.toFixed(1)} °C` : "";
+
+  let deltaHtml="";
+  if(Number.isFinite(currentSat) && Number.isFinite(previousSat)){
+    const delta=currentSat-previousSat;
+    deltaHtml=`<div class="change-summary-delta">Change: <strong>${delta>0?"+":""}${Math.round(delta)} percentage points</strong></div>`;
+  }else if(Number.isFinite(current) && Number.isFinite(previous)){
+    deltaHtml=`<div class="change-summary-delta">Change: <strong>${esc(changeDeltaText("do",current,previous))}</strong></div>`;
+  }
+
+  return `<article class="change-summary-card" style="--change-indicator:${colour}">
+    <div class="change-summary-name">Dissolved Oxygen (DO)</div>
+    <div class="change-summary-values">
+      <div class="change-summary-value">
+        <small>Previous</small>
+        <strong>${esc(previousValue)}</strong>
+        ${previousDetail ? `<small>${esc(previousDetail)}</small>` : ""}
+      </div>
+      <div class="change-summary-arrow">→</div>
+      <div class="change-summary-value">
+        <small>Current</small>
+        <strong>${esc(currentValue)}</strong>
+        ${currentDetail ? `<small>${esc(currentDetail)}</small>` : ""}
+      </div>
+    </div>
+    ${deltaHtml}
+    <span class="change-summary-status ${status.cls}">${status.symbol} ${esc(status.label)}</span>
+    <div class="change-summary-note">
+      ${esc(currentDate ? changeFormatDate(previousDate) : "Previous date unavailable")}
+      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current date unavailable")}
+      ${note ? ` · ${esc(note)}` : ""}
+    </div>
+  </article>`;
+}
+
 function changeCard(key,current,previous,currentDate,previousDate,note){
   const info=changeIndicatorInfo(key);
   const status=changeClassification(key,current,previous);
@@ -4613,13 +4682,28 @@ function renderChangeSummary(){
       add.previous ? changeAverageFromRows(add.previous.rows,coliformGetter) : null]
   ];
 
+  const latestTemperature=add.latest
+    ? changeAverageFromRows(add.latest.rows,tempGetter) : null;
+  const previousTemperature=add.previous
+    ? changeAverageFromRows(add.previous.rows,tempGetter) : null;
+
   addGrid.innerHTML=addItems.some(item=>Number.isFinite(item[1]) || Number.isFinite(item[2]))
-    ? addItems.map(item=>changeCard(
-        item[0],item[1],item[2],
-        add.latest?.timestamp||0,
-        add.previous?.timestamp||0,
-        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
-      )).join("")
+    ? addItems.map(item=>
+        item[0]==="do"
+          ? changeDOCard(
+              item[1],item[2],
+              latestTemperature,previousTemperature,
+              add.latest?.timestamp||0,
+              add.previous?.timestamp||0,
+              ""
+            )
+          : changeCard(
+              item[0],item[1],item[2],
+              add.latest?.timestamp||0,
+              add.previous?.timestamp||0,
+              item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
+            )
+      ).join("")
     : '<div class="change-summary-empty">A second additional water-quality survey is needed before change can be calculated.</div>';
 
   const dateParts=[];
