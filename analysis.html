@@ -1807,18 +1807,26 @@ function comparisonMetricValue(row,metric){
 }
 
 function siteSurveyResults(site,metric){
-  const rows = (!site || site==="all")
-    ? freshwaterDataForChanges
-    : freshwaterDataForChanges.filter(r=>siteName(r)===site);
+  const target=(!site || site==="all") ? "all" : siteKeyForFocus(site);
+
+  const rows=freshwaterDataForChanges
+    .filter(row=>
+      target==="all" || siteKeyForFocus(siteName(row))===target
+    )
+    .slice()
+    .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b));
 
   return rows
-    .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
-    .map(row=>({
-      date:sampleDateLabel(row),
-      value:comparisonMetricValue(row,metric),
-      site:siteName(row)
-    }))
-    .filter(p=>Number.isFinite(p.value));
+    .map(row=>{
+      const dateValue=sampleDateValue(row);
+      return {
+        date:sampleDateLabel(row),
+        dateValue,
+        value:comparisonMetricValue(row,metric),
+        site:siteDisplayForFocus(siteName(row))
+      };
+    })
+    .filter(p=>Number.isFinite(p.value) && Number.isFinite(p.dateValue) && p.dateValue>0);
 }
 
 function metricChartInfo(metric){
@@ -1916,14 +1924,20 @@ function renderAllSitesMetricChangeChart(containerId,metric){
     return;
   }
 
-  const sites=[...new Set(points.map(p=>p.site))].sort((a,b)=>a.localeCompare(b));
-  const dates=[...new Set(
-    points.map(p=>JSON.stringify([p.dateValue,p.date]))
-  )]
-    .map(item=>JSON.parse(item))
+  const sites=[...new Set(points.map(p=>siteDisplayForFocus(p.site)))]
+    .sort((a,b)=>a.localeCompare(b));
+
+  const dateMap=new Map();
+  points.forEach(point=>{
+    if(Number.isFinite(point.dateValue) && point.dateValue>0){
+      dateMap.set(point.dateValue,point.date);
+    }
+  });
+
+  const dates=[...dateMap.entries()]
     .sort((a,b)=>a[0]-b[0]);
 
-  const dateIndex=new Map(dates.map((item,index)=>[item[0]+"|"+item[1],index]));
+  const dateIndex=new Map(dates.map((item,index)=>[item[0],index]));
 
   const palette=[
     "#2f6b45",
@@ -1980,10 +1994,10 @@ function renderAllSitesMetricChangeChart(containerId,metric){
     const colour=palette[siteIndex%palette.length];
 
     const sitePoints=points
-      .filter(p=>p.site===site)
+      .filter(p=>siteKeyForFocus(p.site)===siteKeyForFocus(site))
       .map(p=>({
         ...p,
-        xIndex:dateIndex.get(p.dateValue+"|"+p.date)
+        xIndex:dateIndex.get(p.dateValue)
       }))
       .filter(p=>Number.isFinite(p.xIndex));
 
@@ -2303,8 +2317,6 @@ document.getElementById("changeSiteSelect").addEventListener("change",()=>{
     ? "all"
     : canonicalSiteFromData(rawSite);
 
-  renderSampleAnalysisForFocusedSite();
-
   try{
     localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
   }catch(e){}
@@ -2316,6 +2328,7 @@ document.getElementById("changeSiteSelect").addEventListener("change",()=>{
     });
   }
 
+  renderSampleAnalysisForFocusedSite();
   renderSiteChangeCharts();
   setTimeout(notifyParentOfHeight,40);
 });
