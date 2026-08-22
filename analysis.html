@@ -84,13 +84,13 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   letter-spacing:.04em;
 }
 .additional-chart{
-  min-height:250px;
+  min-height:340px;
 }
 .series-chart{
   display:flex;
   align-items:flex-end;
   gap:14px;
-  height:230px;
+  height:315px;
   padding:18px 10px 0;
   border-left:1px solid var(--line);
   border-bottom:1px solid var(--line);
@@ -139,7 +139,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:190px;
+  min-height:280px;
   text-align:center;
 }
 .single-result strong{
@@ -169,7 +169,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   display:flex;
   align-items:center;
   justify-content:center;
-  min-height:190px;
+  min-height:280px;
   color:var(--muted);
   font-size:13px;
   text-align:center;
@@ -646,6 +646,17 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   .change-metric-section:hover{
     background:inherit;
   }
+}
+
+
+/* Extra vertical room for Additional water-quality testing */
+.additional-chart{
+  padding-bottom:22px;
+}
+.additional-chart .single-result,
+.additional-chart .no-results{
+  padding-top:18px;
+  padding-bottom:18px;
 }
 
 </style>
