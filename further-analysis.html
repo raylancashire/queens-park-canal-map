@@ -1839,6 +1839,34 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 
+
+/* Link Results to Watch hover/focus to its Snapshot result card */
+.snapshot-card.watch-highlight{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  box-shadow:0 0 0 2px rgba(88,140,101,.14);
+}
+
+
+/* Keep the selected Overall Water Quality Snapshot period button fixed on hover/focus */
+.snapshot-period-toggle button.active:hover,
+.snapshot-period-toggle button.active:focus,
+.snapshot-period-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+
+/* Pale-green hover/focus applies only to the unselected Snapshot period button */
+.snapshot-period-toggle button:not(.active):hover,
+.snapshot-period-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
 </style>
 </head>
 <body>
@@ -3963,7 +3991,7 @@ function snapshotCard(metric,title,valueText,note,status){
     statusHtml=`<span class="snapshot-card-status" style="background:${style.background};color:${style.colour}">${esc(status.label)}</span>`;
   }
 
-  return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
+  return `<article class="snapshot-card" data-indicator="${esc(metric)}" style="--snapshot-colour:${colour}">
     <div class="snapshot-card-title">${esc(title)}</div>
     <div class="snapshot-card-value">${esc(valueText)}</div>
     ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
