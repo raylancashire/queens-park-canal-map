@@ -1770,6 +1770,75 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   color:#fff !important;
 }
 
+
+/* Restored Key Takeaways and Results to Watch */
+.key-takeaway{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border-left:4px solid #5f8a69;
+  border-radius:0 8px 8px 0;
+  background:#f2f7f3;
+  color:#35483b;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.key-takeaway-label{
+  display:block;
+  margin-bottom:2px;
+  color:#526158;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+/* Results to Watch */
+.results-watch{margin:0 0 16px}
+.results-watch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.results-watch-title{color:#526158;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.results-watch-count{padding:3px 7px;border-radius:999px;background:#f0f3f1;color:#526158;font-size:9px;font-weight:800}
+.results-watch-grid{display:grid;gap:8px}
+.results-watch-item{padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--watch-colour,#a66a35);border-radius:8px;background:#fffaf5;transition:.15s ease}
+.results-watch-item:hover,.results-watch-item:focus-visible{background:#fff3e7;box-shadow:0 4px 12px rgba(91,62,35,.10);transform:translateY(-1px);outline:none}
+.results-watch-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.results-watch-name{color:var(--ink);font-size:11px;font-weight:850}
+.results-watch-value{color:var(--ink);font-size:13px;font-weight:850;text-align:right}
+.results-watch-reason{margin-top:4px;color:#66746b;font-size:10px;line-height:1.4}
+.results-watch-clear{padding:10px 12px;border:1px solid #cfe1d3;border-radius:8px;background:#f2f8f3;color:#31563b;font-size:11px}
+.snapshot-card.watch-highlight{background:#fff5e9!important;box-shadow:0 0 0 2px rgba(166,106,53,.20),0 5px 14px rgba(91,62,35,.12)!important;transform:translateY(-1px)}
+
+
+
+/* More breathing room around concluding Key Takeaway boxes */
+.key-takeaway{
+  margin-top:20px;
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  .key-takeaway{
+    margin-top:16px;
+    margin-bottom:8px;
+  }
+}
+
+
+/* Extra breathing room for Results to Watch in the Overall Water Quality Snapshot */
+#resultsWatch{
+  margin-top:24px;
+  margin-bottom:22px;
+}
+#resultsWatch .results-watch-head{
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  #resultsWatch{
+    margin-top:20px;
+    margin-bottom:18px;
+  }
+}
+
+
 </style>
 </head>
 <body>
@@ -1814,6 +1883,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
       <div id="snapshotGrid" class="snapshot-grid"></div>
       <div id="snapshotSummary" class="snapshot-summary"></div>
+      <div id="resultsWatch" class="results-watch">
+        <div class="results-watch-head">
+          <div class="results-watch-title">Results to Watch</div>
+          <div id="resultsWatchCount" class="results-watch-count"></div>
+        </div>
+        <div id="resultsWatchGrid" class="results-watch-grid"></div>
+      </div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
+      </div>
+
       <div id="snapshotMeta" class="snapshot-meta"></div>
     </section>
   </div>
@@ -1886,6 +1968,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
+      </div>
       <div id="overallSiteComparisonSummary" class="overall-site-comparison-summary" aria-live="polite"></div>
     </div>
   </section>
@@ -1915,6 +2001,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteConsistencyTable"></div>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
+      </div>
 
       <div class="site-consistency-summary">
         <div class="site-consistency-summary-card">
@@ -3958,6 +4048,35 @@ async function loadSnapshotAdditionalData(){
   setTimeout(notifyParentOfHeight,40);
 }
 
+function watchReason(key,value){
+  if(!Number.isFinite(value)) return null;
+  if(key==="nitrate" && value>5) return "Nitrate is in the higher range and is worth monitoring.";
+  if(key==="phosphate" && value>0.5) return "Phosphate is in the higher range and is worth monitoring.";
+  if(key==="turbidity"){if(value>40)return "Turbidity is high, indicating reduced water clarity.";if(value>=14)return "Turbidity is moderately elevated and should continue to be monitored.";}
+  if(key==="ph"){const a=snapshotPHAssessment(value);if(a&&a.kind==="poor")return "pH is outside the preferred range.";}
+  if(key==="do"){const a=snapshotDOAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Dissolved Oxygen (DO) is below the more favourable range.";}
+  if(key==="bod"){const a=snapshotBODAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Biochemical Oxygen Demand (BOD) is elevated and is worth monitoring.";}
+  if(key==="coliform" && value>=20) return "Coliform is above the upper limit of the test.";
+  return null;
+}
+
+function watchLabel(key){return ({nitrate:"Nitrate",phosphate:"Phosphate",turbidity:"Turbidity",temperature:"Temperature",ph:"pH",do:"Dissolved Oxygen (DO)",bod:"Biochemical Oxygen Demand (BOD)",coliform:"Coliform"})[key]||key;}
+
+function watchValue(key,v){
+  if(key==="nitrate")return `${v.toFixed(2)} mg/L`;if(key==="phosphate")return `${v.toFixed(3)} mg/L`;if(key==="turbidity")return `${v.toFixed(0)} NTU`;if(key==="temperature")return `${v.toFixed(1)} °C`;if(key==="ph")return v.toFixed(1);if(key==="do"||key==="bod")return `${v.toFixed(1)} ppm`;if(key==="coliform")return v>=20?"> 20 coliforms/100ml":`${v.toFixed(0)} coliforms/100ml`;return String(v);
+}
+
+function setWatchHighlight(key,on){document.querySelectorAll(`.snapshot-card[data-indicator="${key}"]`).forEach(card=>card.classList.toggle("watch-highlight",on));}
+
+function renderResultsWatch(values){
+  const grid=document.getElementById("resultsWatchGrid"),count=document.getElementById("resultsWatchCount");if(!grid||!count)return;
+  const items=Object.entries(values).map(([key,value])=>({key,value,reason:watchReason(key,value)})).filter(x=>x.reason);
+  count.textContent=`${items.length} indicator${items.length===1?"":"s"}`;
+  if(!items.length){grid.innerHTML='<div class="results-watch-clear">✓ No results currently require particular attention.</div>';return;}
+  grid.innerHTML=items.map(x=>`<div class="results-watch-item" tabindex="0" data-watch-indicator="${esc(x.key)}" style="--watch-colour:${snapshotIndicatorColour(x.key)}"><div class="results-watch-row"><div class="results-watch-name">${esc(watchLabel(x.key))}</div><div class="results-watch-value">${esc(watchValue(x.key,x.value))}</div></div><div class="results-watch-reason">${esc(x.reason)}</div></div>`).join("");
+  grid.querySelectorAll(".results-watch-item").forEach(item=>{const key=item.dataset.watchIndicator;item.addEventListener("mouseenter",()=>setWatchHighlight(key,true));item.addEventListener("mouseleave",()=>setWatchHighlight(key,false));item.addEventListener("focus",()=>setWatchHighlight(key,true));item.addEventListener("blur",()=>setWatchHighlight(key,false));});
+}
+
 function renderSnapshot(){
   const grid=document.getElementById("snapshotGrid");
   const summary=document.getElementById("snapshotSummary");
@@ -4076,6 +4195,16 @@ function renderSnapshot(){
   grid.innerHTML=cards.length
     ? cards.join("")
     : '<div class="snapshot-empty">No usable measurements are available for this view.</div>';
+  renderResultsWatch({
+    nitrate,
+    phosphate,
+    turbidity,
+    temperature,
+    ph,
+    do:dissolvedOxygen,
+    bod,
+    coliform
+  });
 
   const scope=currentFocusedSite==="all"
     ? "all monitoring sites"
@@ -4108,6 +4237,11 @@ function renderSnapshot(){
   }
 
   summary.textContent=narrative;
+
+  const snapshotTakeaway=document.getElementById("snapshotTakeawayText");
+  if(snapshotTakeaway){
+    snapshotTakeaway.textContent=narrative;
+  }
 
   const fwLatest=fwRows.length
     ? Math.max(...fwRows.map(sampleDateValue).filter(Boolean))
@@ -4241,6 +4375,8 @@ function renderSiteConsistency(){
     holder.innerHTML='<div class="site-comparison-empty">No site consistency data are available for this indicator yet.</div>';
     mostConsistent.textContent="—";
     mostVariable.textContent="—";
+    const takeaway=document.getElementById("siteConsistencyTakeawayText");
+    if(takeaway) takeaway.textContent="More repeated results are needed before consistency can be compared.";
     return;
   }
 
@@ -4294,6 +4430,20 @@ function renderSiteConsistency(){
   }else{
     mostConsistent.textContent="More repeated samples needed";
     mostVariable.textContent="More repeated samples needed";
+  }
+
+  const consistencyTakeaway=document.getElementById("siteConsistencyTakeawayText");
+  if(consistencyTakeaway){
+    if(valid.length){
+      const ordered=[...valid].sort((a,b)=>a.cv-b.cv);
+      const stable=ordered[0];
+      const variable=ordered[ordered.length-1];
+      const label=consistencyMetricInfo(currentConsistencyMetric).label;
+      consistencyTakeaway.textContent=
+        `${label}: ${stable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} has the most stable repeated results, while ${variable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} shows the greatest variation.`;
+    }else{
+      consistencyTakeaway.textContent="More repeated results are needed before consistency can be compared.";
+    }
   }
 }
 
@@ -5026,6 +5176,8 @@ function renderSiteComparison(){
 
   if(!results.length){
     chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
+    const takeaway=document.getElementById("siteComparisonTakeawayText");
+    if(takeaway) takeaway.textContent="No comparison can be made until usable results are available.";
     return;
   }
 
@@ -5049,6 +5201,18 @@ function renderSiteComparison(){
       </div>
     </div>`;
   }).join("");
+
+  const comparisonTakeaway=document.getElementById("siteComparisonTakeawayText");
+  if(comparisonTakeaway){
+    const lowest=results[0];
+    const highest=results[results.length-1];
+    const label=consistencyMetricInfo(currentComparisonMetric).label;
+    const lowSite=lowest.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    const highSite=highest.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    comparisonTakeaway.textContent=results.length===1
+      ? `${label}: only one site currently has a usable result.`
+      : `${label}: ${lowSite} has the lowest latest result and ${highSite} has the highest latest result among the sites in view.`;
+  }
 }
 
 function setComparisonMetric(metric){
