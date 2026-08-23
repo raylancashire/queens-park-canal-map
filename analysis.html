@@ -800,6 +800,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       Each point represents the recorded result for that survey date at the selected site.
       Nitrate and phosphate are plotted using the midpoint of the FreshWater Watch result range.
       Turbidity is plotted in NTU using the recorded test value.
+      Participants shows the number of people recorded as taking part in each survey.
     </p>
 
     <div class="change-metric-section">
@@ -815,6 +816,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div class="change-metric-section">
       <h3 class="change-metric-title">Turbidity results over time</h3>
       <div id="siteChangeTurbidity" class="site-change-chart"></div>
+    </div>
+
+    <div class="change-metric-section">
+      <h3 class="change-metric-title">Participants over time</h3>
+      <div id="siteChangeParticipants" class="site-change-chart"></div>
     </div>
 
 
@@ -1803,6 +1809,20 @@ function comparisonMetricValue(row,metric){
     return m ? Number(m[0]) : null;
   }
 
+  if(metric==="participants"){
+    const raw=getField(
+      row,
+      "Total number of participants",
+      "Total Number of Participants",
+      "total number of participants",
+      "Participants",
+      "participants"
+    );
+    if(raw==="" || raw===null || raw===undefined) return null;
+    const value=parseFloat(String(raw).replace(/,/g,""));
+    return Number.isFinite(value) && value>=0 ? value : null;
+  }
+
   return null;
 }
 
@@ -1833,6 +1853,7 @@ function metricChartInfo(metric){
   if(metric==="nitrate") return {unit:"mg/L",decimals:2};
   if(metric==="phosphate") return {unit:"mg/L",decimals:3};
   if(metric==="turbidity") return {unit:"NTU",decimals:0};
+  if(metric==="participants") return {unit:"participants",decimals:0};
   return {unit:"",decimals:2};
 }
 
@@ -2142,12 +2163,14 @@ function renderSiteChangeCharts(){
     renderAllSitesMetricChangeChart("siteChangeNitrate","nitrate");
     renderAllSitesMetricChangeChart("siteChangePhosphate","phosphate");
     renderAllSitesMetricChangeChart("siteChangeTurbidity","turbidity");
+    renderAllSitesMetricChangeChart("siteChangeParticipants","participants");
     return;
   }
 
   renderMetricChangeChart("siteChangeNitrate",site,"nitrate");
   renderMetricChangeChart("siteChangePhosphate",site,"phosphate");
   renderMetricChangeChart("siteChangeTurbidity",site,"turbidity");
+  renderMetricChangeChart("siteChangeParticipants",site,"participants");
 }
 
 function initialiseSiteChanges(){
