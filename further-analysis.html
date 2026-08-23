@@ -4593,8 +4593,20 @@ function changeRankPH(value){
 }
 
 function changeClassification(key,current,previous){
-  if(!Number.isFinite(current) || !Number.isFinite(previous)){
+  /*
+   * Distinguish which side of the comparison is actually missing.
+   * This status text appears on the result card itself.
+   */
+  if(!Number.isFinite(current) && Number.isFinite(previous)){
+    return {label:"Current survey unavailable",cls:"neutral",symbol:"—"};
+  }
+
+  if(Number.isFinite(current) && !Number.isFinite(previous)){
     return {label:"Previous survey unavailable",cls:"neutral",symbol:"—"};
+  }
+
+  if(!Number.isFinite(current) && !Number.isFinite(previous)){
+    return {label:"Current survey unavailable",cls:"neutral",symbol:"—"};
   }
 
   const info=changeIndicatorInfo(key);
