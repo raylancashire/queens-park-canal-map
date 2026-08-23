@@ -15,7 +15,7 @@ The GitHub repository contains or may contain:
 - `further-analysis.html` — site comparison, trends and wider project analysis
 - `assessment-builder.html` — visual canal assessment builder
 - `freshwater.csv` — FreshWater Watch sampling data
-- `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded
+- `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded; dissolved oxygen can also be presented as calculated oxygen saturation (%) when a paired water temperature is available
 - `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
 - `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
 - `README.md` — project documentation
@@ -715,6 +715,25 @@ The following Canal Watch visual-condition and blog-filter changes were develope
 9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
 
 These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
+
+---
+
+## Update — 23 August 2026
+
+Further refinements were made to **Sample Analysis** and **Further Analysis**:
+
+1. Increased the height of the **Additional water-quality testing** result area so Temperature, pH, Coliform, BOD and Dissolved Oxygen results have more room to display without unnecessary internal scrolling.
+2. Corrected **Results over time by site — All sites** by restoring the date value used to plot combined site histories and aligning its site matching with the shared canonical site-name logic.
+3. Updated **Dissolved Oxygen (DO)** in the **Overall Water Quality Snapshot** to show calculated **oxygen saturation (%)**, while retaining the measured DO concentration and water temperature for context.
+4. Updated **Dissolved Oxygen (DO)** in **Change Since Previous Survey** to compare saturation percentages and, where possible, show the change in percentage points.
+5. Corrected the display label **PH** to the scientifically conventional **pH** in the Overall Water Quality Snapshot and Change Since Previous Survey.
+6. Restored **Results to Watch** and the **Key takeaway** summaries in Further Analysis, including the Site Comparison and Site Consistency takeaway boxes.
+7. Restored the interactive link between **Results to Watch** and the Overall Water Quality Snapshot so hovering or keyboard-focusing a watched result also highlights its corresponding water-quality result card.
+8. Refined the **Overall Water Quality Snapshot** period buttons so the selected **Latest survey** or **Project average** button remains visually selected and does not receive the pale-green hover treatment; only the unselected button responds to hover/focus.
+9. Corrected **Change Since Previous Survey** unavailable-result logic so a missing current result is labelled **Current survey unavailable**, while a missing earlier result is labelled **Previous survey unavailable**.
+10. Continued the standard pale-green hover/focus treatment across interactive analysis elements while preserving clear selected states.
+
+These changes improve the clarity of the additional testing results, strengthen the all-sites time-series view, and make the Further Analysis summaries and comparison states easier to interpret.
 
 ---
 
