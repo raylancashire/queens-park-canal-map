@@ -60,7 +60,7 @@ select {
 
 .bottom-stats {
   display:grid;
-  grid-template-columns:1fr 1fr 1.6fr;
+  grid-template-columns:1fr 1fr 1fr 1.6fr;
   gap:16px;
   margin:0 4px;
 }
@@ -525,6 +525,10 @@ select {
       <strong id="sampleCount">0</strong>
       <span id="sampleCountLabel">Samples in dataset</span>
     </div>
+    <div class="bottom-stat" title="Sum of the Total number of participants recorded for the surveys currently in view">
+      <strong id="participantCount">0</strong>
+      <span id="participantCountLabel">Participant attendances</span>
+    </div>
     <div class="bottom-stat latest">
       <strong id="latestDate">—</strong>
       <span id="latestDateLabel">Latest sample</span>
@@ -860,6 +864,22 @@ function getLon(r) {
 
 function getNotes(r) {
   return getField(r, "notes", "Notes", "note", "Note");
+}
+
+function getParticipantCount(r) {
+  const raw = getField(r,
+    "Total number of participants",
+    "Total Number of Participants",
+    "total number of participants",
+    "Participants",
+    "participants"
+  );
+  const value = parseFloat(String(raw || "").replace(/,/g, ""));
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+function totalParticipantsForRows(rows) {
+  return rows.reduce((sum, row) => sum + getParticipantCount(row), 0);
 }
 
 function getTurbidity(r) {
@@ -1395,6 +1415,8 @@ async function loadData() {
     const siteCountLabelEl = document.getElementById("siteCountLabel");
     const sampleCountEl = document.getElementById("sampleCount");
     const sampleCountLabelEl = document.getElementById("sampleCountLabel");
+    const participantCountEl = document.getElementById("participantCount");
+    const participantCountLabelEl = document.getElementById("participantCountLabel");
     const latestDateEl = document.getElementById("latestDate");
     const latestDateLabelEl = document.getElementById("latestDateLabel");
 
@@ -1434,6 +1456,9 @@ async function loadData() {
         sampleCountEl.textContent = rows.length;
         sampleCountLabelEl.textContent = "Samples in view";
 
+        participantCountEl.textContent = totalParticipantsForRows(rows);
+        participantCountLabelEl.textContent = "Participant attendances at site";
+
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample at site";
       } else {
@@ -1445,6 +1470,10 @@ async function loadData() {
 
         sampleCountEl.textContent = validRows;
         sampleCountLabelEl.textContent = "Samples in view";
+
+        const allVisibleRows = Object.values(groups).flat();
+        participantCountEl.textContent = totalParticipantsForRows(allVisibleRows);
+        participantCountLabelEl.textContent = "Participant attendances";
 
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample";
