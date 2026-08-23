@@ -4126,7 +4126,7 @@ function renderSnapshot(){
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
 
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
-  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
+  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","pH"])));
   const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
     "Dissolved Oxygen PPM",
     "Dissolved Oxygen ppm",
@@ -4837,7 +4837,7 @@ function renderChangeSummary(){
     : '<div class="change-summary-empty">No FreshWater Watch comparison is available for this location yet.</div>';
 
   const tempGetter=r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"]);
-  const phGetter=r=>snapshotFirstNumber(r,["pH","PH"]);
+  const phGetter=r=>snapshotFirstNumber(r,["pH","pH"]);
   const doGetter=r=>snapshotFirstNumber(r,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
