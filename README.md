@@ -18,6 +18,7 @@ The GitHub repository contains or may contain:
 - `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded; dissolved oxygen can also be presented as calculated oxygen saturation (%) when a paired water temperature is available
 - `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
 - `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
+- `Canal_Watch_Volunteer_Participation_Timetable.xlsx` — optional volunteer rota for organising two-person fortnightly survey teams
 - `README.md` — project documentation
 
 Repository:
@@ -617,6 +618,26 @@ The panel explicitly states that the heatmap represents **sampling frequency, no
 
 ---
 
+## Volunteer participation tracking
+
+Canal Watch now also uses the FreshWater Watch **`Total number of participants`** field to show how many people took part in recorded surveys.
+
+Current participation features include:
+
+- A **Participant attendances** summary panel beneath the main map
+- The participation total updates automatically when **All sites** or an individual sampling site is selected
+- The figure is described as **participant attendances** rather than unique participants because the same volunteer may take part in more than one survey
+- A **Participants over time** chart has been added to **Results over time by site**
+- The participation chart uses **sample date** on the horizontal axis and the recorded **number of participants** on the vertical axis
+- Participant charts use whole-number y-axis intervals so recorded counts align exactly with the displayed grid lines
+- The **All sites** participation view retains the sampling-site legend so participation can be compared between monitoring locations
+- A reusable Excel **Volunteer Participation Timetable** has been created to help organise two-person survey teams across the monitoring sites
+- The timetable includes a dashboard, volunteer register, sampling-site list, fortnightly rota, automatic coverage status and an **Actual participants** field for completed surveys
+
+The timetable is intended as an internal planning tool. Public Canal Watch participation figures continue to come from the recorded survey data rather than from planned rota assignments.
+
+---
+
 ## Canal Watch Updates widget
 
 A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
@@ -734,6 +755,16 @@ Further refinements were made to **Sample Analysis** and **Further Analysis**:
 10. Continued the standard pale-green hover/focus treatment across interactive analysis elements while preserving clear selected states.
 
 These changes improve the clarity of the additional testing results, strengthen the all-sites time-series view, and make the Further Analysis summaries and comparison states easier to interpret.
+
+Further participation and volunteer-management refinements were also completed on **23 August 2026**:
+
+11. Added a **Participant attendances** panel beneath the Canal Watch map using the FreshWater Watch `Total number of participants` field.
+12. Made the participant total respond to the selected sampling site, while retaining an all-sites project total.
+13. Added **Participants over time** to `analysis.html`, plotting recorded participant numbers against survey dates.
+14. Restored the sampling-site legend for the All sites Results over time charts after the participation graph was added.
+15. Corrected the Participants over time y-axis to use whole-person intervals so plotted values align exactly with the displayed participant count.
+16. Created a reusable **Volunteer Participation Timetable** workbook for the fortnightly monitoring programme, with two volunteer places per survey, coverage warnings, completion tracking and actual participant recording.
+17. Added a new Canal Watch Updates item announcing the participation-tracking and volunteer-timetable changes.
 
 ---
 
