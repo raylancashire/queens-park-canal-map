@@ -4707,8 +4707,8 @@ function changeDOCard(current,previous,currentTemp,previousTemp,currentDate,prev
     ${deltaHtml}
     <span class="change-summary-status ${status.cls}">${status.symbol} ${esc(status.label)}</span>
     <div class="change-summary-note">
-      ${esc(currentDate ? changeFormatDate(previousDate) : "Previous date unavailable")}
-      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current date unavailable")}
+      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous survey unavailable")}
+      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current survey unavailable")}
       ${note ? ` · ${esc(note)}` : ""}
     </div>
   </article>`;
@@ -4745,8 +4745,8 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
     </span>
 
     <div class="change-summary-note">
-      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous date unavailable")}
-      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current date unavailable")}
+      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous survey unavailable")}
+      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current survey unavailable")}
       ${note ? ` · ${esc(note)}` : ""}
     </div>
   </article>`;
