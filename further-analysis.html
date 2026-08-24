@@ -3512,8 +3512,8 @@ function sampleTrendAnalysis(points,metric){
 
   const evidence=points.length>=5 ? "Established trend" : "Emerging trend";
   const directionText=abs<10
-    ? "The fitted change is small enough to be treated as broadly stable."
-    : `The fitted series changes by approximately ${abs.toFixed(0)}% from the start to the end of the available record.`;
+    ? "The overall trend shows only a small change and is treated as broadly stable."
+    : `The overall trend shows an approximate ${abs.toFixed(0)}% ${pct<0 ? "decrease" : "increase"} across the available samples.`;
 
   return {
     label,cls,symbol,evidence,regression,
