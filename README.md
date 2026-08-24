@@ -618,6 +618,34 @@ The panel explicitly states that the heatmap represents **sampling frequency, no
 
 ---
 
+## Sample Trend Analysis
+
+A standalone **Sample Trend Analysis** panel has been added to `further-analysis.html`.
+
+The panel is designed to show whether repeated monitoring results at a selected site are generally **improving**, **stable** or **deteriorating** over time.
+
+Current features include:
+
+- A **Location** selector supporting **All sites** and individual sampling sites
+- Indicator controls for **Nitrate**, **Phosphate** and **Turbidity**
+- A trend classification of **Improving**, **Stable**, **Deteriorating** or **Insufficient data**
+- A minimum of **3 usable samples** before a trend is classified
+- **3–4 samples** described as an **Emerging trend**
+- **5 or more samples** described as an **Established trend**
+- A linear fitted trend across the available sample series rather than relying only on the first and latest result
+- For nitrate, phosphate and turbidity, a downward direction is treated as an improvement and an upward direction as deterioration
+- A fitted change of less than approximately **10%** is treated as broadly stable
+- Supporting evidence cards showing **First result**, **Latest result**, **Overall change** and **Recent direction**
+- A compact results-over-time chart showing the recorded values together with the fitted trend line
+- The **All sites** view averages usable results recorded on the same survey date to provide a project-wide trend view
+- Site selection is synchronised with the other site-aware Further Analysis panels
+- The panel is included as its own collapsible Further Analysis section
+- Standard pale-green hover and keyboard-focus highlighting is applied to the trend status, evidence cards, chart area, methodology note, selectors and indicator controls
+
+The first version focuses on the three core FreshWater Watch indicators. Additional measures such as pH, Dissolved Oxygen and BOD can be added later once indicator-specific trend interpretation rules are agreed.
+
+---
+
 ## Volunteer participation tracking
 
 Canal Watch now also uses the FreshWater Watch **`Total number of participants`** field to show how many people took part in recorded surveys.
@@ -736,6 +764,22 @@ The following Canal Watch visual-condition and blog-filter changes were develope
 9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
 
 These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
+
+---
+
+## Update — 24 August 2026
+
+The following Further Analysis refinements were completed on **24 August 2026**:
+
+1. Added a standalone **Sample Trend Analysis** panel to `further-analysis.html`.
+2. Added **Nitrate**, **Phosphate** and **Turbidity** trend analysis for All sites and individual sampling locations.
+3. Added **Improving**, **Stable**, **Deteriorating** and **Insufficient data** classifications.
+4. Added minimum evidence rules: at least 3 usable samples are required; 3–4 samples are labelled **Emerging trend** and 5 or more **Established trend**.
+5. Added a fitted linear trend so the assessment uses the overall direction of the series rather than only the first and latest result.
+6. Added supporting evidence cards for first result, latest result, overall change and recent direction.
+7. Added a compact trend chart showing recorded results and the fitted trend line.
+8. Integrated the new panel with the existing site-selection synchronisation and Further Analysis accordion behaviour.
+9. Added consistent pale-green hover and keyboard-focus highlighting across the Sample Trend Analysis panel.
 
 ---
 
