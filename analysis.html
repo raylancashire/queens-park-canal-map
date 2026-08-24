@@ -838,7 +838,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       Each point represents the recorded result for that survey date at the selected site.
       Nitrate and phosphate are plotted using the midpoint of the FreshWater Watch result range.
       Turbidity is plotted in NTU using the recorded test value.
-      Participants shows the number of people recorded as taking part in each survey.
     </p>
 
     <div class="change-metric-section">
@@ -856,12 +855,35 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="siteChangeTurbidity" class="site-change-chart"></div>
     </div>
 
-    <div class="change-metric-section">
-      <h3 class="change-metric-title">Participants over time</h3>
-      <div id="siteChangeParticipants" class="site-change-chart"></div>
     </div>
+  </section>
 
+  <section class="outer-analysis-panel">
+    <button
+      id="participantsTimeToggle"
+      class="outer-analysis-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="participantsTimeContent">
+      <span>Participants over time</span>
+      <span id="participantsTimeIcon" aria-hidden="true">＋</span>
+    </button>
 
+    <div id="participantsTimeContent" class="outer-analysis-content" hidden>
+      <div class="site-change-controls">
+        <label for="participantsTimeSiteSelect">Sampling site:</label>
+        <select id="participantsTimeSiteSelect"></select>
+      </div>
+
+      <p class="change-note">
+        This chart shows the number of people recorded as taking part on each survey date.
+        Select an individual site or choose All sites to compare participation between monitoring locations.
+      </p>
+
+      <div class="change-metric-section">
+        <h3 class="change-metric-title">Participants recorded by survey date</h3>
+        <div id="siteChangeParticipants" class="site-change-chart"></div>
+      </div>
     </div>
   </section>
 
@@ -1718,6 +1740,22 @@ function renderSampleAnalysisForFocusedSite(){
     }
   }
 
+  const participantSelect=document.getElementById("participantsTimeSiteSelect");
+  if(participantSelect){
+    if(currentFocusedSite==="all"){
+      participantSelect.value="all";
+      renderParticipantsTimeChart();
+    }else{
+      const participantMatch=[...participantSelect.options].find(
+        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+      );
+      if(participantMatch){
+        participantSelect.value=participantMatch.value;
+        renderParticipantsTimeChart();
+      }
+    }
+  }
+
   requestAnimationFrame(()=>setTimeout(notifyParentOfHeight,50));
 }
 
@@ -2233,13 +2271,25 @@ function renderSiteChangeCharts(){
     renderAllSitesMetricChangeChart("siteChangeNitrate","nitrate");
     renderAllSitesMetricChangeChart("siteChangePhosphate","phosphate");
     renderAllSitesMetricChangeChart("siteChangeTurbidity","turbidity");
-    renderAllSitesMetricChangeChart("siteChangeParticipants","participants");
     return;
   }
 
   renderMetricChangeChart("siteChangeNitrate",site,"nitrate");
   renderMetricChangeChart("siteChangePhosphate",site,"phosphate");
   renderMetricChangeChart("siteChangeTurbidity",site,"turbidity");
+}
+
+function renderParticipantsTimeChart(){
+  const select=document.getElementById("participantsTimeSiteSelect");
+  if(!select) return;
+
+  const site=select.value || "all";
+
+  if(site==="all"){
+    renderAllSitesMetricChangeChart("siteChangeParticipants","participants");
+    return;
+  }
+
   renderMetricChangeChart("siteChangeParticipants",site,"participants");
 }
 
@@ -2275,7 +2325,20 @@ function initialiseSiteChanges(){
   );
 
   select.value=match ? match.value : "all";
+
+  const participantSelect=document.getElementById("participantsTimeSiteSelect");
+  if(participantSelect){
+    participantSelect.innerHTML=select.innerHTML;
+    const participantMatch=[...participantSelect.options].find(option=>
+      option.value==="all"
+        ? wanted==="all"
+        : siteKeyForFocus(option.value)===siteKeyForFocus(wanted)
+    );
+    participantSelect.value=participantMatch ? participantMatch.value : "all";
+  }
+
   renderSiteChangeCharts();
+  renderParticipantsTimeChart();
 }
 
 async function load(){try{
@@ -2427,6 +2490,31 @@ document.getElementById("changeSiteSelect").addEventListener("change",()=>{
 });
 
 
+document.getElementById("participantsTimeSiteSelect").addEventListener("change",()=>{
+  const select=document.getElementById("participantsTimeSiteSelect");
+  const rawSite=select.value;
+
+  currentFocusedSite=rawSite==="all"
+    ? "all"
+    : canonicalSiteFromData(rawSite);
+
+  try{
+    localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({
+      type:"site-focus",
+      site:currentFocusedSite
+    });
+  }
+
+  renderSampleAnalysisForFocusedSite();
+  renderParticipantsTimeChart();
+  setTimeout(notifyParentOfHeight,40);
+});
+
+
 
 const accordionPanels=[
   {
@@ -2438,6 +2526,11 @@ const accordionPanels=[
     button:document.getElementById("resultsTimeToggle"),
     content:document.getElementById("resultsTimeContent"),
     icon:document.getElementById("resultsTimeIcon")
+  },
+  {
+    button:document.getElementById("participantsTimeToggle"),
+    content:document.getElementById("participantsTimeContent"),
+    icon:document.getElementById("participantsTimeIcon")
   }
 ];
 
@@ -2453,6 +2546,10 @@ function setAccordionPanel(index,open){
     renderSiteChangeCharts();
   }
 
+  if(open && index===2){
+    renderParticipantsTimeChart();
+  }
+
   setTimeout(notifyParentOfHeight,40);
   setTimeout(notifyParentOfHeight,140);
   setTimeout(notifyParentOfHeight,300);
@@ -2463,7 +2560,7 @@ accordionPanels.forEach((panel,index)=>{
     const currentlyOpen=panel.button.getAttribute("aria-expanded")==="true";
 
     // Allow the currently open panel to be collapsed.
-    // Opening either panel automatically closes the other.
+    // Opening one analysis panel automatically closes the others.
     if(currentlyOpen){
       panel.button.setAttribute("aria-expanded","false");
       panel.content.hidden=true;
