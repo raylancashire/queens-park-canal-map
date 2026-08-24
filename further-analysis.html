@@ -3466,7 +3466,7 @@ function sampleTrendRegression(points){
   const intercept=yMean-(slope*xMean);
   const fittedFirst=intercept;
   const fittedLast=intercept+slope*(n-1);
-  const baseline=Math.max(Math.abs(yMean),0.000001);
+  const baseline=Math.max(Math.abs(fittedFirst),0.000001);
   const fittedPct=((fittedLast-fittedFirst)/baseline)*100;
 
   return {slope,intercept,fittedFirst,fittedLast,fittedPct};
