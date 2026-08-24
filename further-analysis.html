@@ -1915,7 +1915,32 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px
 }
 .sample-trend-card{
-  border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 12px;min-width:0
+  border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 12px;min-width:0;
+  transition:background .16s ease,border-color .16s ease
+}
+.sample-trend-status,
+.sample-trend-card,
+.sample-trend-chart-wrap,
+.sample-trend-method{
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.sample-trend-status:hover,
+.sample-trend-status:focus-visible,
+.sample-trend-card:hover,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:hover,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:hover,
+.sample-trend-method:focus-visible{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+  outline:none;
+}
+.sample-trend-status:focus-visible,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:focus-visible{
+  box-shadow:0 0 0 2px rgba(47,107,69,.14);
 }
 .sample-trend-card small{
   display:block;margin-bottom:4px;color:#66746b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.045em
@@ -2169,13 +2194,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div class="sample-trend-hero">
-        <div id="sampleTrendStatus" class="sample-trend-status"></div>
+        <div id="sampleTrendStatus" class="sample-trend-status" tabindex="0"></div>
         <div id="sampleTrendEvidence" class="sample-trend-evidence"></div>
       </div>
 
-      <div id="sampleTrendChart" class="sample-trend-chart-wrap"></div>
+      <div id="sampleTrendChart" class="sample-trend-chart-wrap" tabindex="0"></div>
 
-      <div class="sample-trend-method">
+      <div class="sample-trend-method" tabindex="0">
         <strong>How the trend is assessed:</strong>
         at least three usable samples are required. A linear trend is calculated across the available results.
         For nitrate, phosphate and turbidity, a downward direction is treated as an improvement and an upward direction
@@ -3659,22 +3684,22 @@ function renderSampleTrend(){
 
   const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric);
   evidence.innerHTML=`
-    <div class="sample-trend-card">
+    <div class="sample-trend-card" tabindex="0">
       <small>First result</small>
       <strong>${esc(sampleTrendFormatValue(firstValue,currentSampleTrendMetric))}</strong>
       <span>${esc(first ? sampleTrendFormatDate(first.timestamp) : "—")}</span>
     </div>
-    <div class="sample-trend-card">
+    <div class="sample-trend-card" tabindex="0">
       <small>Latest result</small>
       <strong>${esc(sampleTrendFormatValue(latestValue,currentSampleTrendMetric))}</strong>
       <span>${esc(latest ? sampleTrendFormatDate(latest.timestamp) : "—")}</span>
     </div>
-    <div class="sample-trend-card">
+    <div class="sample-trend-card" tabindex="0">
       <small>Overall change</small>
       <strong>${esc(changeText)}</strong>
       <span>First to latest recorded result</span>
     </div>
-    <div class="sample-trend-card">
+    <div class="sample-trend-card" tabindex="0">
       <small>Recent direction</small>
       <strong>${esc(recent)}</strong>
       <span>${esc(analysis.evidence)}</span>
