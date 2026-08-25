@@ -6,8 +6,9 @@
   <div class="qp-builder-card">
     <h2>Canal Visual Assessment Builder</h2>
     <p class="qp-builder-intro">
-      Choose the observation that best matches each indicator. The assessment
-      and overall score update automatically.
+      Choose the observation that best matches each visual indicator. The visual score
+      updates automatically. If a LaMotte Earth Force coliform screening result is available,
+      select it below so the combined Canal Watch assessment can apply the appropriate safeguard.
     </p>
 
     <div class="qp-builder-meta">
@@ -25,6 +26,21 @@
       </label>
     </div>
 
+    <div class="qp-builder-coliform">
+      <label for="qpBuilderColiform">LaMotte coliform screening</label>
+      <select id="qpBuilderColiform">
+        <option value="not-tested">Not tested / no result</option>
+        <option value="negative">Negative — not detected above screening threshold</option>
+        <option value="repeated-negative">Repeated negative results</option>
+        <option value="uncertain">Uncertain / inconclusive, or positive followed by negative retest</option>
+        <option value="positive">Positive — &gt;20 coliforms/100 mL on one test</option>
+        <option value="repeated-positive">Repeated positive — &gt;20 coliforms/100 mL</option>
+      </select>
+      <div id="qpBuilderColiformHelp" class="qp-builder-coliform-help">
+        Screening result only; this is not an official bathing-water classification.
+      </div>
+    </div>
+
     <div class="qp-builder-table-wrap">
       <table class="qp-builder-table">
         <thead>
@@ -39,479 +55,262 @@
     </div>
 
     <div id="qpBuilderOverall" class="qp-builder-overall good">
-      <div class="qp-builder-overall-label">Overall Visual Assessment</div>
+      <div class="qp-builder-overall-label">Overall Canal Watch Assessment</div>
       <div id="qpBuilderOverallResult" class="qp-builder-overall-result">◆ Good</div>
-      <div id="qpBuilderOverallScore" class="qp-builder-overall-score">Overall score: 4.00 / 5</div>
+      <div id="qpBuilderOverallScore" class="qp-builder-overall-score">Visual score: 4.00 / 5</div>
       <p id="qpBuilderOverallText"></p>
-      <p id="qpBuilderWildlifeNote" class="qp-builder-wildlife-note" hidden>
-        <em>Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em>
-      </p>
     </div>
 
     <div class="qp-builder-actions">
       <button id="qpBuilderReset" type="button">Reset</button>
-      <button id="qpBuilderCopy" class="primary" type="button">Refresh Generated HTML</button>
+      <button id="qpBuilderCopy" class="primary" type="button">Copy Assessment</button>
     </div>
 
     <div id="qpBuilderMessage" class="qp-builder-message" aria-live="polite"></div>
-
-    <div id="qpBuilderOutputWrap" class="qp-builder-output">
-      <label for="qpBuilderOutput"><strong>Generated blog HTML</strong></label>
-      <p>The finished blog HTML appears here automatically. Click “Select Generated HTML”, then copy it with Command+C (Mac) or Ctrl+C (Windows).</p>
-      <textarea id="qpBuilderOutput" readonly></textarea>
-      <button id="qpBuilderSelect" type="button">Select Generated HTML</button>
-    </div>
   </div>
 </div>
 
 <style>
-:root{
-  --qp-ink:#17321f;
-  --qp-green:#2f6b45;
-  --qp-muted:#66746b;
-  --qp-line:#dfe7e1;
-  --qp-soft:#f4f7f4;
-  --qp-soft-2:#eef4ef;
-  --qp-white:#ffffff;
-
-  --qp-excellent:#006400;
-  --qp-good:#39A96B;
-  --qp-fair:#FFD966;
-  --qp-poor:#F4B183;
-  --qp-verypoor:#C00000;
-}
-
 #qpAssessmentBuilder,
-#qpAssessmentBuilder *{
+#qpAssessmentBuilder * {
   box-sizing:border-box;
 }
 
-body{
-  margin:0;
-  background:
-    linear-gradient(180deg,#eef4ef 0,#f8faf8 160px,#ffffff 100%);
-}
-
-.qp-builder{
+.qp-builder {
   width:100%;
-  max-width:1120px;
+  max-width:1100px;
   margin:0 auto;
-  padding:22px 14px 30px;
-  color:var(--qp-ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  color:#17321f;
+  font-family:inherit;
 }
 
-.qp-builder-card{
-  overflow:hidden;
-  background:var(--qp-white);
-  border:1px solid var(--qp-line);
-  border-radius:16px;
-  box-shadow:0 10px 28px rgba(23,50,31,.08);
+.qp-builder-card {
+  background:#fff;
+  border:1px solid #dfe7e1;
+  border-radius:12px;
+  padding:20px;
 }
 
-/* Header */
-.qp-builder-card::before{
-  content:"CANAL WATCH · VISUAL ASSESSMENT";
-  display:block;
-  padding:10px 20px;
-  background:var(--qp-ink);
-  color:#fff;
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:.09em;
+.qp-builder-card h2 {
+  margin:0 0 6px;
+  font-size:24px;
 }
 
-.qp-builder-card > h2{
-  margin:0;
-  padding:20px 20px 4px;
-  font-size:28px;
-  line-height:1.15;
-  font-weight:850;
-  color:var(--qp-ink);
-}
-
-.qp-builder-intro{
-  margin:0;
-  padding:0 20px 18px;
-  max-width:850px;
-  color:var(--qp-muted);
+.qp-builder-intro {
+  margin:0 0 18px;
+  color:#66746b;
   font-size:14px;
-  line-height:1.55;
+  line-height:1.5;
 }
 
-/* Meta fields */
-.qp-builder-meta{
+.qp-builder-meta {
   display:grid;
   grid-template-columns:2fr 1fr 1fr;
   gap:12px;
-  margin:0 20px 18px;
-  padding:14px;
-  background:var(--qp-soft);
-  border:1px solid var(--qp-line);
-  border-radius:12px;
+  margin-bottom:16px;
 }
 
-.qp-builder-meta label{
+.qp-builder-meta label {
+  display:grid;
+  gap:5px;
+  font-size:12px;
+  font-weight:700;
+  color:#526158;
+}
+
+.qp-builder-meta input {
+  width:100%;
+  padding:9px 10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+}
+
+.qp-builder-coliform {
   display:grid;
   gap:6px;
-  color:#43594a;
+  margin:0 0 16px;
+  padding:13px 14px;
+  border:1px solid #dfe7e1;
+  border-radius:10px;
+  background:#f7faf7;
+}
+
+.qp-builder-coliform label {
+  font-size:12px;
+  font-weight:800;
+  color:#526158;
+}
+
+.qp-builder-coliform select {
+  width:100%;
+  padding:9px 10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+}
+
+.qp-builder-coliform-help {
+  color:#66746b;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.qp-builder-table-wrap {
+  overflow-x:auto;
+}
+
+.qp-builder-table {
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  border:1px solid #dfe7e1;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.qp-builder-table th,
+.qp-builder-table td {
+  padding:10px 11px;
+  text-align:left;
+  vertical-align:middle;
+  border-right:1px solid #dfe7e1;
+  border-bottom:1px solid #dfe7e1;
+  font-size:13px;
+}
+
+.qp-builder-table th {
+  background:#f2f6f3;
+  font-weight:800;
+}
+
+.qp-builder-table th:last-child,
+.qp-builder-table td:last-child {
+  border-right:0;
+}
+
+.qp-builder-table tbody tr:last-child td {
+  border-bottom:0;
+}
+
+.qp-builder-table td:first-child {
+  font-weight:700;
+  min-width:145px;
+}
+
+.qp-builder-table select {
+  width:100%;
+  min-width:220px;
+  padding:8px 10px;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+}
+
+.qp-builder-status {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.qp-builder-status.excellent { background:#006400; color:#fff; }
+.qp-builder-status.good      { background:#39A96B; color:#17321f; }
+.qp-builder-status.fair      { background:#FFD966; color:#17321f; }
+.qp-builder-status.poor      { background:#F4B183; color:#4a2b16; }
+.qp-builder-status.very-poor { background:#C00000; color:#fff; }
+
+.qp-builder-overall {
+  margin-top:18px;
+  padding:17px 19px;
+  border:1px solid #d9e3db;
+  border-left:6px solid #39A96B;
+  border-radius:10px;
+  background:#f5f8f5;
+}
+
+.qp-builder-overall.excellent { border-left-color:#006400; }
+.qp-builder-overall.good      { border-left-color:#39A96B; }
+.qp-builder-overall.fair      { border-left-color:#FFD966; }
+.qp-builder-overall.poor      { border-left-color:#F4B183; }
+.qp-builder-overall.very-poor { border-left-color:#C00000; }
+
+.qp-builder-overall-label {
+  color:#66746b;
   font-size:11px;
   font-weight:800;
   text-transform:uppercase;
   letter-spacing:.05em;
 }
 
-.qp-builder-meta input{
-  width:100%;
-  min-height:42px;
-  padding:9px 11px;
-  border:1px solid #cbd7cd;
-  border-radius:9px;
-  background:#fff;
-  color:var(--qp-ink);
-  font:600 14px inherit;
-  outline:none;
-}
-
-.qp-builder-meta input:focus{
-  border-color:var(--qp-green);
-  box-shadow:0 0 0 3px rgba(47,107,69,.12);
-}
-
-/* Table */
-.qp-builder-table-wrap{
-  overflow-x:auto;
-  margin:0 20px;
-  border:1px solid var(--qp-line);
-  border-radius:12px;
-}
-
-.qp-builder-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#fff;
-}
-
-.qp-builder-table th,
-.qp-builder-table td{
-  padding:12px 13px;
-  text-align:left;
-  vertical-align:middle;
-  border-right:1px solid var(--qp-line);
-  border-bottom:1px solid var(--qp-line);
-  font-size:13px;
-}
-
-.qp-builder-table th{
-  position:sticky;
-  top:0;
-  z-index:1;
-  background:#edf3ee;
-  color:var(--qp-ink);
-  font-weight:850;
-}
-
-.qp-builder-table th:last-child,
-.qp-builder-table td:last-child{
-  border-right:0;
-}
-
-.qp-builder-table tbody tr:last-child td{
-  border-bottom:0;
-}
-
-.qp-builder-table tbody tr:nth-child(even) td{
-  background:#fbfcfb;
-}
-
-.qp-builder-table tbody tr:hover td{
-  background:#f5f8f5;
-}
-
-.qp-builder-table td:first-child{
-  width:25%;
-  min-width:160px;
-  font-weight:750;
-  color:var(--qp-ink);
-}
-
-.qp-builder-table td:nth-child(2){
-  width:47%;
-}
-
-.qp-builder-table td:nth-child(3){
-  width:28%;
-}
-
-.qp-builder-table select{
-  width:100%;
-  min-width:230px;
-  min-height:40px;
-  padding:8px 36px 8px 10px;
-  border:1px solid #cbd7cd;
-  border-radius:9px;
-  background:#fff;
-  color:var(--qp-ink);
-  font:650 13px inherit;
-  cursor:pointer;
-  outline:none;
-}
-
-.qp-builder-table select:focus{
-  border-color:var(--qp-green);
-  box-shadow:0 0 0 3px rgba(47,107,69,.12);
-}
-
-/* Status badges */
-.qp-builder-status{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  min-width:102px;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:850;
-  white-space:nowrap;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);
-}
-
-.qp-builder-status.excellent{background:var(--qp-excellent);color:#fff}
-.qp-builder-status.good{background:var(--qp-good);color:var(--qp-ink)}
-.qp-builder-status.fair{background:var(--qp-fair);color:var(--qp-ink)}
-.qp-builder-status.poor{background:var(--qp-poor);color:#4a2b16}
-.qp-builder-status.very-poor{background:var(--qp-verypoor);color:#fff}
-
-/* Overall result card */
-.qp-builder-overall{
-  position:relative;
-  margin:18px 20px 0;
-  padding:18px 20px 18px 22px;
-  border:1px solid var(--qp-line);
-  border-left:7px solid var(--qp-good);
-  border-radius:12px;
-  background:linear-gradient(135deg,#f7faf7,#ffffff);
-}
-
-.qp-builder-overall.excellent{border-left-color:var(--qp-excellent)}
-.qp-builder-overall.good{border-left-color:var(--qp-good)}
-.qp-builder-overall.fair{border-left-color:var(--qp-fair)}
-.qp-builder-overall.poor{border-left-color:var(--qp-poor)}
-.qp-builder-overall.very-poor{border-left-color:var(--qp-verypoor)}
-
-.qp-builder-overall-label{
-  color:var(--qp-muted);
-  font-size:11px;
-  font-weight:850;
-  text-transform:uppercase;
-  letter-spacing:.07em;
-}
-
-.qp-builder-overall-result{
-  margin-top:5px;
-  font-size:26px;
-  line-height:1.2;
-  font-weight:900;
-  color:var(--qp-ink);
-}
-
-.qp-builder-overall-score{
+.qp-builder-overall-result {
   margin-top:4px;
+  font-size:22px;
+  font-weight:800;
+}
+
+.qp-builder-overall-score {
+  margin-top:3px;
   color:#526158;
   font-size:13px;
-  font-weight:750;
+  font-weight:700;
 }
 
-.qp-builder-overall p{
-  margin:11px 0 0;
-  max-width:850px;
-  color:#34493a;
+.qp-builder-overall p {
+  margin:10px 0 0;
   font-size:14px;
-  line-height:1.55;
-}
-
-/* Action bar */
-.qp-builder-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin:18px 20px 0;
-  padding-top:16px;
-  border-top:1px solid var(--qp-line);
-}
-
-.qp-builder-actions button{
-  appearance:none;
-  min-height:40px;
-  padding:9px 14px;
-  border:1px solid #cbd7cd;
-  border-radius:9px;
-  background:#fff;
-  color:var(--qp-ink);
-  font:800 13px inherit;
-  cursor:pointer;
-  transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
-}
-
-.qp-builder-actions button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 4px 12px rgba(23,50,31,.08);
-}
-
-.qp-builder-actions button.primary{
-  background:var(--qp-ink);
-  border-color:var(--qp-ink);
-  color:#fff;
-}
-
-.qp-builder-message{
-  margin:9px 20px 0;
-  min-height:18px;
-  color:var(--qp-muted);
-  font-size:12px;
-}
-
-/* Generated HTML area */
-.qp-builder-output{
-  margin:16px 20px 20px;
-  padding:14px;
-  border:1px solid var(--qp-line);
-  border-radius:12px;
-  background:#fafcfa;
-}
-
-.qp-builder-output label{
-  display:block;
-  margin-bottom:4px;
-  color:var(--qp-ink);
-  font-size:13px;
-}
-
-.qp-builder-output p{
-  margin:0 0 9px;
-  color:var(--qp-muted);
-  font-size:12px;
-  line-height:1.45;
-}
-
-.qp-builder-output textarea{
-  display:block;
-  width:100%;
-  min-height:210px;
-  padding:11px;
-  border:1px solid #cbd7cd;
-  border-radius:9px;
-  background:#fff;
-  color:#2f4134;
-  font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  resize:vertical;
-}
-
-.qp-builder-output textarea:focus{
-  outline:none;
-  border-color:var(--qp-green);
-  box-shadow:0 0 0 3px rgba(47,107,69,.1);
-}
-
-.qp-builder-output button{
-  margin-top:9px;
-  min-height:38px;
-  padding:8px 12px;
-  border:1px solid #cbd7cd;
-  border-radius:8px;
-  background:#fff;
-  color:var(--qp-ink);
-  font:800 12px inherit;
-  cursor:pointer;
-}
-
-/* Mobile */
-@media(max-width:760px){
-  .qp-builder{
-    padding:10px 8px 20px;
-  }
-
-  .qp-builder-card{
-    border-radius:12px;
-  }
-
-  .qp-builder-card > h2{
-    padding:17px 14px 4px;
-    font-size:23px;
-  }
-
-  .qp-builder-intro{
-    padding:0 14px 14px;
-  }
-
-  .qp-builder-meta{
-    grid-template-columns:1fr;
-    margin:0 14px 14px;
-  }
-
-  .qp-builder-table-wrap{
-    margin:0 14px;
-  }
-
-  .qp-builder-table{
-    min-width:720px;
-  }
-
-  .qp-builder-table th,
-  .qp-builder-table td{
-    padding:9px;
-    font-size:12px;
-  }
-
-  .qp-builder-overall{
-    margin:14px 14px 0;
-    padding:15px 16px;
-  }
-
-  .qp-builder-overall-result{
-    font-size:22px;
-  }
-
-  .qp-builder-actions{
-    margin:14px 14px 0;
-  }
-
-  .qp-builder-message{
-    margin-left:14px;
-    margin-right:14px;
-  }
-
-  .qp-builder-output{
-    margin:14px;
-  }
-}
-
-/* Alternate-row shading for easier scanning */
-.qp-builder-table tbody tr:nth-child(even) td{
-  background:#f7faf7;
-}
-
-/* Keep hover clear and slightly stronger than the zebra stripe */
-.qp-builder-table tbody tr:hover td{
-  background:#eef5ef;
-}
-
-
-.qp-builder-wildlife-note{
-  margin:12px 0 0;
-  padding-top:10px;
-  border-top:1px solid rgba(23,50,31,.14);
-  color:#526458;
-  font-size:13px;
   line-height:1.5;
 }
 
-.qp-builder-wildlife-note[hidden]{
-  display:none;
+.qp-builder-actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:16px;
 }
 
+.qp-builder-actions button {
+  appearance:none;
+  border:1px solid #cfd9d2;
+  border-radius:8px;
+  padding:9px 14px;
+  background:#fff;
+  color:#17321f;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.qp-builder-actions button.primary {
+  background:#17321f;
+  color:#fff;
+  border-color:#17321f;
+}
+
+.qp-builder-message {
+  margin-top:9px;
+  min-height:18px;
+  color:#66746b;
+  font-size:12px;
+}
+
+@media(max-width:700px) {
+  .qp-builder-card { padding:14px; }
+  .qp-builder-meta { grid-template-columns:1fr; }
+  .qp-builder-table th,
+  .qp-builder-table td { padding:8px; font-size:12px; }
+  .qp-builder-table select { min-width:190px; font-size:12px; }
+}
 </style>
 
 <script>
@@ -559,12 +358,23 @@ body{
     [1.00,1.49,"Very Poor","very-poor","✖","Waterway appears to be in very poor visual condition, with substantial visible pollution or environmental deterioration."]
   ];
 
+  const coliformRules = {
+    "not-tested": {label:"Not tested", note:"No coliform screening result was available, so the combined assessment is based on the visual survey."},
+    "negative": {label:"Negative", note:"LaMotte screening did not detect total coliform above the kit threshold. The visual assessment is unchanged."},
+    "repeated-negative": {label:"Repeated negative", note:"Repeated LaMotte screening results were negative. The visual assessment is unchanged."},
+    "uncertain": {label:"Fair — follow-up recommended", maxBand:"Fair", note:"The coliform screening result is uncertain or inconsistent. Further monitoring is recommended, so the combined Canal Watch assessment cannot be better than Fair."},
+    "positive": {label:"Poor — elevated coliform", maxBand:"Poor", note:"LaMotte screening was positive (>20 coliforms/100 mL). Repeat testing and investigation are recommended, so the combined Canal Watch assessment cannot be better than Poor."},
+    "repeated-positive": {label:"Very Poor — persistent elevated coliform", forceBand:"Very Poor", note:"Repeated LaMotte screening results were positive (>20 coliforms/100 mL), indicating persistent elevated bacterial contamination and a need for source investigation."}
+  };
+
   const rowsEl = document.getElementById("qpBuilderRows");
   const overallEl = document.getElementById("qpBuilderOverall");
   const overallResult = document.getElementById("qpBuilderOverallResult");
   const overallScore = document.getElementById("qpBuilderOverallScore");
   const overallText = document.getElementById("qpBuilderOverallText");
   const message = document.getElementById("qpBuilderMessage");
+  const coliformSelect = document.getElementById("qpBuilderColiform");
+  const coliformHelp = document.getElementById("qpBuilderColiformHelp");
 
   function esc(value){
     return String(value ?? "")
@@ -577,6 +387,20 @@ body{
 
   function bandFor(score){
     return bands.find(b => score >= b[0] && score <= b[1]) || bands[bands.length-1];
+  }
+
+  function bandByLabel(label){
+    return bands.find(b => b[2] === label) || null;
+  }
+
+  function combinedBand(visualBand){
+    const rule=coliformRules[coliformSelect.value] || coliformRules["not-tested"];
+    if(rule.forceBand) return bandByLabel(rule.forceBand) || visualBand;
+    if(!rule.maxBand) return visualBand;
+
+    const rank={"Excellent":5,"Good":4,"Fair":3,"Poor":2,"Very Poor":1};
+    const cap=bandByLabel(rule.maxBand);
+    return rank[visualBand[2]] > rank[rule.maxBand] ? cap : visualBand;
   }
 
   function build(){
@@ -625,35 +449,16 @@ body{
     });
 
     const average=total/indicators.length;
-    const band=bandFor(average);
+    const visualBand=bandFor(average);
+    const band=combinedBand(visualBand);
+    const rule=coliformRules[coliformSelect.value] || coliformRules["not-tested"];
 
     overallEl.classList.remove("excellent","good","fair","poor","very-poor");
     overallEl.classList.add(band[3]);
     overallResult.textContent=`${band[4]} ${band[2]}`;
-    overallScore.textContent=`Overall score: ${average.toFixed(2)} / 5`;
-
-    const wildlifeSelect=[...rowsEl.querySelectorAll("tr")]
-      .find((tr,index)=>indicators[index][0]==="Wildlife activity")
-      ?.querySelector("select");
-
-    const wildlifeNoneObserved =
-      wildlifeSelect &&
-      wildlifeSelect.options[wildlifeSelect.selectedIndex].textContent
-        .toLowerCase()
-        .includes("none observed");
-
-    overallText.textContent=band[5];
-
-    const wildlifeNote=document.getElementById("qpBuilderWildlifeNote");
-    if(wildlifeNote){
-      wildlifeNote.hidden=!wildlifeNoneObserved;
-    }
-
-    const output=document.getElementById("qpBuilderOutput");
-    if(output){
-      output.value=makeBlogHtml();
-    }
-
+    overallScore.textContent=`Visual score: ${average.toFixed(2)} / 5 · Visual assessment: ${visualBand[2]}`;
+    overallText.textContent = band[2]===visualBand[2] ? visualBand[5] : `${visualBand[5]} ${rule.note}`;
+    coliformHelp.textContent=rule.note;
     message.textContent="";
   }
 
@@ -678,26 +483,24 @@ body{
 
     const scores=[...rowsEl.querySelectorAll("select")].map(s=>Number(s.value));
     const average=scores.reduce((a,b)=>a+b,0)/scores.length;
-    const band=bandFor(average);
+    const visualBand=bandFor(average);
+    const band=combinedBand(visualBand);
+    const coliformRule=coliformRules[coliformSelect.value] || coliformRules["not-tested"];
 
     const meta=[site,date,time].filter(Boolean);
     const metaHtml=meta.length
       ? `<div style="margin:0 0 10px;color:#66746b;font-size:12px">${meta.map(esc).join(" · ")}</div>\n`
       : "";
 
-    const wildlifeRow=[...rowsEl.querySelectorAll("tr")]
-      .find((tr,index)=>indicators[index][0]==="Wildlife activity");
-    const wildlifeSelect=wildlifeRow ? wildlifeRow.querySelector("select") : null;
-    const wildlifeNoneObserved =
-      wildlifeSelect &&
-      wildlifeSelect.options[wildlifeSelect.selectedIndex].textContent
-        .toLowerCase()
-        .includes("none observed");
-    const wildlifeNote = wildlifeNoneObserved
-      ? `<p class="qp-wildlife-note"><em>Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.</em></p>`
+    const coliformHtml = coliformSelect.value!=="not-tested"
+      ? `<div class="qp-coliform-screening" style="margin:0 0 14px;padding:12px 14px;border:1px solid #dfe7e1;border-radius:8px;background:#f7faf7">
+  <strong>LaMotte coliform screening:</strong> ${esc(coliformRule.label)}<br>
+  <span style="font-size:12px;color:#526158">${esc(coliformRule.note)} Screening result only; not an official bathing-water classification.</span>
+</div>
+`
       : "";
 
-    return `${metaHtml}<div class="qp-assessment-table">
+    return `${metaHtml}${coliformHtml}<div class="qp-assessment-table">
   <table class="qp-results-table">
     <thead>
       <tr>
@@ -712,39 +515,44 @@ body{
 </div>
 
 <div class="qp-overall-assessment ${band[3]}">
-  <div class="qp-overall-label">Overall Visual Assessment</div>
+  <div class="qp-overall-label">Overall Canal Watch Assessment</div>
   <div class="qp-overall-result">${band[4]} ${band[2]}</div>
-  <div class="qp-overall-score">Overall score: ${average.toFixed(2)} / 5</div>
-  <p>${esc(band[5])}</p>
-${wildlifeNote}
+  <div class="qp-overall-score">Visual score: ${average.toFixed(2)} / 5 · Visual assessment: ${visualBand[2]}</div>
+  <p>${esc(band[2]===visualBand[2] ? visualBand[5] : visualBand[5]+" "+coliformRule.note)}</p>
 </div>`;
   }
 
-  function copyAssessment(){
-    const output=document.getElementById("qpBuilderOutput");
-    output.value=makeBlogHtml();
-    output.focus();
-    message.textContent="Generated HTML refreshed. Use “Select Generated HTML” below, then copy it manually.";
+  async function copyAssessment(){
+    const html=makeBlogHtml();
+
+    try{
+      await navigator.clipboard.writeText(html);
+      message.textContent="Assessment HTML copied. Return to your blog post and paste it into a Custom HTML element.";
+    }catch(e){
+      const textarea=document.createElement("textarea");
+      textarea.value=html;
+      textarea.style.position="fixed";
+      textarea.style.left="-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+      message.textContent="Assessment HTML copied. Return to your blog post and paste it into a Custom HTML element.";
+    }
   }
 
   function reset(){
     document.getElementById("qpBuilderSite").value="";
     document.getElementById("qpBuilderDate").value="";
     document.getElementById("qpBuilderTime").value="";
+    coliformSelect.value="not-tested";
     rowsEl.querySelectorAll("select").forEach(s=>s.selectedIndex=0);
     update();
   }
 
+  coliformSelect.addEventListener("change",update);
   document.getElementById("qpBuilderCopy").addEventListener("click",copyAssessment);
   document.getElementById("qpBuilderReset").addEventListener("click",reset);
-
-  document.getElementById("qpBuilderSelect").addEventListener("click",function(){
-    const output=document.getElementById("qpBuilderOutput");
-    output.focus();
-    output.select();
-    output.setSelectionRange(0,output.value.length);
-    message.textContent="Generated HTML selected. Now press Command+C on Mac or Ctrl+C on Windows, then paste it into a Webador Custom HTML element.";
-  });
 
   build();
 })();
