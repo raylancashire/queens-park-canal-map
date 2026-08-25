@@ -875,3 +875,14 @@ The Canal Watch coliform interpretation has been aligned with the **Earth Force 
 
 This preserves the distinction between good visual appearance and microbiological screening: canal water can look clean while still returning an elevated coliform result.
 
+
+
+## Update — 25 August 2026 — site-name de-duplication restored
+
+Following the coliform assessment update, the site-list generation was corrected so all site selectors continue to use the project-wide normalised site identity rule.
+
+- Site names with and without the `Grand Union Canal -` prefix are treated as the same monitoring location.
+- Differences in repeated whitespace, typographic apostrophes and dash characters are normalised before comparison.
+- Duplicate entries are removed from site dropdowns in Sample Analysis and Further Analysis.
+- Site-focused filters use the same normalised identity, so all records for a named site remain grouped together even when the source text varies slightly.
+- The LaMotte coliform assessment and overall-rating cap logic remain unchanged.
