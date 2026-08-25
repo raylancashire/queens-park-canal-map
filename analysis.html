@@ -84,14 +84,18 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   letter-spacing:.04em;
 }
 .additional-chart{
-  min-height:250px;
+  /* Extra depth is needed for multi-line date, site and assessment labels. */
+  min-height:430px;
+}
+.additional-chart .series-chart{
+  min-height:350px;
 }
 .series-chart{
   display:flex;
   align-items:flex-end;
   gap:14px;
-  height:230px;
-  padding:18px 10px 0;
+  height:350px;
+  padding:18px 10px 14px;
   border-left:1px solid var(--line);
   border-bottom:1px solid var(--line);
   overflow-x:auto;
@@ -528,7 +532,11 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
 th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f7f9f7}
 .error{display:none;margin-bottom:16px;padding:12px 14px;border-radius:8px;background:#fff1f1;color:#8b1e1e}
 .note{margin-top:14px;color:var(--muted);font-size:11px}
-@media(max-width:760px){.summary{grid-template-columns:1fr}.wrap{padding:10px 10px 6px}.bar-list{height:240px;overflow-x:auto;grid-template-columns:42px minmax(430px,1fr)}.bar-columns{gap:7px}.bar-row{min-width:58px}.bar-track,.bar-axis,.bar-grid{height:165px}.chart-toggle button{flex:1 1 160px}}
+@media(max-width:760px){
+  .additional-chart{min-height:470px}
+  .additional-chart .series-chart{height:390px;min-height:390px;padding-bottom:18px}
+  .summary{grid-template-columns:1fr}.wrap{padding:10px 10px 6px}.bar-list{height:240px;overflow-x:auto;grid-template-columns:42px minmax(430px,1fr)}.bar-columns{gap:7px}.bar-row{min-width:58px}.bar-track,.bar-axis,.bar-grid{height:165px}.chart-toggle button{flex:1 1 160px}
+}
 
 /* Keep occurrence charts vertically aligned when description text wraps */
 #nitratePanel > .sub,
