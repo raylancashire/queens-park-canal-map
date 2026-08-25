@@ -18,7 +18,6 @@ The GitHub repository contains or may contain:
 - `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded; dissolved oxygen can also be presented as calculated oxygen saturation (%) when a paired water temperature is available
 - `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
 - `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
-- `Canal_Watch_Volunteer_Participation_Timetable.xlsx` — optional volunteer rota for organising two-person fortnightly survey teams
 - `README.md` — project documentation
 
 Repository:
@@ -618,54 +617,6 @@ The panel explicitly states that the heatmap represents **sampling frequency, no
 
 ---
 
-## Sample Trend Analysis
-
-A standalone **Sample Trend Analysis** panel has been added to `further-analysis.html`.
-
-The panel is designed to show whether repeated monitoring results at a selected site are generally **improving**, **stable** or **deteriorating** over time.
-
-Current features include:
-
-- A **Location** selector supporting **All sites** and individual sampling sites
-- Indicator controls for **Nitrate**, **Phosphate** and **Turbidity**
-- A trend classification of **Improving**, **Stable**, **Deteriorating** or **Insufficient data**
-- A minimum of **3 usable samples** before a trend is classified
-- **3–4 samples** described as an **Emerging trend**
-- **5 or more samples** described as an **Established trend**
-- A linear fitted trend across the available sample series rather than relying only on the first and latest result
-- For nitrate, phosphate and turbidity, a downward direction is treated as an improvement and an upward direction as deterioration
-- A fitted change of less than approximately **10%** is treated as broadly stable
-- Supporting evidence cards showing **First result**, **Latest result**, **Overall change** and **Recent direction**
-- A compact results-over-time chart showing the recorded values together with the fitted trend line
-- The **All sites** view averages usable results recorded on the same survey date to provide a project-wide trend view
-- Site selection is synchronised with the other site-aware Further Analysis panels
-- The panel is included as its own collapsible Further Analysis section
-- Standard pale-green hover and keyboard-focus highlighting is applied to the trend status, evidence cards, chart area, methodology note, selectors and indicator controls
-
-The first version focuses on the three core FreshWater Watch indicators. Additional measures such as pH, Dissolved Oxygen and BOD can be added later once indicator-specific trend interpretation rules are agreed.
-
----
-
-## Volunteer participation tracking
-
-Canal Watch now also uses the FreshWater Watch **`Total number of participants`** field to show how many people took part in recorded surveys.
-
-Current participation features include:
-
-- A **Participant attendances** summary panel beneath the main map
-- The participation total updates automatically when **All sites** or an individual sampling site is selected
-- The figure is described as **participant attendances** rather than unique participants because the same volunteer may take part in more than one survey
-- A **Participants over time** chart has been added to **Results over time by site**
-- The participation chart uses **sample date** on the horizontal axis and the recorded **number of participants** on the vertical axis
-- Participant charts use whole-number y-axis intervals so recorded counts align exactly with the displayed grid lines
-- The **All sites** participation view retains the sampling-site legend so participation can be compared between monitoring locations
-- A reusable Excel **Volunteer Participation Timetable** has been created to help organise two-person survey teams across the monitoring sites
-- The timetable includes a dashboard, volunteer register, sampling-site list, fortnightly rota, automatic coverage status and an **Actual participants** field for completed surveys
-
-The timetable is intended as an internal planning tool. Public Canal Watch participation figures continue to come from the recorded survey data rather than from planned rota assignments.
-
----
-
 ## Canal Watch Updates widget
 
 A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
@@ -767,22 +718,6 @@ These changes make the most recent visual-condition updates easier to reach whil
 
 ---
 
-## Update — 24 August 2026
-
-The following Further Analysis refinements were completed on **24 August 2026**:
-
-1. Added a standalone **Sample Trend Analysis** panel to `further-analysis.html`.
-2. Added **Nitrate**, **Phosphate** and **Turbidity** trend analysis for All sites and individual sampling locations.
-3. Added **Improving**, **Stable**, **Deteriorating** and **Insufficient data** classifications.
-4. Added minimum evidence rules: at least 3 usable samples are required; 3–4 samples are labelled **Emerging trend** and 5 or more **Established trend**.
-5. Added a fitted linear trend so the assessment uses the overall direction of the series rather than only the first and latest result.
-6. Added supporting evidence cards for first result, latest result, overall change and recent direction.
-7. Added a compact trend chart showing recorded results and the fitted trend line.
-8. Integrated the new panel with the existing site-selection synchronisation and Further Analysis accordion behaviour.
-9. Added consistent pale-green hover and keyboard-focus highlighting across the Sample Trend Analysis panel.
-
----
-
 ## Update — 23 August 2026
 
 Further refinements were made to **Sample Analysis** and **Further Analysis**:
@@ -799,16 +734,6 @@ Further refinements were made to **Sample Analysis** and **Further Analysis**:
 10. Continued the standard pale-green hover/focus treatment across interactive analysis elements while preserving clear selected states.
 
 These changes improve the clarity of the additional testing results, strengthen the all-sites time-series view, and make the Further Analysis summaries and comparison states easier to interpret.
-
-Further participation and volunteer-management refinements were also completed on **23 August 2026**:
-
-11. Added a **Participant attendances** panel beneath the Canal Watch map using the FreshWater Watch `Total number of participants` field.
-12. Made the participant total respond to the selected sampling site, while retaining an all-sites project total.
-13. Added **Participants over time** to `analysis.html`, plotting recorded participant numbers against survey dates.
-14. Restored the sampling-site legend for the All sites Results over time charts after the participation graph was added.
-15. Corrected the Participants over time y-axis to use whole-person intervals so plotted values align exactly with the displayed participant count.
-16. Created a reusable **Volunteer Participation Timetable** workbook for the fortnightly monitoring programme, with two volunteer places per survey, coverage warnings, completion tracking and actual participant recording.
-17. Added a new Canal Watch Updates item announcing the participation-tracking and volunteer-timetable changes.
 
 ---
 
@@ -929,4 +854,24 @@ The following changes were developed or refined on **14 August 2026**:
 23. Added the same conditional wildlife note to the **generated blog HTML**, allowing it to appear automatically in the published Overall Visual Assessment.
 
 These changes are intended to improve readability, interpretation and accessibility without making the public-facing analysis unnecessarily complicated.
+
+---
+
+## Update — 25 August 2026 — LaMotte coliform assessment
+
+The Canal Watch coliform interpretation has been aligned with the **Earth Force LaMotte** screening test and integrated with the visual assessment workflow.
+
+1. Treat the LaMotte coliform result as a **screening threshold test** rather than a precise colony count above the threshold.
+2. Use **negative** results as no elevated coliform detected by the screening test.
+3. Use an uncertain or inconsistent result as **Fair — follow-up recommended**.
+4. Use a single positive result of **>20 coliforms/100 mL** as **Poor — elevated coliform**.
+5. Use repeated positive results of **>20 coliforms/100 mL** at the same monitoring site as **Very Poor — persistent elevated coliform**.
+6. Keep the underlying **visual assessment score and visual-condition wording visible**, so a microbiological screening result is not presented as though it came from photographic observation.
+7. In the Assessment Builder, a single positive coliform result caps the combined **Overall Canal Watch Assessment** at **Poor**; repeated positive results set the combined assessment to **Very Poor**.
+8. An uncertain/inconclusive result caps the combined assessment at **Fair**. Negative screening results do not upgrade or downgrade the visual assessment.
+9. The generated blog HTML includes the LaMotte screening result, interpretation and a note that it is **not an official bathing-water classification**.
+10. Sample Analysis and Overall Water Quality Snapshot now describe a high result consistently as **`> 20 coliforms/100 mL`** and classify it as **Poor — elevated coliform**; repeated positives at an individual site are identified as **Very Poor — persistent elevated coliform** in the Snapshot.
+11. The recommended response to an elevated result is **repeat testing and investigation of potential contamination sources**, rather than direct chemical treatment of the canal.
+
+This preserves the distinction between good visual appearance and microbiological screening: canal water can look clean while still returning an elevated coliform result.
 
