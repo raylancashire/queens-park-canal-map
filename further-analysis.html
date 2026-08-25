@@ -2730,18 +2730,63 @@ function dissolvedOxygenPercentSaturation(doMgL,tempC){
 function coliformAssessment(value){
   const n=Number(value);
   if(!Number.isFinite(n)) return null;
+
+  // LaMotte is a threshold screening test rather than a precise colony count.
+  // A clear negative current test is Good; a positive result at the kit limit
+  // is graded Poor. Repeated-test grading is applied in coliformSeriesAssessment().
   if(n===0) return {
-    label:"No total coliform colonies detected",
-    colour:"#006400",
-    text:"#ffffff",
+    label:"Good — negative",
+    colour:"#39A96B",
+    text:"#17321f",
     symbol:"●"
   };
+  if(n>=20) return {
+    label:"Poor — positive >20 colonies/100 mL",
+    colour:"#F4B183",
+    text:"#17321f",
+    symbol:"▲"
+  };
   return {
-    label:"Total coliforms detected",
+    label:"Fair — uncertain / below screening threshold",
     colour:"#FFD966",
     text:"#17321f",
     symbol:"▲"
   };
+}
+
+function coliformSeriesAssessment(points,index){
+  const point=points[index];
+  if(!point || !Number.isFinite(point.value)) return null;
+
+  const siteKey=siteKeyForFocus(point.location||"");
+  const previous=points.slice(0,index).filter(p=>{
+    if(!Number.isFinite(p.value)) return false;
+    const pKey=siteKeyForFocus(p.location||"");
+    return siteKey ? pKey===siteKey : true;
+  });
+
+  const priorPositive=previous.filter(p=>p.value>=20).length;
+  const priorNegative=previous.filter(p=>p.value===0).length;
+
+  if(point.value>=20){
+    if(priorPositive>=1){
+      return {label:"Very Poor — repeated positive >20 colonies/100 mL",colour:"#C00000",text:"#ffffff",symbol:"■"};
+    }
+    return {label:"Poor — positive >20 colonies/100 mL",colour:"#F4B183",text:"#17321f",symbol:"▲"};
+  }
+
+  if(point.value===0){
+    const immediatelyPrevious=previous.length ? previous[previous.length-1] : null;
+    if(immediatelyPrevious && immediatelyPrevious.value>=20){
+      return {label:"Fair — negative retest after positive result",colour:"#FFD966",text:"#17321f",symbol:"◆"};
+    }
+    if(priorNegative>=1){
+      return {label:"Excellent — repeated negative results",colour:"#006400",text:"#ffffff",symbol:"●"};
+    }
+    return {label:"Good — current test negative",colour:"#39A96B",text:"#17321f",symbol:"●"};
+  }
+
+  return {label:"Fair — uncertain / inconclusive",colour:"#FFD966",text:"#17321f",symbol:"◆"};
 }
 
 function additionalAssessment(column,value){
@@ -2774,7 +2819,9 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
   if(points.length===1){
     const p=points[0];
-    const assessment=additionalAssessment(column,p.value);
+    const assessment=column==="Coliform"
+      ? coliformSeriesAssessment(points,0)
+      : additionalAssessment(column,p.value);
     const assessmentHtml=assessment
       ? `<span class="result-assessment" style="background:${assessment.colour};color:${assessment.text}">${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}</span>`
       : "";
@@ -2842,7 +2889,9 @@ function renderAdditionalSeries(containerId,data,column,unit){
   el.innerHTML=`<div class="series-chart">`+
     points.map(p=>{
       const height=Math.max(3,(p.value/max)*100);
-      const assessment=additionalAssessment(column,p.value);
+      const assessment=column==="Coliform"
+        ? coliformSeriesAssessment(points,points.indexOf(p))
+        : additionalAssessment(column,p.value);
       let kit=null;
       let phNatureText="";
       if(column==="pH"){
@@ -4744,12 +4793,30 @@ function renderSnapshot(){
   }
 
   if(Number.isFinite(coliform)){
+    const coliformHistory=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite)
+      .map(row=>({
+        value:snapshotFirstNumber(row,["Coliform (48 Hrs)","Coliform (48 hrs)","Coliform"]),
+        location:String(getField(row,"Location","Site Name","site_name","Site","Sampling Site","sampling_site")||"").trim(),
+        date:snapshotAdditionalDateValue(row)
+      }))
+      .filter(p=>Number.isFinite(p.value))
+      .sort((a,b)=>(a.date||0)-(b.date||0));
+
+    const latestIndex=Math.max(0,coliformHistory.length-1);
+    const coliformGrade=coliformSeriesAssessment(coliformHistory,latestIndex);
+    const kindMap={
+      "Excellent — repeated negative results":"good",
+      "Good — current test negative":"good",
+      "Fair — negative retest after positive result":"fair",
+      "Fair — uncertain / inconclusive":"fair",
+      "Poor — positive >20 colonies/100 mL":"poor",
+      "Very Poor — repeated positive >20 colonies/100 mL":"very-poor"
+    };
+
     cards.push(snapshotCard(
       "coliform","Coliform",coliform>=20 ? "> 20 coliforms/100ml" : `${coliform.toFixed(0)} coliforms/100ml`,
-      "48-hour result",
-      coliform===0
-        ? {label:"None detected",kind:"good"}
-        : {label:"Detected",kind:"fair"}
+      "48-hour LaMotte screening result",
+      coliformGrade ? {label:coliformGrade.label.split(" — ")[0],kind:kindMap[coliformGrade.label]||"fair"} : {label:"Fair",kind:"fair"}
     ));
   }
 
@@ -5126,6 +5193,29 @@ function changeRankPH(value){
 }
 
 function changeClassification(key,current,previous){
+  /* Coliform is a threshold screening result, so compare states rather than
+     treating the values as a continuous numerical scale. */
+  if(key==="coliform"){
+    if(Number.isFinite(current) && current>=20 && Number.isFinite(previous) && previous>=20){
+      return {label:"Very Poor — repeated positive >20",cls:"worse",symbol:"■"};
+    }
+    if(Number.isFinite(current) && current>=20){
+      return {label:"Poor — positive >20",cls:"worse",symbol:"▲"};
+    }
+    if(Number.isFinite(current) && current===0 && Number.isFinite(previous) && previous>=20){
+      return {label:"Fair — negative retest after positive",cls:"stable",symbol:"◆"};
+    }
+    if(Number.isFinite(current) && current===0 && Number.isFinite(previous) && previous===0){
+      return {label:"Excellent — repeated negative",cls:"improved",symbol:"●"};
+    }
+    if(Number.isFinite(current) && current===0 && !Number.isFinite(previous)){
+      return {label:"Good — current test negative",cls:"improved",symbol:"●"};
+    }
+    if(Number.isFinite(current) && current>0 && current<20){
+      return {label:"Fair — uncertain / inconclusive",cls:"stable",symbol:"◆"};
+    }
+  }
+
   /*
    * Distinguish which side of the comparison is actually missing.
    * This status text appears on the result card itself.

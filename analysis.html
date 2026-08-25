@@ -798,7 +798,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
   <article id="coliformPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="coliformTab" hidden>
     <h2>Coliform</h2>
-    <p class="sub">Coliform results per 100ml. A result at the upper limit of the test is displayed as &gt; 20 coliforms/100ml. Test-kit colour indicates a positive or negative result; the separate detection indicator is not an official bathing-water classification.</p>
+    <p class="sub">Coliform results per 100ml using the Earth Force LaMotte screening test. A positive result at the kit threshold is displayed as &gt; 20 coliforms/100ml and graded Poor; repeated positive results at the same site are graded Very Poor. A current negative is Good, repeated negatives are Excellent, and a negative retest after a positive result is Fair. This is a screening interpretation, not an official bathing-water classification.</p>
     <div id="coliformChart"></div>
   </article>
 
@@ -1279,18 +1279,63 @@ function dissolvedOxygenPercentSaturation(doMgL,tempC){
 function coliformAssessment(value){
   const n=Number(value);
   if(!Number.isFinite(n)) return null;
+
+  // LaMotte is a threshold screening test rather than a precise colony count.
+  // A clear negative current test is Good; a positive result at the kit limit
+  // is graded Poor. Repeated-test grading is applied in coliformSeriesAssessment().
   if(n===0) return {
-    label:"No total coliform colonies detected",
-    colour:"#006400",
-    text:"#ffffff",
+    label:"Good — negative",
+    colour:"#39A96B",
+    text:"#17321f",
     symbol:"●"
   };
+  if(n>=20) return {
+    label:"Poor — positive >20 colonies/100 mL",
+    colour:"#F4B183",
+    text:"#17321f",
+    symbol:"▲"
+  };
   return {
-    label:"Total coliforms detected",
+    label:"Fair — uncertain / below screening threshold",
     colour:"#FFD966",
     text:"#17321f",
     symbol:"▲"
   };
+}
+
+function coliformSeriesAssessment(points,index){
+  const point=points[index];
+  if(!point || !Number.isFinite(point.value)) return null;
+
+  const siteKey=siteKeyForFocus(point.location||"");
+  const previous=points.slice(0,index).filter(p=>{
+    if(!Number.isFinite(p.value)) return false;
+    const pKey=siteKeyForFocus(p.location||"");
+    return siteKey ? pKey===siteKey : true;
+  });
+
+  const priorPositive=previous.filter(p=>p.value>=20).length;
+  const priorNegative=previous.filter(p=>p.value===0).length;
+
+  if(point.value>=20){
+    if(priorPositive>=1){
+      return {label:"Very Poor — repeated positive >20 colonies/100 mL",colour:"#C00000",text:"#ffffff",symbol:"■"};
+    }
+    return {label:"Poor — positive >20 colonies/100 mL",colour:"#F4B183",text:"#17321f",symbol:"▲"};
+  }
+
+  if(point.value===0){
+    const immediatelyPrevious=previous.length ? previous[previous.length-1] : null;
+    if(immediatelyPrevious && immediatelyPrevious.value>=20){
+      return {label:"Fair — negative retest after positive result",colour:"#FFD966",text:"#17321f",symbol:"◆"};
+    }
+    if(priorNegative>=1){
+      return {label:"Excellent — repeated negative results",colour:"#006400",text:"#ffffff",symbol:"●"};
+    }
+    return {label:"Good — current test negative",colour:"#39A96B",text:"#17321f",symbol:"●"};
+  }
+
+  return {label:"Fair — uncertain / inconclusive",colour:"#FFD966",text:"#17321f",symbol:"◆"};
 }
 
 function additionalAssessment(column,value){
@@ -1324,7 +1369,9 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
   if(points.length===1){
     const p=points[0];
-    const assessment=additionalAssessment(column,p.value);
+    const assessment=column==="Coliform"
+      ? coliformSeriesAssessment(points,0)
+      : additionalAssessment(column,p.value);
     const assessmentHtml=assessment
       ? `<span class="result-assessment" style="background:${assessment.colour};color:${assessment.text}">${assessment.symbol ? esc(assessment.symbol)+" " : ""}${esc(assessment.label)}</span>`
       : "";
@@ -1392,7 +1439,9 @@ function renderAdditionalSeries(containerId,data,column,unit){
   el.innerHTML=`<div class="series-chart">`+
     points.map(p=>{
       const height=Math.max(3,(p.value/max)*100);
-      const assessment=additionalAssessment(column,p.value);
+      const assessment=column==="Coliform"
+        ? coliformSeriesAssessment(points,points.indexOf(p))
+        : additionalAssessment(column,p.value);
       let kit=null;
       let phNatureText="";
       if(column==="pH"){
