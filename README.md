@@ -886,3 +886,17 @@ Following the coliform assessment update, the site-list generation was corrected
 - Duplicate entries are removed from site dropdowns in Sample Analysis and Further Analysis.
 - Site-focused filters use the same normalised identity, so all records for a named site remain grouped together even when the source text varies slightly.
 - The LaMotte coliform assessment and overall-rating cap logic remain unchanged.
+
+
+### Coliform Snapshot persistence fix — 25 August 2026
+
+The **Overall Water Quality Snapshot** now treats LaMotte coliform results as threshold screening outcomes rather than averaging them numerically.
+
+- `0` / negative screening remains **Good**.
+- A single positive `>20 coliforms/100 mL` result is **Poor — elevated coliform**.
+- Two or more positive `>20 coliforms/100 mL` results at the same site are **Very Poor — persistent elevated coliform**.
+- Repeated-positive status is calculated from the full history for the selected site, even when the Snapshot is displaying the latest survey.
+- The project-average view no longer dilutes positive coliform screens by averaging positive and negative numerical values.
+- In the All sites view, repeated-positive status is only triggered when at least one individual site has two or more positive screening results.
+
+This reflects the LaMotte test's threshold-screening purpose and avoids reporting persistent positive results as Fair.
