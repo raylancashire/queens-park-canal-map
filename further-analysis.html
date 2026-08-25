@@ -1345,24 +1345,628 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 
-/* Hover highlight for individual result cards */
-.snapshot-card,
-.change-summary-card,
-.site-consistency-table tbody tr,
-.site-comparison-table tbody tr{
+.overall-site-comparison-summary{margin-top:18px}
+.overall-site-summary-card{border:1px solid var(--line);border-radius:10px;background:#f7faf7;overflow:hidden}
+.overall-site-summary-heading{padding:11px 13px 9px;color:var(--ink);font-size:14px;font-weight:800}
+.overall-site-summary-sub{padding:0 13px 10px;color:var(--muted);font-size:11px;line-height:1.45}
+.overall-site-summary-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 13px;border-top:1px solid #e5ebe6;font-size:12px}
+.overall-site-summary-row:nth-child(even){background:rgba(255,255,255,.58)}
+.overall-site-summary-row.strongest{box-shadow:inset 4px 0 0 #39A96B}
+.overall-site-summary-row.watch{box-shadow:inset 4px 0 0 #F4B183}
+.overall-site-summary-site{min-width:0;color:var(--ink);font-weight:750}
+.overall-site-summary-rating{font-weight:800;white-space:nowrap}
+.overall-site-summary-count{color:var(--muted);white-space:nowrap}
+.overall-site-summary-tag{display:inline-block;margin-left:7px;padding:2px 6px;border-radius:999px;background:#e9f4ed;color:#2f6b45;font-size:10px;font-weight:800}
+.overall-site-summary-row.watch .overall-site-summary-tag{background:#fff0e5;color:#7b4a28}
+.overall-site-summary-note{padding:9px 13px 11px;border-top:1px solid #e5ebe6;color:var(--muted);font-size:11px;line-height:1.45}
+@media(max-width:600px){.overall-site-summary-row{grid-template-columns:minmax(0,1fr) auto}.overall-site-summary-count{grid-column:1/-1}}
+
+
+.sampling-frequency-intro{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.sampling-frequency-heatmap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sampling-frequency-grid{display:grid;gap:5px;min-width:max-content;align-items:center}
+.sampling-frequency-corner,.sampling-frequency-month{min-width:58px;padding:4px 5px;color:var(--muted);font-size:10px;font-weight:750;text-align:center;white-space:nowrap}
+.sampling-frequency-corner{min-width:150px;text-align:left}
+.sampling-frequency-site{min-width:150px;max-width:190px;padding:7px 8px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.3}
+.sampling-frequency-cell{width:58px;min-width:58px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #dce5df;border-radius:6px;background:#f5f8f5;color:#68766d;font-size:11px;font-weight:850;box-sizing:border-box}
+.sampling-frequency-cell.has-visits{color:#17321f;border-color:#b8cdbd}
+.sampling-frequency-cell.frequency-1{background:#e8f3eb}
+.sampling-frequency-cell.frequency-2{background:#cfe5d5}
+.sampling-frequency-cell.frequency-3{background:#a8d0b3}
+.sampling-frequency-cell.frequency-4plus{background:#7db28b;color:#102719}
+.sampling-frequency-cell{transition:background-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.sampling-frequency-cell:hover,.sampling-frequency-cell:focus{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+  outline:2px solid #17321f;
+  outline-offset:1px
+}
+.sampling-frequency-summary{margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#f8faf8;color:var(--ink);font-size:12px;line-height:1.5}
+.sampling-frequency-summary strong{font-weight:850}
+.sampling-frequency-note{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
+@media(max-width:600px){.sampling-frequency-site,.sampling-frequency-corner{min-width:125px;max-width:145px}.sampling-frequency-cell,.sampling-frequency-month{width:52px;min-width:52px}}
+
+
+.sampling-frequency-last-title{
+  margin:16px 0 8px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:850;
+  line-height:1.3;
+}
+
+.sampling-frequency-last-visits{
+  margin-top:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:8px;
+}
+.sampling-frequency-last-visit{
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  font-size:11px;
+  line-height:1.4;
   transition:background-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
 
-.snapshot-card:hover,
-.change-summary-card:hover{
+.sampling-frequency-last-visit:hover,
+.sampling-frequency-last-visit:focus-within{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+}
+.sampling-frequency-last-visit strong{
+  display:block;
+  margin-bottom:2px;
+  font-size:11px;
+  font-weight:850;
+}
+.sampling-frequency-last-visit span{
+  color:var(--muted);
+}
+
+
+.sampling-frequency-last-date{
+  display:block;
+  margin-top:3px;
+}
+
+
+.sampling-frequency-last-visit.linked-highlight{
   background:#f2f7f3;
   box-shadow:0 5px 14px rgba(23,50,31,.10);
   transform:translateY(-1px);
 }
 
-.site-consistency-table tbody tr:hover td,
-.site-comparison-table tbody tr:hover td{
+
+.sampling-frequency-cell-wrap{
+  width:58px;
+  min-width:58px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
+}
+
+.sampling-frequency-date-lines{
+  min-height:24px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.3;
+  text-align:center;
+}
+
+.sampling-frequency-date-line{
+  display:block;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:block;
+  margin-top:1px;
+  color:#66746b;
+  font-size:8px;
+  line-height:1.25;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-cell-wrap{
+    width:52px;
+    min-width:52px;
+  }
+  .sampling-frequency-date-lines{
+    font-size:8px;
+  }
+  .sampling-frequency-gap{
+    font-size:7px;
+  }
+}
+
+
+.sampling-frequency-site{
+  align-self:start;
+  min-height:62px;
+  display:flex;
+  align-items:center;
+}
+
+.sampling-frequency-cell-wrap{
+  position:relative;
+}
+
+.sampling-frequency-between{
+  position:absolute;
+  left:-8px;
+  top:15px;
+  transform:translateX(-50%);
+  z-index:2;
+  min-width:18px;
+  padding:1px 3px;
+  border-radius:999px;
+  background:#fff;
+  color:#66746b;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:none;
+}
+
+
+/* Refined sampling-frequency alignment */
+.sampling-frequency-grid{
+  column-gap:0;
+  row-gap:10px;
+}
+
+.sampling-frequency-month{
+  width:76px;
+  min-width:76px;
+  box-sizing:border-box;
+}
+
+.sampling-frequency-cell-wrap{
+  width:76px;
+  min-width:76px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+.sampling-frequency-cell{
+  width:58px;
+  min-width:58px;
+}
+
+.sampling-frequency-site{
+  align-self:stretch;
+  min-height:0;
+  height:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+/* The interval badge sits exactly halfway between the current and previous
+   58px cells: 9px side space + half of the 18px gap. */
+.sampling-frequency-between{
+  left:-9px;
+  top:15px;
+  transform:translateX(-50%);
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:68px;
+    min-width:68px;
+  }
+
+  .sampling-frequency-cell{
+    width:52px;
+    min-width:52px;
+  }
+
+  .sampling-frequency-between{
+    left:-8px;
+  }
+}
+
+
+/* Sampling-frequency interval placement */
+.sampling-frequency-month,
+.sampling-frequency-cell-wrap{
+  width:96px;
+  min-width:96px;
+}
+
+.sampling-frequency-cell-wrap{
+  align-items:center;
+}
+
+/* 58px cell centred in a 96px column leaves 19px each side.
+   The following sample's interval value is placed halfway through
+   the 38px space between the two neighbouring cells. */
+.sampling-frequency-between{
+  left:0;
+  top:17px;
+  transform:translate(-50%,-50%);
+  min-width:22px;
+  padding:2px 4px;
+  background:#fff;
+  border:0;
+  border-radius:999px;
+  box-shadow:none;
+  color:#66746b;
+  font-size:10px;
+  font-weight:850;
+  line-height:1;
+}
+
+/* Centre each site name against the complete row. */
+.sampling-frequency-site{
+  align-self:stretch;
+  display:flex;
+  align-items:center;
+  min-height:66px;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:84px;
+    min-width:84px;
+  }
+
+  .sampling-frequency-between{
+    left:0;
+  }
+}
+
+
+/* Centre sampling-site names with the sampling cells */
+.sampling-frequency-corner{
+  text-align:center;
+}
+
+.sampling-frequency-site{
+  justify-content:center;
+  text-align:center;
+}
+
+
+/* Standard pale-green hover/focus highlight for Snapshot and Change panels */
+.snapshot-card,
+.change-card,
+.snapshot-result,
+.change-result,
+.results-watch-item,
+.snapshot-control,
+.change-summary-card{
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease;
+}
+
+.snapshot-card:hover,
+.snapshot-card:focus-within,
+.change-card:hover,
+.change-card:focus-within,
+.snapshot-result:hover,
+.snapshot-result:focus-within,
+.change-result:hover,
+.change-result:focus-within,
+.results-watch-item:hover,
+.results-watch-item:focus-within,
+.snapshot-control:hover,
+.snapshot-control:focus-within,
+.change-summary-card:hover,
+.change-summary-card:focus-within{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+}
+
+@media (hover:none){
+  .snapshot-card:hover,
+  .change-card:hover,
+  .snapshot-result:hover,
+  .change-result:hover,
+  .results-watch-item:hover,
+  .snapshot-control:hover,
+  .change-summary-card:hover{
+    background:inherit;
+  }
+}
+
+
+/* Pale-green interaction highlight: Snapshot buttons + Site Consistency controls/rows */
+#snapshotSiteSelect:hover,
+#snapshotSiteSelect:focus,
+#snapshotMetricSelect:hover,
+#snapshotMetricSelect:focus,
+.snapshot-controls button:hover,
+.snapshot-controls button:focus-visible,
+.snapshot-button:hover,
+.snapshot-button:focus-visible,
+.site-consistency button:hover,
+.site-consistency button:focus-visible,
+.consistency-controls button:hover,
+.consistency-controls button:focus-visible,
+.consistency-button:hover,
+.consistency-button:focus-visible,
+.consistency-metric-button:hover,
+.consistency-metric-button:focus-visible,
+.consistency-row:hover,
+.consistency-line:hover,
+.site-consistency-row:hover,
+.site-consistency-line:hover,
+#consistencyTable tbody tr:hover{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+#snapshotSiteSelect,
+#snapshotMetricSelect,
+.snapshot-controls button,
+.snapshot-button,
+.site-consistency button,
+.consistency-controls button,
+.consistency-button,
+.consistency-metric-button,
+.consistency-row,
+.consistency-line,
+.site-consistency-row,
+.site-consistency-line,
+#consistencyTable tbody tr{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+
+/* Correct Site Consistency hover/focus targets */
+.site-consistency-toggle button:not(.active):hover,
+.site-consistency-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
+.site-consistency-table tbody tr:hover > td,
+.site-consistency-table tbody tr:focus-within > td{
+  background:#eef7ef !important;
+}
+
+.site-consistency-summary-card:hover,
+.site-consistency-summary-card:focus-within{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+.site-consistency-toggle button,
+.site-consistency-table tbody td,
+.site-consistency-summary-card{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+/* Keep the selected consistency indicator visually selected. */
+.site-consistency-toggle button.active:hover,
+.site-consistency-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+}
+
+
+/* Restored Key Takeaways and Results to Watch */
+.key-takeaway{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border-left:4px solid #5f8a69;
+  border-radius:0 8px 8px 0;
   background:#f2f7f3;
+  color:#35483b;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.key-takeaway-label{
+  display:block;
+  margin-bottom:2px;
+  color:#526158;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+/* Results to Watch */
+.results-watch{margin:0 0 16px}
+.results-watch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.results-watch-title{color:#526158;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.results-watch-count{padding:3px 7px;border-radius:999px;background:#f0f3f1;color:#526158;font-size:9px;font-weight:800}
+.results-watch-grid{display:grid;gap:8px}
+.results-watch-item{padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--watch-colour,#a66a35);border-radius:8px;background:#fffaf5;transition:.15s ease}
+.results-watch-item:hover,.results-watch-item:focus-visible{background:#fff3e7;box-shadow:0 4px 12px rgba(91,62,35,.10);transform:translateY(-1px);outline:none}
+.results-watch-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.results-watch-name{color:var(--ink);font-size:11px;font-weight:850}
+.results-watch-value{color:var(--ink);font-size:13px;font-weight:850;text-align:right}
+.results-watch-reason{margin-top:4px;color:#66746b;font-size:10px;line-height:1.4}
+.results-watch-clear{padding:10px 12px;border:1px solid #cfe1d3;border-radius:8px;background:#f2f8f3;color:#31563b;font-size:11px}
+.snapshot-card.watch-highlight{background:#fff5e9!important;box-shadow:0 0 0 2px rgba(166,106,53,.20),0 5px 14px rgba(91,62,35,.12)!important;transform:translateY(-1px)}
+
+
+
+/* More breathing room around concluding Key Takeaway boxes */
+.key-takeaway{
+  margin-top:20px;
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  .key-takeaway{
+    margin-top:16px;
+    margin-bottom:8px;
+  }
+}
+
+
+/* Extra breathing room for Results to Watch in the Overall Water Quality Snapshot */
+#resultsWatch{
+  margin-top:24px;
+  margin-bottom:22px;
+}
+#resultsWatch .results-watch-head{
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  #resultsWatch{
+    margin-top:20px;
+    margin-bottom:18px;
+  }
+}
+
+
+
+/* Link Results to Watch hover/focus to its Snapshot result card */
+.snapshot-card.watch-highlight{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  box-shadow:0 0 0 2px rgba(88,140,101,.14);
+}
+
+
+/* Keep the selected Overall Water Quality Snapshot period button fixed on hover/focus */
+.snapshot-period-toggle button.active:hover,
+.snapshot-period-toggle button.active:focus,
+.snapshot-period-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+
+/* Pale-green hover/focus applies only to the unselected Snapshot period button */
+.snapshot-period-toggle button:not(.active):hover,
+.snapshot-period-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
+
+/* Sample Trend Analysis */
+.sample-trend-panel{padding:18px}
+.sample-trend-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.55}
+.sample-trend-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
+.sample-trend-control{display:grid;gap:5px;min-width:210px}
+.sample-trend-control label{font-size:11px;font-weight:800;color:#435248}
+.sample-trend-control select{
+  min-height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  padding:7px 10px;font:inherit;font-size:12px
+}
+.sample-trend-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.sample-trend-tabs button{
+  appearance:none;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  padding:8px 12px;font-size:12px;font-weight:750;cursor:pointer
+}
+.sample-trend-tabs button:not(.active):hover,
+.sample-trend-tabs button:not(.active):focus-visible,
+.sample-trend-control select:hover,
+.sample-trend-control select:focus-visible{
+  background:#eef7ef;border-color:#bfd7c5
+}
+.sample-trend-tabs button.active,
+.sample-trend-tabs button.active:hover,
+.sample-trend-tabs button.active:focus-visible{
+  background:var(--ink);border-color:var(--ink);color:#fff
+}
+.sample-trend-hero{
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);gap:14px;margin:12px 0
+}
+.sample-trend-status{
+  border:1px solid var(--line);border-radius:11px;background:#f8faf8;padding:16px
+}
+.sample-trend-status-kicker{
+  color:#66746b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em
+}
+.sample-trend-status-main{
+  display:flex;align-items:center;gap:9px;margin:5px 0 6px;font-size:24px;font-weight:850;color:var(--ink)
+}
+.sample-trend-status-main.improving{color:#245b32}
+.sample-trend-status-main.stable{color:#5e5a26}
+.sample-trend-status-main.deteriorating{color:#8a3f20}
+.sample-trend-status-main.insufficient{color:#66746b}
+.sample-trend-status-detail{color:#66746b;font-size:12px;line-height:1.5}
+.sample-trend-evidence{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px
+}
+.sample-trend-card{
+  border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 12px;min-width:0;
+  transition:background .16s ease,border-color .16s ease
+}
+.sample-trend-status,
+.sample-trend-card,
+.sample-trend-chart-wrap,
+.sample-trend-method{
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.sample-trend-status:hover,
+.sample-trend-status:focus-visible,
+.sample-trend-card:hover,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:hover,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:hover,
+.sample-trend-method:focus-visible{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+  outline:none;
+}
+.sample-trend-status:focus-visible,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:focus-visible{
+  box-shadow:0 0 0 2px rgba(47,107,69,.14);
+}
+.sample-trend-card small{
+  display:block;margin-bottom:4px;color:#66746b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.045em
+}
+.sample-trend-card strong{display:block;color:var(--ink);font-size:14px;line-height:1.25}
+.sample-trend-card span{display:block;margin-top:3px;color:#66746b;font-size:10px;line-height:1.3}
+.sample-trend-chart-wrap{
+  overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin-top:12px
+}
+.sample-trend-svg{display:block;width:100%;min-width:560px;height:auto}
+.sample-trend-grid{stroke:#e5ebe6;stroke-width:1}
+.sample-trend-axis{fill:#66746b;font-size:10px}
+.sample-trend-line{fill:none;stroke:#50675a;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.sample-trend-regression{fill:none;stroke:#9b6b2f;stroke-width:2;stroke-dasharray:6 5}
+.sample-trend-point{fill:#fff;stroke:#50675a;stroke-width:2}
+.sample-trend-value{fill:#314039;font-size:10px;font-weight:750}
+.sample-trend-method{
+  margin-top:12px;padding:10px 12px;border-left:4px solid #a9b7ad;background:#f6f8f6;color:#66746b;
+  font-size:11px;line-height:1.5
+}
+@media(max-width:720px){
+  .sample-trend-hero{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .sample-trend-evidence{grid-template-columns:1fr}
+  .sample-trend-control{min-width:100%;width:100%}
 }
 
 </style>
@@ -1409,6 +2013,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
       <div id="snapshotGrid" class="snapshot-grid"></div>
       <div id="snapshotSummary" class="snapshot-summary"></div>
+      <div id="resultsWatch" class="results-watch">
+        <div class="results-watch-head">
+          <div class="results-watch-title">Results to Watch</div>
+          <div id="resultsWatchCount" class="results-watch-count"></div>
+        </div>
+        <div id="resultsWatchGrid" class="results-watch-grid"></div>
+      </div>
+
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="snapshotTakeawayText">Summary will update with the selected results.</span>
+      </div>
+
       <div id="snapshotMeta" class="snapshot-meta"></div>
     </section>
   </div>
@@ -1481,6 +2098,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteComparisonChart" class="site-comparison-chart"></div>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteComparisonTakeawayText">Comparison summary will update with the selected indicator.</span>
+      </div>
+      <div id="overallSiteComparisonSummary" class="overall-site-comparison-summary" aria-live="polite"></div>
     </div>
   </section>
 
@@ -1509,6 +2131,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="siteConsistencyTable"></div>
+      <div class="key-takeaway">
+        <span class="key-takeaway-label">Key takeaway</span>
+        <span id="siteConsistencyTakeawayText">Consistency summary will update with the selected indicator.</span>
+      </div>
 
       <div class="site-consistency-summary">
         <div class="site-consistency-summary-card">
@@ -1526,6 +2152,60 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         each site's variation is measured relative to its own average result using the coefficient of variation
         (standard deviation ÷ mean). Lower values indicate more stable results. Sites with fewer than two usable samples
         are shown as having insufficient data.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="sampleTrendToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="sampleTrendContent">
+    <span>Sample Trend Analysis</span>
+    <span id="sampleTrendIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="sampleTrendContent" class="outer-analysis-content" hidden>
+    <div class="sample-trend-panel">
+      <p class="sample-trend-intro">
+        Assess whether repeated survey results are generally improving, stable or deteriorating over time.
+        The analysis uses the overall direction of the available series rather than relying only on the first and latest result.
+      </p>
+
+      <div class="sample-trend-controls">
+        <div class="sample-trend-control">
+          <label for="sampleTrendSiteSelect">Location</label>
+          <select id="sampleTrendSiteSelect">
+            <option value="all">All sites</option>
+          </select>
+        </div>
+
+        <div class="sample-trend-control">
+          <label>Indicator</label>
+          <div class="sample-trend-tabs" role="group" aria-label="Choose sample trend indicator">
+            <button id="sampleTrendNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+            <button id="sampleTrendPhosphate" type="button" aria-pressed="false">Phosphate</button>
+            <button id="sampleTrendTurbidity" type="button" aria-pressed="false">Turbidity</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sample-trend-hero">
+        <div id="sampleTrendStatus" class="sample-trend-status" tabindex="0"></div>
+        <div id="sampleTrendEvidence" class="sample-trend-evidence"></div>
+      </div>
+
+      <div id="sampleTrendChart" class="sample-trend-chart-wrap" tabindex="0"></div>
+
+      <div class="sample-trend-method" tabindex="0">
+        <strong>How the trend is assessed:</strong>
+        at least three usable samples are required. A linear trend is calculated across the available results.
+        For nitrate, phosphate and turbidity, a downward direction is treated as an improvement and an upward direction
+        as deterioration. A change of less than about 10% across the fitted series is treated as broadly stable.
+        Three to four samples are described as an emerging trend; five or more as an established trend.
       </div>
     </div>
   </div>
@@ -1628,6 +2308,36 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="relationshipSummary" class="relationship-summary"></div>
     </div>
   </section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="samplingFrequencyToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="samplingFrequencyContent">
+    <span>Sampling frequency over time</span>
+    <span id="samplingFrequencyIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="samplingFrequencyContent" class="outer-analysis-content" hidden>
+    <p class="sampling-frequency-intro">
+      A compact view of when each monitoring location has been sampled.
+      The numbers show sampling visits, not water-quality status.
+    </p>
+
+    <div id="samplingFrequencyHeatmap" class="sampling-frequency-heatmap"></div>
+    <div id="samplingFrequencySummary" class="sampling-frequency-summary"></div>
+
+    <h3 class="sampling-frequency-last-title">Time since last sampled</h3>
+    <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
+
+    <p class="sampling-frequency-note">
+      The sample date is shown below each monthly frequency cell. Where consecutive samples are available, the small number between cells shows the number of days between samples.
+      Hover or focus a cell for the full survey date details. Days since last sample are calculated from each site's most recent sample date to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
+    </p>
+  </div>
+</section>
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
@@ -2021,19 +2731,13 @@ function coliformAssessment(value){
   const n=Number(value);
   if(!Number.isFinite(n)) return null;
   if(n===0) return {
-    label:"Good — screening negative",
-    colour:"#39A96B",
-    text:"#17321f",
-    symbol:"◆"
-  };
-  if(n>=20) return {
-    label:"Poor — elevated coliform (>20/100 mL)",
-    colour:"#F4B183",
-    text:"#4a2b16",
-    symbol:"■"
+    label:"No total coliform colonies detected",
+    colour:"#006400",
+    text:"#ffffff",
+    symbol:"●"
   };
   return {
-    label:"Fair — coliform detected / follow-up recommended",
+    label:"Total coliforms detected",
     colour:"#FFD966",
     text:"#17321f",
     symbol:"▲"
@@ -2094,7 +2798,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     if(column==="Coliform"){
       const kit=coliformTestKit(p.value);
-      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${Number(p.value)>=20 ? "&gt;20" : esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
       if(kit){
         extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
           ● Test-kit result: ${esc(kit.reading)}
@@ -2183,32 +2887,10 @@ let additionalWaterQualityData=[];
 
 function normaliseSiteForMatch(value){
   return String(value||"")
-    .replace(/[’‘]/g,"'")
-    .replace(/[–—]/g,"-")
     .replace(/^Grand Union Canal\s*-\s*/i,"")
     .trim()
     .replace(/\s+/g," ")
     .toLowerCase();
-}
-
-function siteDisplayName(value){
-  return String(value||"")
-    .replace(/[’‘]/g,"'")
-    .replace(/[–—]/g,"-")
-    .replace(/^Grand Union Canal\s*-\s*/i,"")
-    .trim()
-    .replace(/\s+/g," ");
-}
-
-function uniqueNormalisedSiteNames(rows){
-  const seen=new Map();
-  rows.forEach(row=>{
-    const raw=siteName(row);
-    const key=normaliseSiteForMatch(raw);
-    if(!key || seen.has(key)) return;
-    seen.set(key,siteDisplayName(raw));
-  });
-  return [...seen.values()].sort((a,b)=>a.localeCompare(b));
 }
 
 function filterAdditionalForSite(data,site){
@@ -2254,11 +2936,11 @@ function populateSeasonalSiteSelect(){
   const select=document.getElementById("seasonalSiteSelect");
   if(!select) return;
 
-  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncSeasonalSiteUI();
 }
@@ -2270,7 +2952,7 @@ function syncSeasonalSiteUI(){
       select.value="all";
     }else{
       const match=[...select.options].find(
-        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+        o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
       );
       if(match) select.value=match.value;
     }
@@ -2285,7 +2967,7 @@ function syncSeasonalSiteUI(){
 }
 
 function applySeasonalSiteFocus(site,{publish=false}={}){
-  currentFocusedSite=site||"all";
+  currentFocusedSite=canonicalSiteForSync(site||"all");
   syncSeasonalSiteUI();
 
   if(publish){
@@ -2698,6 +3380,378 @@ function setRelationship(key){
 }
 
 
+
+let currentSampleTrendMetric="nitrate";
+
+function sampleTrendMetricInfo(metric){
+  if(metric==="nitrate") return {label:"Nitrate",unit:"mg/L",decimals:2,lowerBetter:true};
+  if(metric==="phosphate") return {label:"Phosphate",unit:"mg/L",decimals:3,lowerBetter:true};
+  return {label:"Turbidity",unit:"NTU",decimals:0,lowerBetter:true};
+}
+
+function sampleTrendRowsForSite(site){
+  const target=canonicalSiteKey(site||"all");
+  if(target==="all") return freshwaterDataForChanges.slice();
+  return freshwaterDataForChanges.filter(row=>canonicalSiteKey(siteName(row))===target);
+}
+
+function sampleTrendPoints(site,metric){
+  const rows=sampleTrendRowsForSite(site);
+  const target=canonicalSiteKey(site||"all");
+
+  if(target!=="all"){
+    return rows
+      .map(row=>({
+        timestamp:sampleDateValue(row),
+        value:comparisonMetricValue(row,metric),
+        site:canonicalSiteDisplay(siteName(row))
+      }))
+      .filter(point=>point.timestamp>0 && Number.isFinite(point.value))
+      .sort((a,b)=>a.timestamp-b.timestamp);
+  }
+
+  // For All sites, average all usable site results recorded on the same date.
+  const groups=new Map();
+
+  rows.forEach(row=>{
+    const timestamp=sampleDateValue(row);
+    const value=comparisonMetricValue(row,metric);
+    if(!timestamp || !Number.isFinite(value)) return;
+
+    const d=new Date(timestamp);
+    const dateKey=[
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,"0"),
+      String(d.getDate()).padStart(2,"0")
+    ].join("-");
+
+    if(!groups.has(dateKey)){
+      groups.set(dateKey,{
+        timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),
+        values:[],
+        sites:new Set()
+      });
+    }
+    const group=groups.get(dateKey);
+    group.values.push(value);
+    group.sites.add(canonicalSiteDisplay(siteName(row)));
+  });
+
+  return [...groups.values()]
+    .map(group=>({
+      timestamp:group.timestamp,
+      value:group.values.reduce((sum,value)=>sum+value,0)/group.values.length,
+      siteCount:group.sites.size
+    }))
+    .sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+function sampleTrendRegression(points){
+  const n=points.length;
+  if(n<2) return null;
+
+  const xs=points.map((_,i)=>i);
+  const ys=points.map(point=>point.value);
+  const xMean=xs.reduce((a,b)=>a+b,0)/n;
+  const yMean=ys.reduce((a,b)=>a+b,0)/n;
+
+  let numerator=0;
+  let denominator=0;
+  for(let i=0;i<n;i++){
+    numerator+=(xs[i]-xMean)*(ys[i]-yMean);
+    denominator+=(xs[i]-xMean)*(xs[i]-xMean);
+  }
+
+  const slope=denominator ? numerator/denominator : 0;
+  const intercept=yMean-(slope*xMean);
+  const fittedFirst=intercept;
+  const fittedLast=intercept+slope*(n-1);
+  const baseline=Math.max(Math.abs(fittedFirst),0.000001);
+  const fittedPct=((fittedLast-fittedFirst)/baseline)*100;
+
+  return {slope,intercept,fittedFirst,fittedLast,fittedPct};
+}
+
+function sampleTrendDirectionLabel(deltaPct,info){
+  const abs=Math.abs(deltaPct);
+  if(abs<5) return {label:"Stable",symbol:"→"};
+  const improving=info.lowerBetter ? deltaPct<0 : deltaPct>0;
+  return improving
+    ? {label:"Improving",symbol:"↓"}
+    : {label:"Deteriorating",symbol:"↑"};
+}
+
+function sampleTrendAnalysis(points,metric){
+  const info=sampleTrendMetricInfo(metric);
+
+  if(points.length<3){
+    return {
+      label:"Insufficient data",
+      cls:"insufficient",
+      symbol:"—",
+      evidence:"Insufficient data",
+      detail:`${points.length} usable ${points.length===1?"sample":"samples"} available; at least 3 are needed to identify a trend.`,
+      regression:sampleTrendRegression(points)
+    };
+  }
+
+  const regression=sampleTrendRegression(points);
+  const pct=regression ? regression.fittedPct : 0;
+  const abs=Math.abs(pct);
+
+  let label="Stable";
+  let cls="stable";
+  let symbol="→";
+
+  if(abs>=10){
+    const improving=info.lowerBetter ? pct<0 : pct>0;
+    label=improving ? "Improving" : "Deteriorating";
+    cls=improving ? "improving" : "deteriorating";
+    symbol=improving ? "↓" : "↑";
+  }
+
+  const evidence=points.length>=5 ? "Established trend" : "Emerging trend";
+  const directionText=abs<10
+    ? "The overall trend shows only a small change and is treated as broadly stable."
+    : `The overall trend shows an approximate ${abs.toFixed(0)}% ${pct<0 ? "decrease" : "increase"} across the available samples.`;
+
+  return {
+    label,cls,symbol,evidence,regression,
+    detail:`${evidence} based on ${points.length} usable samples. ${directionText}`
+  };
+}
+
+function sampleTrendRecentDirection(points,metric){
+  if(points.length<2) return "Insufficient data";
+  const info=sampleTrendMetricInfo(metric);
+  const recent=points.slice(-Math.min(3,points.length));
+  const first=recent[0].value;
+  const last=recent[recent.length-1].value;
+  const baseline=Math.max(Math.abs(first),0.000001);
+  const pct=((last-first)/baseline)*100;
+  const result=sampleTrendDirectionLabel(pct,info);
+  return result.label;
+}
+
+function sampleTrendFormatValue(value,metric){
+  if(!Number.isFinite(value)) return "—";
+  const info=sampleTrendMetricInfo(metric);
+  return `${value.toFixed(info.decimals)} ${info.unit}`;
+}
+
+function sampleTrendFormatDate(timestamp){
+  if(!timestamp) return "—";
+  return new Date(timestamp).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+function populateSampleTrendSiteSelect(){
+  const select=document.getElementById("sampleTrendSiteSelect");
+  if(!select) return;
+
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
+  select.innerHTML=
+    `<option value="all">All sites</option>`+
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
+
+  syncSampleTrendSiteUI();
+}
+
+function syncSampleTrendSiteUI(){
+  const select=document.getElementById("sampleTrendSiteSelect");
+  if(!select) return;
+
+  if(canonicalSiteKey(currentFocusedSite)==="all"){
+    select.value="all";
+    return;
+  }
+
+  const match=[...select.options].find(option=>
+    option.value!=="all" &&
+    canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
+  );
+  select.value=match ? match.value : "all";
+}
+
+function renderSampleTrendChart(points,metric,analysis){
+  const target=document.getElementById("sampleTrendChart");
+  if(!target) return;
+
+  if(!points.length){
+    target.innerHTML='<div class="site-comparison-empty">No usable trend data is available for this selection.</div>';
+    return;
+  }
+
+  const info=sampleTrendMetricInfo(metric);
+  const W=Math.max(600,points.length*105);
+  const H=270;
+  const left=58,right=28,top=28,bottom=64;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  let min=Math.min(...points.map(p=>p.value));
+  let max=Math.max(...points.map(p=>p.value));
+  min=Math.min(0,min);
+  if(max===min) max=min+1;
+  const range=max-min;
+  max+=range*0.15;
+
+  const x=i=>points.length===1 ? left+plotW/2 : left+(i/(points.length-1))*plotW;
+  const y=value=>top+((max-value)/(max-min))*plotH;
+  const ticks=Array.from({length:5},(_,i)=>min+((max-min)*(i/4)));
+
+  const grid=ticks.map(value=>`
+    <line x1="${left}" y1="${y(value)}" x2="${W-right}" y2="${y(value)}" class="sample-trend-grid"></line>
+    <text x="${left-8}" y="${y(value)+4}" text-anchor="end" class="sample-trend-axis">${value.toFixed(info.decimals)}</text>
+  `).join("");
+
+  const linePath=points.map((point,i)=>
+    `${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(point.value).toFixed(1)}`
+  ).join(" ");
+
+  let regressionPath="";
+  if(analysis.regression && points.length>=2){
+    const firstY=analysis.regression.intercept;
+    const lastY=analysis.regression.intercept+analysis.regression.slope*(points.length-1);
+    regressionPath=`<path d="M ${x(0)} ${y(firstY)} L ${x(points.length-1)} ${y(lastY)}" class="sample-trend-regression"></path>`;
+  }
+
+  const marks=points.map((point,i)=>{
+    const date=sampleTrendFormatDate(point.timestamp);
+    const siteDetail=point.siteCount
+      ? `${point.siteCount} ${point.siteCount===1?"site":"sites"}`
+      : (point.site||"");
+    return `
+      <circle cx="${x(i)}" cy="${y(point.value)}" r="4.5" class="sample-trend-point">
+        <title>${esc(date)} · ${esc(sampleTrendFormatValue(point.value,metric))}${siteDetail ? " · "+esc(siteDetail) : ""}</title>
+      </circle>
+      <text x="${x(i)}" y="${y(point.value)-10}" text-anchor="middle" class="sample-trend-value">
+        ${point.value.toFixed(info.decimals)}
+      </text>
+      <text x="${x(i)}" y="${H-28}" text-anchor="middle" class="sample-trend-axis">${esc(date)}</text>
+    `;
+  }).join("");
+
+  target.innerHTML=`<svg class="sample-trend-svg" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="${esc(info.label)} sample trend over time">
+    ${grid}
+    <text x="16" y="${top+plotH/2}" text-anchor="middle"
+      transform="rotate(-90 16 ${top+plotH/2})" class="sample-trend-axis">${esc(info.unit)}</text>
+    <path d="${linePath}" class="sample-trend-line"></path>
+    ${regressionPath}
+    ${marks}
+  </svg>`;
+}
+
+function renderSampleTrend(){
+  const status=document.getElementById("sampleTrendStatus");
+  const evidence=document.getElementById("sampleTrendEvidence");
+  if(!status || !evidence) return;
+
+  const site=document.getElementById("sampleTrendSiteSelect")?.value || currentFocusedSite || "all";
+  const points=sampleTrendPoints(site,currentSampleTrendMetric);
+  const analysis=sampleTrendAnalysis(points,currentSampleTrendMetric);
+  const info=sampleTrendMetricInfo(currentSampleTrendMetric);
+
+  const first=points[0]||null;
+  const latest=points[points.length-1]||null;
+  const firstValue=first?.value;
+  const latestValue=latest?.value;
+  let changeText="—";
+
+  if(Number.isFinite(firstValue) && Number.isFinite(latestValue)){
+    const delta=latestValue-firstValue;
+    const sign=delta>0?"+":"";
+    changeText=`${sign}${delta.toFixed(info.decimals)} ${info.unit}`;
+    if(firstValue!==0){
+      const pct=(delta/Math.abs(firstValue))*100;
+      changeText+=` (${pct>0?"+":""}${pct.toFixed(1)}%)`;
+    }
+  }
+
+  const dateRange=points.length
+    ? `${sampleTrendFormatDate(first.timestamp)} to ${sampleTrendFormatDate(latest.timestamp)}`
+    : "No usable sample dates";
+
+  status.innerHTML=`
+    <div class="sample-trend-status-kicker">${esc(info.label)} trend</div>
+    <div class="sample-trend-status-main ${analysis.cls}">
+      <span aria-hidden="true">${analysis.symbol}</span>
+      <span>${esc(analysis.label)}</span>
+    </div>
+    <div class="sample-trend-status-detail">${esc(analysis.detail)}</div>
+    <div class="sample-trend-status-detail" style="margin-top:5px;">${esc(dateRange)}</div>
+  `;
+
+  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric);
+  evidence.innerHTML=`
+    <div class="sample-trend-card" tabindex="0">
+      <small>First result</small>
+      <strong>${esc(sampleTrendFormatValue(firstValue,currentSampleTrendMetric))}</strong>
+      <span>${esc(first ? sampleTrendFormatDate(first.timestamp) : "—")}</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Latest result</small>
+      <strong>${esc(sampleTrendFormatValue(latestValue,currentSampleTrendMetric))}</strong>
+      <span>${esc(latest ? sampleTrendFormatDate(latest.timestamp) : "—")}</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Overall change</small>
+      <strong>${esc(changeText)}</strong>
+      <span>First to latest recorded result</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Recent direction</small>
+      <strong>${esc(recent)}</strong>
+      <span>${esc(analysis.evidence)}</span>
+    </div>
+  `;
+
+  renderSampleTrendChart(points,currentSampleTrendMetric,analysis);
+}
+
+function setSampleTrendMetric(metric){
+  currentSampleTrendMetric=metric;
+
+  const buttons={
+    nitrate:document.getElementById("sampleTrendNitrate"),
+    phosphate:document.getElementById("sampleTrendPhosphate"),
+    turbidity:document.getElementById("sampleTrendTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([key,button])=>{
+    if(!button) return;
+    const active=key===metric;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderSampleTrend();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+function applySampleTrendSiteFocus(site){
+  currentFocusedSite=canonicalSiteForSync(site||"all");
+  syncSnapshotSiteUI();
+  syncChangeSummarySiteUI();
+  syncSeasonalSiteUI();
+  syncSampleTrendSiteUI();
+
+  try{
+    localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({type:"site-focus",site:currentFocusedSite});
+  }
+
+  if(typeof renderSnapshot==="function") renderSnapshot();
+  if(typeof renderChangeSummary==="function") renderChangeSummary();
+  if(typeof renderSeasonalPattern==="function") renderSeasonalPattern();
+  renderSampleTrend();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+
 let currentTrendMetric="nitrate";
 
 function projectTrendPoints(metric){
@@ -2877,6 +3931,103 @@ const siteSyncChannel=("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
   : null;
 
+function canonicalSiteForSync(site){
+  if(!site || site==="all") return "all";
+  const target=normaliseSiteForMatch(site);
+  const source=freshwaterDataForChanges.length ? freshwaterDataForChanges : freshwaterDataAll;
+  const match=source.find(row=>normaliseSiteForMatch(siteName(row))===target);
+  return match ? canonicalSiteDisplay(siteName(match)) : canonicalSiteDisplay(site);
+}
+
+function syncAllSiteDropdowns(){
+  const ids=["snapshotSiteSelect","changeSummarySiteSelect","seasonalSiteSelect"];
+  ids.forEach(id=>{
+    const select=document.getElementById(id);
+    if(!select) return;
+    if(currentFocusedSite==="all"){
+      select.value="all";
+      return;
+    }
+    const match=[...select.options].find(
+      option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
+    );
+    if(match) select.value=match.value;
+  });
+}
+
+
+function canonicalSiteKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function canonicalSiteDisplay(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
+}
+
+function uniqueSitesFromRows(rows, siteGetter){
+  const seen = new Map();
+
+  rows.forEach(row=>{
+    const raw = siteGetter(row);
+    if(!raw) return;
+
+    const key = canonicalSiteKey(raw);
+    if(!key) return;
+
+    if(!seen.has(key)){
+      seen.set(key, {
+        key,
+        full: String(raw).trim(),
+        display: canonicalSiteDisplay(raw)
+      });
+    }
+  });
+
+  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
+}
+
+
+function dedupeSiteDropdown(select){
+  if(!select) return;
+
+  const options=[...select.options];
+  const seen=new Set();
+
+  options.forEach(option=>{
+    if(option.value==="all") return;
+
+    const key=canonicalSiteKey(option.value || option.textContent);
+    if(!key || seen.has(key)){
+      option.remove();
+      return;
+    }
+
+    seen.add(key);
+
+    /* Keep the existing value used by the synchronisation code, but make
+       the visible label consistent by removing the canal prefix. */
+    const countMatch=option.textContent.match(/\s+\(\d+\s+samples?\)\s*$/i);
+    const suffix=countMatch ? countMatch[0] : "";
+    option.textContent=canonicalSiteDisplay(option.value || option.textContent)+suffix;
+  });
+}
+
+function dedupeAllSiteDropdowns(){
+  document.querySelectorAll("select").forEach(select=>{
+    const siteOptions=[...select.options].filter(o=>o.value!=="all");
+    if(siteOptions.some(o=>canonicalSiteKey(o.value || o.textContent))){
+      dedupeSiteDropdown(select);
+    }
+  });
+}
+
 function filterFreshwaterForSite(data,site){
   if(!site || site==="all") return data;
   const target=normaliseSiteForMatch(site);
@@ -2932,7 +4083,7 @@ function renderSampleAnalysisForFocusedSite(){
       renderSiteChangeCharts();
     }else{
       const matching=[...select.options].find(
-        o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+        o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
       );
       if(matching){
         select.value=matching.value;
@@ -2945,15 +4096,17 @@ function renderSampleAnalysisForFocusedSite(){
 }
 
 function setFocusedSite(site){
-  currentFocusedSite=site||"all";
+  currentFocusedSite=canonicalSiteForSync(site||"all");
 
   if(typeof renderSampleAnalysisForFocusedSite==="function"){
     renderSampleAnalysisForFocusedSite();
   }
 
+  syncAllSiteDropdowns();
   syncSeasonalSiteUI();
   syncSnapshotSiteUI();
   syncChangeSummarySiteUI();
+  syncSampleTrendSiteUI();
 
   if(typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
@@ -2965,6 +4118,10 @@ function setFocusedSite(site){
 
   if(typeof renderChangeSummary==="function"){
     renderChangeSummary();
+  }
+
+  if(typeof renderSampleTrend==="function"){
+    renderSampleTrend();
   }
 }
 
@@ -3014,7 +4171,11 @@ function sampleDateLabel(row){
 }
 
 function siteName(row){
-  return getField(row,"Site Name","site_name") || "Unnamed site";
+  const raw=getField(row,"Site Name","site_name") || "Unnamed site";
+  return String(raw)
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .replace(/\s+/g," ");
 }
 
 function midpointFromRange(raw){
@@ -3052,7 +4213,7 @@ function comparisonMetricValue(row,metric){
 function siteSurveyResults(site,metric){
   const rows = (!site || site==="all")
     ? freshwaterDataForChanges
-    : freshwaterDataForChanges.filter(r=>normaliseSiteForMatch(siteName(r))===normaliseSiteForMatch(site));
+    : freshwaterDataForChanges.filter(r=>siteName(r)===site);
 
   return rows
     .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
@@ -3170,16 +4331,17 @@ function initialiseSiteChanges(){
   const select=document.getElementById("changeSiteSelect");
   if(!select) return;
 
-  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
+  const sites=[...new Set(freshwaterDataForChanges.map(siteName))].sort((a,b)=>a.localeCompare(b));
   select.innerHTML=
     `<option value="all">All sites</option>` +
     sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
 
+  dedupeSiteDropdown(select);
   select.value=currentFocusedSite==="all" ? "all" : currentFocusedSite;
 
   if(select.value!==currentFocusedSite && currentFocusedSite!=="all"){
     const matching=[...select.options].find(
-      o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentFocusedSite)
+      o=>canonicalSiteKey(o.value)===canonicalSiteKey(currentFocusedSite)
     );
     if(matching) select.value=matching.value;
   }
@@ -3362,7 +4524,7 @@ function snapshotCard(metric,title,valueText,note,status){
     statusHtml=`<span class="snapshot-card-status" style="background:${style.background};color:${style.colour}">${esc(status.label)}</span>`;
   }
 
-  return `<article class="snapshot-card" style="--snapshot-colour:${colour}">
+  return `<article class="snapshot-card" data-indicator="${esc(metric)}" style="--snapshot-colour:${colour}">
     <div class="snapshot-card-title">${esc(title)}</div>
     <div class="snapshot-card-value">${esc(valueText)}</div>
     ${note ? `<div class="snapshot-card-note">${esc(note)}</div>` : ""}
@@ -3374,11 +4536,11 @@ function populateSnapshotSiteSelect(){
   const select=document.getElementById("snapshotSiteSelect");
   if(!select) return;
 
-  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncSnapshotSiteUI();
 }
@@ -3393,13 +4555,13 @@ function syncSnapshotSiteUI(){
   }
 
   const match=[...select.options].find(
-    option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+    option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
   );
   if(match) select.value=match.value;
 }
 
 function applySnapshotSiteFocus(site){
-  currentFocusedSite=site || "all";
+  currentFocusedSite=canonicalSiteForSync(site || "all");
   syncSnapshotSiteUI();
   syncSeasonalSiteUI();
 
@@ -3447,6 +4609,35 @@ async function loadSnapshotAdditionalData(){
   setTimeout(notifyParentOfHeight,40);
 }
 
+function watchReason(key,value){
+  if(!Number.isFinite(value)) return null;
+  if(key==="nitrate" && value>5) return "Nitrate is in the higher range and is worth monitoring.";
+  if(key==="phosphate" && value>0.5) return "Phosphate is in the higher range and is worth monitoring.";
+  if(key==="turbidity"){if(value>40)return "Turbidity is high, indicating reduced water clarity.";if(value>=14)return "Turbidity is moderately elevated and should continue to be monitored.";}
+  if(key==="ph"){const a=snapshotPHAssessment(value);if(a&&a.kind==="poor")return "pH is outside the preferred range.";}
+  if(key==="do"){const a=snapshotDOAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Dissolved Oxygen (DO) is below the more favourable range.";}
+  if(key==="bod"){const a=snapshotBODAssessment(value);if(a&&(a.kind==="poor"||a.kind==="fair"))return "Biochemical Oxygen Demand (BOD) is elevated and is worth monitoring.";}
+  if(key==="coliform" && value>=20) return "Coliform is above the upper limit of the test.";
+  return null;
+}
+
+function watchLabel(key){return ({nitrate:"Nitrate",phosphate:"Phosphate",turbidity:"Turbidity",temperature:"Temperature",ph:"pH",do:"Dissolved Oxygen (DO)",bod:"Biochemical Oxygen Demand (BOD)",coliform:"Coliform"})[key]||key;}
+
+function watchValue(key,v){
+  if(key==="nitrate")return `${v.toFixed(2)} mg/L`;if(key==="phosphate")return `${v.toFixed(3)} mg/L`;if(key==="turbidity")return `${v.toFixed(0)} NTU`;if(key==="temperature")return `${v.toFixed(1)} °C`;if(key==="ph")return v.toFixed(1);if(key==="do"||key==="bod")return `${v.toFixed(1)} ppm`;if(key==="coliform")return v>=20?"> 20 coliforms/100ml":`${v.toFixed(0)} coliforms/100ml`;return String(v);
+}
+
+function setWatchHighlight(key,on){document.querySelectorAll(`.snapshot-card[data-indicator="${key}"]`).forEach(card=>card.classList.toggle("watch-highlight",on));}
+
+function renderResultsWatch(values){
+  const grid=document.getElementById("resultsWatchGrid"),count=document.getElementById("resultsWatchCount");if(!grid||!count)return;
+  const items=Object.entries(values).map(([key,value])=>({key,value,reason:watchReason(key,value)})).filter(x=>x.reason);
+  count.textContent=`${items.length} indicator${items.length===1?"":"s"}`;
+  if(!items.length){grid.innerHTML='<div class="results-watch-clear">✓ No results currently require particular attention.</div>';return;}
+  grid.innerHTML=items.map(x=>`<div class="results-watch-item" tabindex="0" data-watch-indicator="${esc(x.key)}" style="--watch-colour:${snapshotIndicatorColour(x.key)}"><div class="results-watch-row"><div class="results-watch-name">${esc(watchLabel(x.key))}</div><div class="results-watch-value">${esc(watchValue(x.key,x.value))}</div></div><div class="results-watch-reason">${esc(x.reason)}</div></div>`).join("");
+  grid.querySelectorAll(".results-watch-item").forEach(item=>{const key=item.dataset.watchIndicator;item.addEventListener("mouseenter",()=>setWatchHighlight(key,true));item.addEventListener("mouseleave",()=>setWatchHighlight(key,false));item.addEventListener("focus",()=>setWatchHighlight(key,true));item.addEventListener("blur",()=>setWatchHighlight(key,false));});
+}
+
 function renderSnapshot(){
   const grid=document.getElementById("snapshotGrid");
   const summary=document.getElementById("snapshotSummary");
@@ -3468,7 +4659,7 @@ function renderSnapshot(){
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
 
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
-  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
+  const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","pH"])));
   const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
     "Dissolved Oxygen PPM",
     "Dissolved Oxygen ppm",
@@ -3520,9 +4711,26 @@ function renderSnapshot(){
   }
 
   if(Number.isFinite(dissolvedOxygen)){
+    /*
+     * Dissolved oxygen saturation depends on water temperature.
+     * Use the temperature from the same snapshot scope to convert the
+     * measured DO concentration to an approximate saturation percentage.
+     */
+    const doSaturation=Number.isFinite(temperature)
+      ? dissolvedOxygenPercentSaturation(dissolvedOxygen,temperature)
+      : null;
+
+    const doValue=Number.isFinite(doSaturation)
+      ? `${Math.round(doSaturation)}% saturation`
+      : `${dissolvedOxygen.toFixed(1)} ppm`;
+
+    const doNote=Number.isFinite(doSaturation)
+      ? `${dissolvedOxygen.toFixed(1)} ppm at ${temperature.toFixed(1)} °C`
+      : (currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result");
+
     cards.push(snapshotCard(
-      "do","Dissolved Oxygen (DO)",`${dissolvedOxygen.toFixed(1)} ppm`,
-      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result",
+      "do","Dissolved Oxygen (DO)",doValue,
+      doNote,
       snapshotDOAssessment(dissolvedOxygen)
     ));
   }
@@ -3536,31 +4744,28 @@ function renderSnapshot(){
   }
 
   if(Number.isFinite(coliform)){
-    const scopedColiformHistory = currentFocusedSite==="all"
-      ? []
-      : filterAdditionalForSite(snapshotAdditionalData,currentFocusedSite)
-          .map(r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]))
-          .filter(Number.isFinite);
-    const repeatedPositive = scopedColiformHistory.filter(v=>v>=20).length>=2;
-
-    const coliformStatus = coliform===0
-      ? {label:"Good — screening negative",kind:"good"}
-      : coliform>=20
-        ? (repeatedPositive
-            ? {label:"Very Poor — persistent elevated coliform",kind:"poor"}
-            : {label:"Poor — elevated coliform",kind:"poor"})
-        : {label:"Fair — follow-up recommended",kind:"fair"};
-
     cards.push(snapshotCard(
-      "coliform","Coliform",coliform>=20 ? "> 20 coliforms/100 mL" : `${coliform.toFixed(0)} coliforms/100 mL`,
-      repeatedPositive && coliform>=20 ? "Repeated positive LaMotte screening results" : "48-hour LaMotte screening result",
-      coliformStatus
+      "coliform","Coliform",coliform>=20 ? "> 20 coliform/100ml" : `${coliform.toFixed(0)} coliform/100ml`,
+      "48-hour result",
+      coliform===0
+        ? {label:"None detected",kind:"good"}
+        : {label:"Detected",kind:"fair"}
     ));
   }
 
   grid.innerHTML=cards.length
     ? cards.join("")
     : '<div class="snapshot-empty">No usable measurements are available for this view.</div>';
+  renderResultsWatch({
+    nitrate,
+    phosphate,
+    turbidity,
+    temperature,
+    ph,
+    do:dissolvedOxygen,
+    bod,
+    coliform
+  });
 
   const scope=currentFocusedSite==="all"
     ? "all monitoring sites"
@@ -3592,15 +4797,12 @@ function renderSnapshot(){
     if(da) narrative+=` Dissolved oxygen is assessed as ${da.label.toLowerCase()}.`;
   }
 
-  if(Number.isFinite(coliform)){
-    if(coliform>=20){
-      narrative+=` Coliform screening is elevated (>20/100 mL); repeat testing and source investigation are recommended.`;
-    }else if(coliform===0){
-      narrative+=` Coliform screening is negative at the LaMotte kit threshold.`;
-    }
-  }
-
   summary.textContent=narrative;
+
+  const snapshotTakeaway=document.getElementById("snapshotTakeawayText");
+  if(snapshotTakeaway){
+    snapshotTakeaway.textContent=narrative;
+  }
 
   const fwLatest=fwRows.length
     ? Math.max(...fwRows.map(sampleDateValue).filter(Boolean))
@@ -3689,7 +4891,7 @@ function consistencyTypicalDescription(metric,label){
     if(label==="High turbidity") return "The site's average turbidity is above 40 NTU.";
   }
 
-  return "Typical level is based on the site's average result across its usable samples.";
+  return "Typical level is based on the site's average result across its usable results for this indicator.";
 }
 
 function collectSiteConsistency(metric){
@@ -3734,6 +4936,8 @@ function renderSiteConsistency(){
     holder.innerHTML='<div class="site-comparison-empty">No site consistency data are available for this indicator yet.</div>';
     mostConsistent.textContent="—";
     mostVariable.textContent="—";
+    const takeaway=document.getElementById("siteConsistencyTakeawayText");
+    if(takeaway) takeaway.textContent="More repeated results are needed before consistency can be compared.";
     return;
   }
 
@@ -3746,7 +4950,7 @@ function renderSiteConsistency(){
       <thead>
         <tr>
           <th>Site</th>
-          <th>Samples</th>
+          <th>Results used</th>
           <th>Consistency</th>
           <th>Typical level</th>
           <th>Range</th>
@@ -3787,6 +4991,20 @@ function renderSiteConsistency(){
   }else{
     mostConsistent.textContent="More repeated samples needed";
     mostVariable.textContent="More repeated samples needed";
+  }
+
+  const consistencyTakeaway=document.getElementById("siteConsistencyTakeawayText");
+  if(consistencyTakeaway){
+    if(valid.length){
+      const ordered=[...valid].sort((a,b)=>a.cv-b.cv);
+      const stable=ordered[0];
+      const variable=ordered[ordered.length-1];
+      const label=consistencyMetricInfo(currentConsistencyMetric).label;
+      consistencyTakeaway.textContent=
+        `${label}: ${stable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} has the most stable repeated results, while ${variable.site.replace(/^Grand Union Canal\s*-\s*/i,"")} shows the greatest variation.`;
+    }else{
+      consistencyTakeaway.textContent="More repeated results are needed before consistency can be compared.";
+    }
   }
 }
 
@@ -3881,7 +5099,7 @@ function changeIndicatorInfo(key){
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
     bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
-    coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
+    coliform:{label:"Coliform",unit:"coliform/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
   return info[key];
 }
@@ -3892,8 +5110,8 @@ function changeFormatValue(key,value){
 
   if(key==="coliform"){
     return value>=20
-      ? "> 20 coliforms/100ml"
-      : `${value.toFixed(0)} coliforms/100ml`;
+      ? "> 20 coliform/100ml"
+      : `${value.toFixed(0)} coliform/100ml`;
   }
 
   return `${value.toFixed(info.decimals)}${info.unit ? " "+info.unit : ""}`;
@@ -3908,8 +5126,20 @@ function changeRankPH(value){
 }
 
 function changeClassification(key,current,previous){
-  if(!Number.isFinite(current) || !Number.isFinite(previous)){
+  /*
+   * Distinguish which side of the comparison is actually missing.
+   * This status text appears on the result card itself.
+   */
+  if(!Number.isFinite(current) && Number.isFinite(previous)){
+    return {label:"Current survey unavailable",cls:"neutral",symbol:"—"};
+  }
+
+  if(Number.isFinite(current) && !Number.isFinite(previous)){
     return {label:"Previous survey unavailable",cls:"neutral",symbol:"—"};
+  }
+
+  if(!Number.isFinite(current) && !Number.isFinite(previous)){
+    return {label:"Current survey unavailable",cls:"neutral",symbol:"—"};
   }
 
   const info=changeIndicatorInfo(key);
@@ -3977,6 +5207,58 @@ function changeDeltaText(key,current,previous){
   return text;
 }
 
+function changeDOCard(current,previous,currentTemp,previousTemp,currentDate,previousDate,note){
+  const status=changeClassification("do",current,previous);
+  const colour=snapshotIndicatorColour("do");
+
+  const currentSat=Number.isFinite(current) && Number.isFinite(currentTemp)
+    ? dissolvedOxygenPercentSaturation(current,currentTemp) : null;
+  const previousSat=Number.isFinite(previous) && Number.isFinite(previousTemp)
+    ? dissolvedOxygenPercentSaturation(previous,previousTemp) : null;
+
+  const previousValue=Number.isFinite(previousSat)
+    ? `${Math.round(previousSat)}% saturation` : changeFormatValue("do",previous);
+  const currentValue=Number.isFinite(currentSat)
+    ? `${Math.round(currentSat)}% saturation` : changeFormatValue("do",current);
+
+  const previousDetail=Number.isFinite(previous) && Number.isFinite(previousTemp)
+    ? `${previous.toFixed(1)} ppm at ${previousTemp.toFixed(1)} °C` : "";
+  const currentDetail=Number.isFinite(current) && Number.isFinite(currentTemp)
+    ? `${current.toFixed(1)} ppm at ${currentTemp.toFixed(1)} °C` : "";
+
+  let deltaHtml="";
+  if(Number.isFinite(currentSat) && Number.isFinite(previousSat)){
+    const delta=currentSat-previousSat;
+    deltaHtml=`<div class="change-summary-delta">Change: <strong>${delta>0?"+":""}${Math.round(delta)} percentage points</strong></div>`;
+  }else if(Number.isFinite(current) && Number.isFinite(previous)){
+    deltaHtml=`<div class="change-summary-delta">Change: <strong>${esc(changeDeltaText("do",current,previous))}</strong></div>`;
+  }
+
+  return `<article class="change-summary-card" style="--change-indicator:${colour}">
+    <div class="change-summary-name">Dissolved Oxygen (DO)</div>
+    <div class="change-summary-values">
+      <div class="change-summary-value">
+        <small>Previous</small>
+        <strong>${esc(previousValue)}</strong>
+        ${previousDetail ? `<small>${esc(previousDetail)}</small>` : ""}
+      </div>
+      <div class="change-summary-arrow">→</div>
+      <div class="change-summary-value">
+        <small>Current</small>
+        <strong>${esc(currentValue)}</strong>
+        ${currentDetail ? `<small>${esc(currentDetail)}</small>` : ""}
+      </div>
+    </div>
+    ${deltaHtml}
+    <span class="change-summary-status ${status.cls}">${status.symbol} ${esc(status.label)}</span>
+    <div class="change-summary-note">
+      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous survey unavailable")}
+      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current survey unavailable")}
+      ${note ? ` · ${esc(note)}` : ""}
+    </div>
+  </article>`;
+}
+
 function changeCard(key,current,previous,currentDate,previousDate,note){
   const info=changeIndicatorInfo(key);
   const status=changeClassification(key,current,previous);
@@ -4008,8 +5290,8 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
     </span>
 
     <div class="change-summary-note">
-      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous date unavailable")}
-      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current date unavailable")}
+      ${esc(previousDate ? changeFormatDate(previousDate) : "Previous survey unavailable")}
+      → ${esc(currentDate ? changeFormatDate(currentDate) : "Current survey unavailable")}
       ${note ? ` · ${esc(note)}` : ""}
     </div>
   </article>`;
@@ -4019,11 +5301,11 @@ function populateChangeSummarySiteSelect(){
   const select=document.getElementById("changeSummarySiteSelect");
   if(!select) return;
 
-  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
-    sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
 
   syncChangeSummarySiteUI();
 }
@@ -4038,7 +5320,7 @@ function syncChangeSummarySiteUI(){
   }
 
   const match=[...select.options].find(
-    option=>normaliseSiteForMatch(option.value)===normaliseSiteForMatch(currentFocusedSite)
+    option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
   );
   if(match) select.value=match.value;
 }
@@ -4100,7 +5382,7 @@ function renderChangeSummary(){
     : '<div class="change-summary-empty">No FreshWater Watch comparison is available for this location yet.</div>';
 
   const tempGetter=r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"]);
-  const phGetter=r=>snapshotFirstNumber(r,["pH","PH"]);
+  const phGetter=r=>snapshotFirstNumber(r,["pH","pH"]);
   const doGetter=r=>snapshotFirstNumber(r,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
@@ -4123,13 +5405,28 @@ function renderChangeSummary(){
       add.previous ? changeAverageFromRows(add.previous.rows,coliformGetter) : null]
   ];
 
+  const latestTemperature=add.latest
+    ? changeAverageFromRows(add.latest.rows,tempGetter) : null;
+  const previousTemperature=add.previous
+    ? changeAverageFromRows(add.previous.rows,tempGetter) : null;
+
   addGrid.innerHTML=addItems.some(item=>Number.isFinite(item[1]) || Number.isFinite(item[2]))
-    ? addItems.map(item=>changeCard(
-        item[0],item[1],item[2],
-        add.latest?.timestamp||0,
-        add.previous?.timestamp||0,
-        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
-      )).join("")
+    ? addItems.map(item=>
+        item[0]==="do"
+          ? changeDOCard(
+              item[1],item[2],
+              latestTemperature,previousTemperature,
+              add.latest?.timestamp||0,
+              add.previous?.timestamp||0,
+              ""
+            )
+          : changeCard(
+              item[0],item[1],item[2],
+              add.latest?.timestamp||0,
+              add.previous?.timestamp||0,
+              item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
+            )
+      ).join("")
     : '<div class="change-summary-empty">A second additional water-quality survey is needed before change can be calculated.</div>';
 
   const dateParts=[];
@@ -4162,6 +5459,177 @@ function renderChangeSummary(){
   }
 }
 
+
+
+function samplingFrequencyMonthKey(ts){
+  const d=new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function samplingFrequencyMonthLabel(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"short",year:"2-digit"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyLongMonth(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyDateLabel(ts){
+  return new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric"}).format(new Date(ts));
+}
+function samplingFrequencyMonths(firstTs,lastTs){
+  if(!firstTs||!lastTs)return[];
+  const first=new Date(firstTs),last=new Date(lastTs);
+  let d=new Date(first.getFullYear(),first.getMonth(),1);
+  const end=new Date(last.getFullYear(),last.getMonth(),1),months=[];
+  while(d<=end){
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+    d=new Date(d.getFullYear(),d.getMonth()+1,1);
+  }
+  return months.length>12?months.slice(-12):months;
+}
+function renderSamplingFrequency(){
+  const chart=document.getElementById("samplingFrequencyHeatmap");
+  const summary=document.getElementById("samplingFrequencySummary");
+  if(!chart||!summary)return;
+
+  const visitMap=new Map();
+  freshwaterDataForChanges.forEach(row=>{
+    const site=siteName(row),ts=sampleDateValue(row);
+    if(!site||!ts)return;
+    const d=new Date(ts);
+    const dayKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const key=`${site}||${dayKey}`;
+    if(!visitMap.has(key)){
+      visitMap.set(key,{site,timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()});
+    }
+  });
+
+  const visits=[...visitMap.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  if(!visits.length){
+    chart.innerHTML='<div class="site-comparison-empty">No sampling dates are available yet.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const months=samplingFrequencyMonths(visits[0].timestamp,visits[visits.length-1].timestamp);
+  const monthSet=new Set(months);
+  const sites=[...new Set(visits.map(v=>v.site))].sort((a,b)=>a.localeCompare(b));
+  const grouped={};
+  sites.forEach(site=>{grouped[site]={};months.forEach(month=>grouped[site][month]=[])});
+
+  const siteIntervals={};
+  sites.forEach(site=>{
+    const siteVisits=visits
+      .filter(v=>v.site===site)
+      .sort((a,b)=>a.timestamp-b.timestamp);
+
+    siteIntervals[site]=new Map();
+
+    siteVisits.forEach((visit,index)=>{
+      const previous=index>0 ? siteVisits[index-1] : null;
+      const daysBetween=previous
+        ? Math.round((visit.timestamp-previous.timestamp)/(24*60*60*1000))
+        : null;
+
+      siteIntervals[site].set(visit.timestamp,daysBetween);
+    });
+  });
+
+  visits.forEach(v=>{
+    const month=samplingFrequencyMonthKey(v.timestamp);
+    if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
+  });
+
+  const columns=`150px repeat(${months.length},96px)`;
+  const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
+    months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
+
+  const rows=sites.map(site=>{
+    const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    return `<div class="sampling-frequency-site">${esc(shortSite)}</div>`+
+      months.map(month=>{
+        const dates=(grouped[site][month]||[]).sort((a,b)=>a-b),count=dates.length;
+        const cls=count===0?"":count===1?" frequency-1":count===2?" frequency-2":count===3?" frequency-3":" frequency-4plus";
+        const dateText=count?dates.map(samplingFrequencyDateLabel).join(", "):`No recorded visit in ${samplingFrequencyLongMonth(month)}`;
+
+        const visibleDates=count
+          ? dates.map(ts=>{
+              const shortDate=new Intl.DateTimeFormat("en-GB",{
+                day:"numeric",
+                month:"short"
+              }).format(new Date(ts));
+              return `<span class="sampling-frequency-date-line">${esc(shortDate)}</span>`;
+            }).join("")
+          : '<span class="sampling-frequency-date-line">—</span>';
+
+        const aria=count
+          ? `${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`
+          : `${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
+
+        let intervalBadge="";
+        if(count){
+          const firstDate=dates[0];
+          const gap=siteIntervals[site]?.get(firstDate);
+          if(Number.isFinite(gap)){
+            intervalBadge=`<span class="sampling-frequency-between" title="${gap} ${gap===1?"day":"days"} since previous sample" aria-label="${gap} ${gap===1?"day":"days"} between samples">${gap}</span>`;
+          }
+        }
+
+        return `<div class="sampling-frequency-cell-wrap">
+          ${intervalBadge}
+          <div class="sampling-frequency-cell${count?" has-visits":""}${cls}"
+            data-site="${esc(site)}"
+            tabindex="0"
+            title="${esc(dateText)}"
+            aria-label="${esc(aria)}">${count||"—"}</div>
+          <div class="sampling-frequency-date-lines">${visibleDates}</div>
+        </div>`;
+      }).join("");
+  }).join("");
+
+  chart.innerHTML=`<div class="sampling-frequency-grid" style="grid-template-columns:${columns}">${headers}${rows}</div>`;
+
+  const visibleVisits=visits.filter(v=>monthSet.has(samplingFrequencyMonthKey(v.timestamp)));
+  const range=`${samplingFrequencyLongMonth(months[0])} – ${samplingFrequencyLongMonth(months[months.length-1])}`;
+  summary.innerHTML=`<strong>Monitoring coverage:</strong> ${sites.length} ${sites.length===1?"site":"sites"} · ${visibleVisits.length} ${visibleVisits.length===1?"sampling visit":"sampling visits"} · ${esc(range)}${visibleVisits.length!==visits.length?` · latest 12 months of ${visits.length} total visits`:""}`;
+
+  const lastVisits=document.getElementById("samplingFrequencyLastVisits");
+  if(lastVisits){
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+    const dayMs=24*60*60*1000;
+
+    lastVisits.innerHTML=sites.map(site=>{
+      const siteVisits=visits.filter(v=>v.site===site);
+      const latest=siteVisits[siteVisits.length-1];
+      const days=Math.max(0,Math.floor((today-latest.timestamp)/dayMs));
+      const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+      const daysText=days===0
+        ? "Sampled today"
+        : `${days} ${days===1?"day":"days"} since last sample`;
+
+      return `<div class="sampling-frequency-last-visit" data-site="${esc(site)}">
+        <strong>${esc(shortSite)}</strong>
+        <span>${esc(daysText)}</span>
+        <span class="sampling-frequency-last-date">Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
+      </div>`;
+    }).join("");
+
+    const setLinkedLastSampleHighlight=(site,active)=>{
+      lastVisits.querySelectorAll(".sampling-frequency-last-visit").forEach(card=>{
+        const match=card.dataset.site===site;
+        if(match) card.classList.toggle("linked-highlight",active);
+      });
+    };
+
+    chart.querySelectorAll(".sampling-frequency-cell[data-site]").forEach(cell=>{
+      cell.addEventListener("mouseenter",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("mouseleave",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+      cell.addEventListener("focus",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("blur",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+    });
+  }
+}
 
 let currentComparisonMetric="nitrate";
 
@@ -4230,26 +5698,72 @@ function comparisonDisplay(metric,result){
   };
 }
 
+
+function overallSiteMetricScore(row,metric){
+  if(metric==="nitrate"||metric==="phosphate"){
+    const raw=metric==="nitrate"?getNitrate(row):getPhosphate(row);
+    const nums=(String(normaliseRange(raw)).match(/\d+(?:\.\d+)?/g)||[]).map(Number);
+    const v=nums.length>=2?(nums[0]+nums[1])/2:(nums[0]??NaN);
+    if(!Number.isFinite(v))return null;
+    if(metric==="nitrate"){if(v<=0.5)return 5;if(v<=1.5)return 4;if(v<=3.5)return 3;if(v<=7.5)return 2;return 1}
+    if(v<=0.025)return 5;if(v<=0.075)return 4;if(v<=0.15)return 3;if(v<=0.3)return 2;return 1
+  }
+  const v=comparisonMetricValue(row,"turbidity");
+  if(!Number.isFinite(v))return null;
+  if(v<=4)return 5;if(v<=8)return 4;if(v<=12)return 3;if(v<=20)return 2;return 1
+}
+function overallSiteRating(s){if(s>=4.5)return"Excellent";if(s>=3.5)return"Good";if(s>=2.5)return"Fair";if(s>=1.5)return"Poor";return"Very Poor"}
+function renderOverallSiteComparisonSummary(){
+  const target=document.getElementById("overallSiteComparisonSummary");if(!target||!freshwaterDataForChanges.length)return;
+  const groups={};freshwaterDataForChanges.forEach(r=>{const s=siteName(r);if(s)(groups[s]||=[]).push(r)});
+  const items=Object.entries(groups).map(([site,rows])=>{
+    const scores=[];rows.forEach(r=>["nitrate","phosphate","turbidity"].forEach(m=>{const v=overallSiteMetricScore(r,m);if(Number.isFinite(v))scores.push(v)}));
+    const score=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:NaN;
+    return{site,count:rows.length,score,rating:Number.isFinite(score)?overallSiteRating(score):"No data"};
+  }).filter(x=>Number.isFinite(x.score)).sort((a,b)=>b.score-a.score||b.count-a.count||a.site.localeCompare(b.site));
+  if(!items.length){target.innerHTML="";return}
+  const best=items[0],watch=items.length>1?items[items.length-1]:null;
+  target.innerHTML=`<div class="overall-site-summary-card"><div class="overall-site-summary-heading">Overall site comparison</div>
+  <div class="overall-site-summary-sub">Based on the available nitrate, phosphate and turbidity results across the monitoring period.</div>
+  ${items.map(x=>{const b=x.site===best.site,w=watch&&x.site===watch.site&&!b;const name=x.site.replace(/^Grand Union Canal\s*-\s*/i,"");const tag=b?'<span class="overall-site-summary-tag">Strongest overall results</span>':w?'<span class="overall-site-summary-tag">Results to watch</span>':"";return`<div class="overall-site-summary-row${b?" strongest":w?" watch":""}"><div class="overall-site-summary-site">${esc(name)}${tag}</div><div class="overall-site-summary-rating">${esc(x.rating)}</div><div class="overall-site-summary-count">${x.count} ${x.count===1?"sample":"samples"}</div></div>`}).join("")}
+  <div class="overall-site-summary-note">This is a relative comparison of the monitored sites using the available FreshWater Watch results, not a formal water-quality classification.</div></div>`;
+}
+
 function renderSiteComparison(){
   const chart=document.getElementById("siteComparisonChart");
   if(!chart || !freshwaterDataForChanges.length) return;
 
-  const groups={};
+  /* Group by canonical site name, not the raw CSV label or GPS position.
+     This prevents prefixed/unprefixed or whitespace/case variants from
+     appearing as duplicate monitoring sites. */
+  const groups=new Map();
+
   freshwaterDataForChanges.forEach(row=>{
-    const site=siteName(row);
-    (groups[site] ||= []).push(row);
+    const rawSite=siteName(row);
+    const key=canonicalSiteKey(rawSite);
+    if(!key) return;
+
+    if(!groups.has(key)){
+      groups.set(key,{
+        site:canonicalSiteDisplay(rawSite),
+        rows:[]
+      });
+    }
+    groups.get(key).rows.push(row);
   });
 
-  const results=Object.entries(groups)
-    .map(([site,rows])=>({
-      site,
-      result:latestMetricResultForSite(rows,currentComparisonMetric)
+  const results=[...groups.values()]
+    .map(group=>({
+      site:group.site,
+      result:latestMetricResultForSite(group.rows,currentComparisonMetric)
     }))
     .filter(item=>item.result)
     .sort((a,b)=>a.result.value-b.result.value);
 
   if(!results.length){
     chart.innerHTML='<div class="site-comparison-empty">No results available for this comparison.</div>';
+    const takeaway=document.getElementById("siteComparisonTakeawayText");
+    if(takeaway) takeaway.textContent="No comparison can be made until usable results are available.";
     return;
   }
 
@@ -4273,6 +5787,18 @@ function renderSiteComparison(){
       </div>
     </div>`;
   }).join("");
+
+  const comparisonTakeaway=document.getElementById("siteComparisonTakeawayText");
+  if(comparisonTakeaway){
+    const lowest=results[0];
+    const highest=results[results.length-1];
+    const label=consistencyMetricInfo(currentComparisonMetric).label;
+    const lowSite=lowest.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    const highSite=highest.site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    comparisonTakeaway.textContent=results.length===1
+      ? `${label}: only one site currently has a usable result.`
+      : `${label}: ${lowSite} has the lowest latest result and ${highSite} has the highest latest result among the sites in view.`;
+  }
 }
 
 function setComparisonMetric(metric){
@@ -4313,11 +5839,15 @@ async function load(){
     renderChangeSummary();
 
     renderSiteComparison();
+  renderOverallSiteComparisonSummary();
     renderSiteConsistency();
+    populateSampleTrendSiteSelect();
+    renderSampleTrend();
     renderProjectTrend();
     populateSeasonalSiteSelect();
     renderSeasonalPattern();
     renderRelationship();
+    renderSamplingFrequency();
 
     /*
      * Additional water-quality results are loaded separately because
@@ -4451,6 +5981,11 @@ document.getElementById("consistencyNitrate").addEventListener("click",()=>setCo
 document.getElementById("consistencyPhosphate").addEventListener("click",()=>setConsistencyMetric("phosphate"));
 document.getElementById("consistencyTurbidity").addEventListener("click",()=>setConsistencyMetric("turbidity"));
 
+document.getElementById("sampleTrendNitrate").addEventListener("click",()=>setSampleTrendMetric("nitrate"));
+document.getElementById("sampleTrendPhosphate").addEventListener("click",()=>setSampleTrendMetric("phosphate"));
+document.getElementById("sampleTrendTurbidity").addEventListener("click",()=>setSampleTrendMetric("turbidity"));
+document.getElementById("sampleTrendSiteSelect").addEventListener("change",event=>applySampleTrendSiteFocus(event.target.value));
+
 document.getElementById("compareNitrate").addEventListener("click",()=>setComparisonMetric("nitrate"));
 document.getElementById("comparePhosphate").addEventListener("click",()=>setComparisonMetric("phosphate"));
 document.getElementById("compareTurbidity").addEventListener("click",()=>setComparisonMetric("turbidity"));
@@ -4478,6 +6013,11 @@ const furtherPanels = [
     icon:document.getElementById("siteConsistencyIcon")
   },
   {
+    button:document.getElementById("sampleTrendToggle"),
+    content:document.getElementById("sampleTrendContent"),
+    icon:document.getElementById("sampleTrendIcon")
+  },
+  {
     button:document.getElementById("projectTrendsToggle"),
     content:document.getElementById("projectTrendsContent"),
     icon:document.getElementById("projectTrendsIcon")
@@ -4491,6 +6031,11 @@ const furtherPanels = [
     button:document.getElementById("relationshipToggle"),
     content:document.getElementById("relationshipContent"),
     icon:document.getElementById("relationshipIcon")
+  },
+  {
+    button:document.getElementById("samplingFrequencyToggle"),
+    content:document.getElementById("samplingFrequencyContent"),
+    icon:document.getElementById("samplingFrequencyIcon")
   }
 ];
 
@@ -4518,16 +6063,24 @@ function setFurtherPanel(index,open){
     renderSiteConsistency();
   }
 
-  if(open && index===4 && typeof renderProjectTrend==="function"){
+  if(open && index===4 && typeof renderSampleTrend==="function"){
+    renderSampleTrend();
+  }
+
+  if(open && index===5 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===5 && typeof renderSeasonalPattern==="function"){
+  if(open && index===6 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===6 && typeof renderRelationship==="function"){
+  if(open && index===7 && typeof renderRelationship==="function"){
     renderRelationship();
+  }
+
+  if(open && index===8 && typeof renderSamplingFrequency==="function"){
+    renderSamplingFrequency();
   }
 
   if(typeof notifyParentOfHeight==="function"){
@@ -4576,6 +6129,11 @@ if(document.getElementById("compareNitrate")){
 }
 
 load();
+
+document.addEventListener("DOMContentLoaded",()=>{
+  setTimeout(dedupeAllSiteDropdowns,0);
+  setTimeout(dedupeAllSiteDropdowns,250);
+});
 </script>
 </body>
 </html>
