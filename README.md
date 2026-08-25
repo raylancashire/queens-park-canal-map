@@ -900,3 +900,11 @@ The **Overall Water Quality Snapshot** now treats LaMotte coliform results as th
 - In the All sites view, repeated-positive status is only triggered when at least one individual site has two or more positive screening results.
 
 This reflects the LaMotte test's threshold-screening purpose and avoids reporting persistent positive results as Fair.
+
+### Site Comparison and Site Consistency duplicate-site correction — 25 August 2026
+
+- Updated **Site Comparison** and **Site Consistency** to group FreshWater Watch records using the shared normalised site-name key.
+- Prefix variants such as `Grand Union Canal - Burket Close` and `Burket Close` are now treated as one monitoring site in these sections.
+- Apostrophe, dash and whitespace variations are normalised before grouping.
+- One clean display name is retained for each grouped site.
+- This brings Site Comparison and Site Consistency into line with the site dropdowns, Snapshot and other site-aware analysis controls.
