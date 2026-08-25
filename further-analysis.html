@@ -2134,11 +2134,28 @@ function renderAdditionalSeries(containerId,data,column,unit){
     return;
   }
 
-  const max=Math.max(...points.map(p=>p.value),1);
+  // LaMotte coliform is a threshold screening test. Values at or above
+  // the positive threshold are displayed as the same >20 outcome rather
+  // than as different quantitative concentrations.
+  const chartValue=p=>column==="Coliform" && p.value>=20 ? 20 : p.value;
+  const max=Math.max(...points.map(chartValue),1);
   el.innerHTML=`<div class="series-chart">`+
-    points.map(p=>{
-      const height=Math.max(3,(p.value/max)*100);
-      const assessment=additionalAssessment(column,p.value);
+    points.map((p,index)=>{
+      const plottedValue=chartValue(p);
+      const height=Math.max(3,(plottedValue/max)*100);
+      let assessment=additionalAssessment(column,p.value);
+
+      if(column==="Coliform" && p.value>=20){
+        const siteKey=siteKeyForFocus(p.location||"");
+        const positiveNumber=points.slice(0,index+1).filter(prev=>{
+          if(prev.value<20) return false;
+          if(!siteKey) return true;
+          return siteKeyForFocus(prev.location||"")===siteKey;
+        }).length;
+        assessment=positiveNumber>=2
+          ? {label:"Very Poor — repeated positive >20 coliforms/100 mL",colour:"#C00000",text:"#ffffff",symbol:"●"}
+          : {label:"Poor — positive >20 coliforms/100 mL",colour:"#F4B183",text:"#4a2b16",symbol:"■"};
+      }
       let kit=null;
       let phNatureText="";
       if(column==="pH"){
@@ -2158,8 +2175,9 @@ function renderAdditionalSeries(containerId,data,column,unit){
           saturationText=`<br><span style="font-weight:700">${Math.round(saturation)}% saturation</span>`;
         }
       }
+      const displayedValue=column==="Coliform" && p.value>=20 ? "&gt;20" : esc(p.value);
       return `<div class="series-row">
-        <div class="series-value">${esc(p.value)}${esc(unitText)}</div>
+        <div class="series-value">${displayedValue}${esc(unitText)}</div>
         <div class="series-track"><div class="series-fill" style="${barStyle}"></div></div>
         <div class="series-label">${esc(p.label)}${p.location ? `<br>${esc(p.location)}` : ""}${phNatureText}${saturationText}${assessmentText}</div>
       </div>`;
