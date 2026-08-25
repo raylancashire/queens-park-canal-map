@@ -2798,7 +2798,7 @@ function renderAdditionalSeries(containerId,data,column,unit){
 
     if(column==="Coliform"){
       const kit=coliformTestKit(p.value);
-      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${esc(p.value)} total coliform colonies / 100 mL</strong></span>`;
+      extraHtml=`<span style="margin-top:8px"><strong style="font-size:20px;margin:6px 0 0">${Number(p.value)>=20 ? "&gt; 20 coliforms/100ml" : esc(p.value)+" coliforms/100ml"}</strong></span>`;
       if(kit){
         extraHtml+=`<span class="result-assessment" style="background:${kit.colour};color:${kit.text}">
           ● Test-kit result: ${esc(kit.reading)}
@@ -4745,7 +4745,7 @@ function renderSnapshot(){
 
   if(Number.isFinite(coliform)){
     cards.push(snapshotCard(
-      "coliform","Coliform",coliform>=20 ? "> 20 coliform/100ml" : `${coliform.toFixed(0)} coliform/100ml`,
+      "coliform","Coliform",coliform>=20 ? "> 20 coliforms/100ml" : `${coliform.toFixed(0)} coliforms/100ml`,
       "48-hour result",
       coliform===0
         ? {label:"None detected",kind:"good"}
@@ -5099,7 +5099,7 @@ function changeIndicatorInfo(key){
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
     bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
-    coliform:{label:"Coliform",unit:"coliform/100ml",decimals:0,lowerBetter:true,coliform:true}
+    coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
   return info[key];
 }
@@ -5110,8 +5110,8 @@ function changeFormatValue(key,value){
 
   if(key==="coliform"){
     return value>=20
-      ? "> 20 coliform/100ml"
-      : `${value.toFixed(0)} coliform/100ml`;
+      ? "> 20 coliforms/100ml"
+      : `${value.toFixed(0)} coliforms/100ml`;
   }
 
   return `${value.toFixed(info.decimals)}${info.unit ? " "+info.unit : ""}`;
