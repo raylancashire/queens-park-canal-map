@@ -3756,17 +3756,20 @@ function collectSiteConsistency(metric){
   const grouped=new Map();
 
   freshwaterDataForChanges.forEach(row=>{
-    const site=siteName(row);
-    if(!site) return;
+    const rawSite=siteName(row);
+    const key=normaliseSiteForMatch(rawSite);
+    if(!key) return;
 
     const value=comparisonMetricValue(row,metric);
     if(!Number.isFinite(value)) return;
 
-    if(!grouped.has(site)) grouped.set(site,[]);
-    grouped.get(site).push(value);
+    if(!grouped.has(key)){
+      grouped.set(key,{site:siteDisplayName(rawSite),values:[]});
+    }
+    grouped.get(key).values.push(value);
   });
 
-  return [...grouped.entries()].map(([site,values])=>{
+  return [...grouped.values()].map(({site,values})=>{
     const mean=values.reduce((a,b)=>a+b,0)/values.length;
     const min=Math.min(...values);
     const max=Math.max(...values);
@@ -4294,14 +4297,19 @@ function renderSiteComparison(){
   const chart=document.getElementById("siteComparisonChart");
   if(!chart || !freshwaterDataForChanges.length) return;
 
-  const groups={};
+  const groups=new Map();
   freshwaterDataForChanges.forEach(row=>{
-    const site=siteName(row);
-    (groups[site] ||= []).push(row);
+    const rawSite=siteName(row);
+    const key=normaliseSiteForMatch(rawSite);
+    if(!key) return;
+    if(!groups.has(key)){
+      groups.set(key,{site:siteDisplayName(rawSite),rows:[]});
+    }
+    groups.get(key).rows.push(row);
   });
 
-  const results=Object.entries(groups)
-    .map(([site,rows])=>({
+  const results=[...groups.values()]
+    .map(({site,rows})=>({
       site,
       result:latestMetricResultForSite(rows,currentComparisonMetric)
     }))
