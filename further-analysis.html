@@ -2183,9 +2183,32 @@ let additionalWaterQualityData=[];
 
 function normaliseSiteForMatch(value){
   return String(value||"")
+    .replace(/[’‘]/g,"'")
+    .replace(/[–—]/g,"-")
     .replace(/^Grand Union Canal\s*-\s*/i,"")
     .trim()
+    .replace(/\s+/g," ")
     .toLowerCase();
+}
+
+function siteDisplayName(value){
+  return String(value||"")
+    .replace(/[’‘]/g,"'")
+    .replace(/[–—]/g,"-")
+    .replace(/^Grand Union Canal\s*-\s*/i,"")
+    .trim()
+    .replace(/\s+/g," ");
+}
+
+function uniqueNormalisedSiteNames(rows){
+  const seen=new Map();
+  rows.forEach(row=>{
+    const raw=siteName(row);
+    const key=normaliseSiteForMatch(raw);
+    if(!key || seen.has(key)) return;
+    seen.set(key,siteDisplayName(raw));
+  });
+  return [...seen.values()].sort((a,b)=>a.localeCompare(b));
 }
 
 function filterAdditionalForSite(data,site){
@@ -2231,9 +2254,7 @@ function populateSeasonalSiteSelect(){
   const select=document.getElementById("seasonalSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
@@ -3031,7 +3052,7 @@ function comparisonMetricValue(row,metric){
 function siteSurveyResults(site,metric){
   const rows = (!site || site==="all")
     ? freshwaterDataForChanges
-    : freshwaterDataForChanges.filter(r=>siteName(r)===site);
+    : freshwaterDataForChanges.filter(r=>normaliseSiteForMatch(siteName(r))===normaliseSiteForMatch(site));
 
   return rows
     .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
@@ -3149,7 +3170,7 @@ function initialiseSiteChanges(){
   const select=document.getElementById("changeSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))].sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
   select.innerHTML=
     `<option value="all">All sites</option>` +
     sites.map(site=>`<option value="${esc(site)}">${esc(site)}</option>`).join("");
@@ -3353,9 +3374,7 @@ function populateSnapshotSiteSelect(){
   const select=document.getElementById("snapshotSiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+
@@ -4000,9 +4019,7 @@ function populateChangeSummarySiteSelect(){
   const select=document.getElementById("changeSummarySiteSelect");
   if(!select) return;
 
-  const sites=[...new Set(freshwaterDataForChanges.map(siteName))]
-    .filter(Boolean)
-    .sort((a,b)=>a.localeCompare(b));
+  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
 
   select.innerHTML=
     `<option value="all">All sites</option>`+

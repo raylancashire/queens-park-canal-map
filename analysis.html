@@ -1804,7 +1804,7 @@ function comparisonMetricValue(row,metric){
 function siteSurveyResults(site,metric){
   const rows = (!site || site==="all")
     ? freshwaterDataForChanges
-    : freshwaterDataForChanges.filter(r=>siteName(r)===site);
+    : freshwaterDataForChanges.filter(r=>normaliseSiteForMatch(siteName(r))===normaliseSiteForMatch(site));
 
   return rows
     .sort((a,b)=>sampleDateValue(a)-sampleDateValue(b))
@@ -2175,6 +2175,7 @@ async function load(){try{
  currentFocusedSite="all";
 
  initialiseSiteChanges();
+ dedupeAllSiteDropdowns();
  renderSampleAnalysisForFocusedSite();
 
  setTimeout(notifyParentOfHeight,80);
