@@ -1494,6 +1494,107 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .monitoring-gap-status.insufficient{background:#edf1ee;color:#526158}
 .monitoring-gaps-note{margin-top:12px;color:#66746b;font-size:11px;line-height:1.5}
 
+/* Sample Trend Analysis */
+.sample-trend-panel{padding:18px}
+.sample-trend-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.55}
+.sample-trend-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
+.sample-trend-control{display:grid;gap:5px;min-width:210px}
+.sample-trend-control label{font-size:11px;font-weight:800;color:#435248}
+.sample-trend-control select{
+  min-height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  padding:7px 10px;font:inherit;font-size:12px
+}
+.sample-trend-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.sample-trend-tabs button{
+  appearance:none;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  padding:8px 12px;font-size:12px;font-weight:750;cursor:pointer
+}
+.sample-trend-tabs button:not(.active):hover,
+.sample-trend-tabs button:not(.active):focus-visible,
+.sample-trend-control select:hover,
+.sample-trend-control select:focus-visible{
+  background:#eef7ef;border-color:#bfd7c5
+}
+.sample-trend-tabs button.active,
+.sample-trend-tabs button.active:hover,
+.sample-trend-tabs button.active:focus-visible{
+  background:var(--ink);border-color:var(--ink);color:#fff
+}
+.sample-trend-hero{
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);gap:14px;margin:12px 0
+}
+.sample-trend-status{
+  border:1px solid var(--line);border-radius:11px;background:#f8faf8;padding:16px
+}
+.sample-trend-status-kicker{
+  color:#66746b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em
+}
+.sample-trend-status-main{
+  display:flex;align-items:center;gap:9px;margin:5px 0 6px;font-size:24px;font-weight:850;color:var(--ink)
+}
+.sample-trend-status-main.improving{color:#245b32}
+.sample-trend-status-main.stable{color:#5e5a26}
+.sample-trend-status-main.deteriorating{color:#8a3f20}
+.sample-trend-status-main.insufficient{color:#66746b}
+.sample-trend-status-detail{color:#66746b;font-size:12px;line-height:1.5}
+.sample-trend-evidence{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px
+}
+.sample-trend-card{
+  border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 12px;min-width:0;
+  transition:background .16s ease,border-color .16s ease
+}
+.sample-trend-status,
+.sample-trend-card,
+.sample-trend-chart-wrap,
+.sample-trend-method{
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.sample-trend-status:hover,
+.sample-trend-status:focus-visible,
+.sample-trend-card:hover,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:hover,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:hover,
+.sample-trend-method:focus-visible{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+  outline:none;
+}
+.sample-trend-status:focus-visible,
+.sample-trend-card:focus-visible,
+.sample-trend-chart-wrap:focus-visible,
+.sample-trend-method:focus-visible{
+  box-shadow:0 0 0 2px rgba(47,107,69,.14);
+}
+.sample-trend-card small{
+  display:block;margin-bottom:4px;color:#66746b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.045em
+}
+.sample-trend-card strong{display:block;color:var(--ink);font-size:14px;line-height:1.25}
+.sample-trend-card span{display:block;margin-top:3px;color:#66746b;font-size:10px;line-height:1.3}
+.sample-trend-chart-wrap{
+  overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin-top:12px
+}
+.sample-trend-svg{display:block;width:100%;min-width:560px;height:auto}
+.sample-trend-grid{stroke:#e5ebe6;stroke-width:1}
+.sample-trend-axis{fill:#66746b;font-size:10px}
+.sample-trend-line{fill:none;stroke:#50675a;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.sample-trend-regression{fill:none;stroke:#9b6b2f;stroke-width:2;stroke-dasharray:6 5}
+.sample-trend-point{fill:#fff;stroke:#50675a;stroke-width:2}
+.sample-trend-value{fill:#314039;font-size:10px;font-weight:750}
+.sample-trend-method{
+  margin-top:12px;padding:10px 12px;border-left:4px solid #a9b7ad;background:#f6f8f6;color:#66746b;
+  font-size:11px;line-height:1.5
+}
+@media(max-width:720px){
+  .sample-trend-hero{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .sample-trend-evidence{grid-template-columns:1fr}
+  .sample-trend-control{min-width:100%;width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -1721,6 +1822,60 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         each site's variation is measured relative to its own average result using the coefficient of variation
         (standard deviation ÷ mean). Lower values indicate more stable results. Sites with fewer than two usable samples
         are shown as having insufficient data.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="sampleTrendToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="sampleTrendContent">
+    <span>Sample Trend Analysis</span>
+    <span id="sampleTrendIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="sampleTrendContent" class="outer-analysis-content" hidden>
+    <div class="sample-trend-panel">
+      <p class="sample-trend-intro">
+        Assess whether repeated survey results are generally improving, stable or deteriorating over time.
+        The analysis uses the overall direction of the available series rather than relying only on the first and latest result.
+      </p>
+
+      <div class="sample-trend-controls">
+        <div class="sample-trend-control">
+          <label for="sampleTrendSiteSelect">Location</label>
+          <select id="sampleTrendSiteSelect">
+            <option value="all">All sites</option>
+          </select>
+        </div>
+
+        <div class="sample-trend-control">
+          <label>Indicator</label>
+          <div class="sample-trend-tabs" role="group" aria-label="Choose sample trend indicator">
+            <button id="sampleTrendNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
+            <button id="sampleTrendPhosphate" type="button" aria-pressed="false">Phosphate</button>
+            <button id="sampleTrendTurbidity" type="button" aria-pressed="false">Turbidity</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sample-trend-hero">
+        <div id="sampleTrendStatus" class="sample-trend-status" tabindex="0"></div>
+        <div id="sampleTrendEvidence" class="sample-trend-evidence"></div>
+      </div>
+
+      <div id="sampleTrendChart" class="sample-trend-chart-wrap" tabindex="0"></div>
+
+      <div class="sample-trend-method" tabindex="0">
+        <strong>How the trend is assessed:</strong>
+        at least three usable samples are required. A linear trend is calculated across the available results.
+        For nitrate, phosphate and turbidity, a downward direction is treated as an improvement and an upward direction
+        as deterioration. A change of less than about 10% across the fitted series is treated as broadly stable.
+        Three to four samples are described as an emerging trend; five or more as an established trend.
       </div>
     </div>
   </div>
@@ -2915,6 +3070,438 @@ function setRelationship(key){
   setTimeout(notifyParentOfHeight,40);
 }
 
+
+function canonicalSiteForSync(site){
+  if(!site || site==="all") return "all";
+  const target=normaliseSiteForMatch(site);
+  const source=freshwaterDataForChanges.length ? freshwaterDataForChanges : freshwaterDataAll;
+  const match=source.find(row=>normaliseSiteForMatch(siteName(row))===target);
+  return match ? canonicalSiteDisplay(siteName(match)) : canonicalSiteDisplay(site);
+}
+
+function syncAllSiteDropdowns(){
+  const ids=["snapshotSiteSelect","changeSummarySiteSelect","seasonalSiteSelect"];
+  ids.forEach(id=>{
+    const select=document.getElementById(id);
+    if(!select) return;
+    if(currentFocusedSite==="all"){
+      select.value="all";
+      return;
+    }
+    const match=[...select.options].find(
+      option=>canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
+    );
+    if(match) select.value=match.value;
+  });
+}
+
+
+function canonicalSiteKey(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function canonicalSiteDisplay(value){
+  return String(value || "")
+    .trim()
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .replace(/\s+/g, " ");
+}
+
+function uniqueSitesFromRows(rows, siteGetter){
+  const seen = new Map();
+
+  rows.forEach(row=>{
+    const raw = siteGetter(row);
+    if(!raw) return;
+
+    const key = canonicalSiteKey(raw);
+    if(!key) return;
+
+    if(!seen.has(key)){
+      seen.set(key, {
+        key,
+        full: String(raw).trim(),
+        display: canonicalSiteDisplay(raw)
+      });
+    }
+  });
+
+  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
+}
+
+let currentSampleTrendMetric="nitrate";
+
+function sampleTrendMetricInfo(metric){
+  if(metric==="nitrate") return {label:"Nitrate",unit:"mg/L",decimals:2,lowerBetter:true};
+  if(metric==="phosphate") return {label:"Phosphate",unit:"mg/L",decimals:3,lowerBetter:true};
+  return {label:"Turbidity",unit:"NTU",decimals:0,lowerBetter:true};
+}
+
+function sampleTrendRowsForSite(site){
+  const target=canonicalSiteKey(site||"all");
+  if(target==="all") return freshwaterDataForChanges.slice();
+  return freshwaterDataForChanges.filter(row=>canonicalSiteKey(siteName(row))===target);
+}
+
+function sampleTrendPoints(site,metric){
+  const rows=sampleTrendRowsForSite(site);
+  const target=canonicalSiteKey(site||"all");
+
+  if(target!=="all"){
+    return rows
+      .map(row=>({
+        timestamp:sampleDateValue(row),
+        value:comparisonMetricValue(row,metric),
+        site:canonicalSiteDisplay(siteName(row))
+      }))
+      .filter(point=>point.timestamp>0 && Number.isFinite(point.value))
+      .sort((a,b)=>a.timestamp-b.timestamp);
+  }
+
+  // For All sites, average all usable site results recorded on the same date.
+  const groups=new Map();
+
+  rows.forEach(row=>{
+    const timestamp=sampleDateValue(row);
+    const value=comparisonMetricValue(row,metric);
+    if(!timestamp || !Number.isFinite(value)) return;
+
+    const d=new Date(timestamp);
+    const dateKey=[
+      d.getFullYear(),
+      String(d.getMonth()+1).padStart(2,"0"),
+      String(d.getDate()).padStart(2,"0")
+    ].join("-");
+
+    if(!groups.has(dateKey)){
+      groups.set(dateKey,{
+        timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),
+        values:[],
+        sites:new Set()
+      });
+    }
+    const group=groups.get(dateKey);
+    group.values.push(value);
+    group.sites.add(canonicalSiteDisplay(siteName(row)));
+  });
+
+  return [...groups.values()]
+    .map(group=>({
+      timestamp:group.timestamp,
+      value:group.values.reduce((sum,value)=>sum+value,0)/group.values.length,
+      siteCount:group.sites.size
+    }))
+    .sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+function sampleTrendRegression(points){
+  const n=points.length;
+  if(n<2) return null;
+
+  const xs=points.map((_,i)=>i);
+  const ys=points.map(point=>point.value);
+  const xMean=xs.reduce((a,b)=>a+b,0)/n;
+  const yMean=ys.reduce((a,b)=>a+b,0)/n;
+
+  let numerator=0;
+  let denominator=0;
+  for(let i=0;i<n;i++){
+    numerator+=(xs[i]-xMean)*(ys[i]-yMean);
+    denominator+=(xs[i]-xMean)*(xs[i]-xMean);
+  }
+
+  const slope=denominator ? numerator/denominator : 0;
+  const intercept=yMean-(slope*xMean);
+  const fittedFirst=intercept;
+  const fittedLast=intercept+slope*(n-1);
+  const baseline=Math.max(Math.abs(fittedFirst),0.000001);
+  const fittedPct=((fittedLast-fittedFirst)/baseline)*100;
+
+  return {slope,intercept,fittedFirst,fittedLast,fittedPct};
+}
+
+function sampleTrendDirectionLabel(deltaPct,info){
+  const abs=Math.abs(deltaPct);
+  if(abs<5) return {label:"Stable",symbol:"→"};
+  const improving=info.lowerBetter ? deltaPct<0 : deltaPct>0;
+  return improving
+    ? {label:"Improving",symbol:"↓"}
+    : {label:"Deteriorating",symbol:"↑"};
+}
+
+function sampleTrendAnalysis(points,metric){
+  const info=sampleTrendMetricInfo(metric);
+
+  if(points.length<3){
+    return {
+      label:"Insufficient data",
+      cls:"insufficient",
+      symbol:"—",
+      evidence:"Insufficient data",
+      detail:`${points.length} usable ${points.length===1?"sample":"samples"} available; at least 3 are needed to identify a trend.`,
+      regression:sampleTrendRegression(points)
+    };
+  }
+
+  const regression=sampleTrendRegression(points);
+  const pct=regression ? regression.fittedPct : 0;
+  const abs=Math.abs(pct);
+
+  let label="Stable";
+  let cls="stable";
+  let symbol="→";
+
+  if(abs>=10){
+    const improving=info.lowerBetter ? pct<0 : pct>0;
+    label=improving ? "Improving" : "Deteriorating";
+    cls=improving ? "improving" : "deteriorating";
+    symbol=improving ? "↓" : "↑";
+  }
+
+  const evidence=points.length>=5 ? "Established trend" : "Emerging trend";
+  const directionText=abs<10
+    ? "The overall trend shows only a small change and is treated as broadly stable."
+    : `The overall trend shows an approximate ${abs.toFixed(0)}% ${pct<0 ? "decrease" : "increase"} across the available samples.`;
+
+  return {
+    label,cls,symbol,evidence,regression,
+    detail:`${evidence} based on ${points.length} usable samples. ${directionText}`
+  };
+}
+
+function sampleTrendRecentDirection(points,metric){
+  if(points.length<2) return "Insufficient data";
+  const info=sampleTrendMetricInfo(metric);
+  const recent=points.slice(-Math.min(3,points.length));
+  const first=recent[0].value;
+  const last=recent[recent.length-1].value;
+  const baseline=Math.max(Math.abs(first),0.000001);
+  const pct=((last-first)/baseline)*100;
+  const result=sampleTrendDirectionLabel(pct,info);
+  return result.label;
+}
+
+function sampleTrendFormatValue(value,metric){
+  if(!Number.isFinite(value)) return "—";
+  const info=sampleTrendMetricInfo(metric);
+  return `${value.toFixed(info.decimals)} ${info.unit}`;
+}
+
+function sampleTrendFormatDate(timestamp){
+  if(!timestamp) return "—";
+  return new Date(timestamp).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+function populateSampleTrendSiteSelect(){
+  const select=document.getElementById("sampleTrendSiteSelect");
+  if(!select) return;
+
+  const sites=uniqueSitesFromRows(freshwaterDataForChanges,siteName);
+  select.innerHTML=
+    `<option value="all">All sites</option>`+
+    sites.map(site=>`<option value="${esc(site.full)}">${esc(site.display)}</option>`).join("");
+
+  syncSampleTrendSiteUI();
+}
+
+function syncSampleTrendSiteUI(){
+  const select=document.getElementById("sampleTrendSiteSelect");
+  if(!select) return;
+
+  if(canonicalSiteKey(currentFocusedSite)==="all"){
+    select.value="all";
+    return;
+  }
+
+  const match=[...select.options].find(option=>
+    option.value!=="all" &&
+    canonicalSiteKey(option.value)===canonicalSiteKey(currentFocusedSite)
+  );
+  select.value=match ? match.value : "all";
+}
+
+function renderSampleTrendChart(points,metric,analysis){
+  const target=document.getElementById("sampleTrendChart");
+  if(!target) return;
+
+  if(!points.length){
+    target.innerHTML='<div class="site-comparison-empty">No usable trend data is available for this selection.</div>';
+    return;
+  }
+
+  const info=sampleTrendMetricInfo(metric);
+  const W=Math.max(600,points.length*105);
+  const H=270;
+  const left=58,right=28,top=28,bottom=64;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  let min=Math.min(...points.map(p=>p.value));
+  let max=Math.max(...points.map(p=>p.value));
+  min=Math.min(0,min);
+  if(max===min) max=min+1;
+  const range=max-min;
+  max+=range*0.15;
+
+  const x=i=>points.length===1 ? left+plotW/2 : left+(i/(points.length-1))*plotW;
+  const y=value=>top+((max-value)/(max-min))*plotH;
+  const ticks=Array.from({length:5},(_,i)=>min+((max-min)*(i/4)));
+
+  const grid=ticks.map(value=>`
+    <line x1="${left}" y1="${y(value)}" x2="${W-right}" y2="${y(value)}" class="sample-trend-grid"></line>
+    <text x="${left-8}" y="${y(value)+4}" text-anchor="end" class="sample-trend-axis">${value.toFixed(info.decimals)}</text>
+  `).join("");
+
+  const linePath=points.map((point,i)=>
+    `${i===0?"M":"L"} ${x(i).toFixed(1)} ${y(point.value).toFixed(1)}`
+  ).join(" ");
+
+  let regressionPath="";
+  if(analysis.regression && points.length>=2){
+    const firstY=analysis.regression.intercept;
+    const lastY=analysis.regression.intercept+analysis.regression.slope*(points.length-1);
+    regressionPath=`<path d="M ${x(0)} ${y(firstY)} L ${x(points.length-1)} ${y(lastY)}" class="sample-trend-regression"></path>`;
+  }
+
+  const marks=points.map((point,i)=>{
+    const date=sampleTrendFormatDate(point.timestamp);
+    const siteDetail=point.siteCount
+      ? `${point.siteCount} ${point.siteCount===1?"site":"sites"}`
+      : (point.site||"");
+    return `
+      <circle cx="${x(i)}" cy="${y(point.value)}" r="4.5" class="sample-trend-point">
+        <title>${esc(date)} · ${esc(sampleTrendFormatValue(point.value,metric))}${siteDetail ? " · "+esc(siteDetail) : ""}</title>
+      </circle>
+      <text x="${x(i)}" y="${y(point.value)-10}" text-anchor="middle" class="sample-trend-value">
+        ${point.value.toFixed(info.decimals)}
+      </text>
+      <text x="${x(i)}" y="${H-28}" text-anchor="middle" class="sample-trend-axis">${esc(date)}</text>
+    `;
+  }).join("");
+
+  target.innerHTML=`<svg class="sample-trend-svg" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="${esc(info.label)} sample trend over time">
+    ${grid}
+    <text x="16" y="${top+plotH/2}" text-anchor="middle"
+      transform="rotate(-90 16 ${top+plotH/2})" class="sample-trend-axis">${esc(info.unit)}</text>
+    <path d="${linePath}" class="sample-trend-line"></path>
+    ${regressionPath}
+    ${marks}
+  </svg>`;
+}
+
+function renderSampleTrend(){
+  const status=document.getElementById("sampleTrendStatus");
+  const evidence=document.getElementById("sampleTrendEvidence");
+  if(!status || !evidence) return;
+
+  const site=document.getElementById("sampleTrendSiteSelect")?.value || currentFocusedSite || "all";
+  const points=sampleTrendPoints(site,currentSampleTrendMetric);
+  const analysis=sampleTrendAnalysis(points,currentSampleTrendMetric);
+  const info=sampleTrendMetricInfo(currentSampleTrendMetric);
+
+  const first=points[0]||null;
+  const latest=points[points.length-1]||null;
+  const firstValue=first?.value;
+  const latestValue=latest?.value;
+  let changeText="—";
+
+  if(Number.isFinite(firstValue) && Number.isFinite(latestValue)){
+    const delta=latestValue-firstValue;
+    const sign=delta>0?"+":"";
+    changeText=`${sign}${delta.toFixed(info.decimals)} ${info.unit}`;
+    if(firstValue!==0){
+      const pct=(delta/Math.abs(firstValue))*100;
+      changeText+=` (${pct>0?"+":""}${pct.toFixed(1)}%)`;
+    }
+  }
+
+  const dateRange=points.length
+    ? `${sampleTrendFormatDate(first.timestamp)} to ${sampleTrendFormatDate(latest.timestamp)}`
+    : "No usable sample dates";
+
+  status.innerHTML=`
+    <div class="sample-trend-status-kicker">${esc(info.label)} trend</div>
+    <div class="sample-trend-status-main ${analysis.cls}">
+      <span aria-hidden="true">${analysis.symbol}</span>
+      <span>${esc(analysis.label)}</span>
+    </div>
+    <div class="sample-trend-status-detail">${esc(analysis.detail)}</div>
+    <div class="sample-trend-status-detail" style="margin-top:5px;">${esc(dateRange)}</div>
+  `;
+
+  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric);
+  evidence.innerHTML=`
+    <div class="sample-trend-card" tabindex="0">
+      <small>First result</small>
+      <strong>${esc(sampleTrendFormatValue(firstValue,currentSampleTrendMetric))}</strong>
+      <span>${esc(first ? sampleTrendFormatDate(first.timestamp) : "—")}</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Latest result</small>
+      <strong>${esc(sampleTrendFormatValue(latestValue,currentSampleTrendMetric))}</strong>
+      <span>${esc(latest ? sampleTrendFormatDate(latest.timestamp) : "—")}</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Overall change</small>
+      <strong>${esc(changeText)}</strong>
+      <span>First to latest recorded result</span>
+    </div>
+    <div class="sample-trend-card" tabindex="0">
+      <small>Recent direction</small>
+      <strong>${esc(recent)}</strong>
+      <span>${esc(analysis.evidence)}</span>
+    </div>
+  `;
+
+  renderSampleTrendChart(points,currentSampleTrendMetric,analysis);
+}
+
+function setSampleTrendMetric(metric){
+  currentSampleTrendMetric=metric;
+
+  const buttons={
+    nitrate:document.getElementById("sampleTrendNitrate"),
+    phosphate:document.getElementById("sampleTrendPhosphate"),
+    turbidity:document.getElementById("sampleTrendTurbidity")
+  };
+
+  Object.entries(buttons).forEach(([key,button])=>{
+    if(!button) return;
+    const active=key===metric;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+
+  renderSampleTrend();
+  setTimeout(notifyParentOfHeight,40);
+}
+
+function applySampleTrendSiteFocus(site){
+  currentFocusedSite=canonicalSiteForSync(site||"all");
+  syncSnapshotSiteUI();
+  syncChangeSummarySiteUI();
+  syncSeasonalSiteUI();
+  syncSampleTrendSiteUI();
+
+  try{
+    localStorage.setItem(SITE_SYNC_KEY,currentFocusedSite);
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({type:"site-focus",site:currentFocusedSite});
+  }
+
+  if(typeof renderSnapshot==="function") renderSnapshot();
+  if(typeof renderChangeSummary==="function") renderChangeSummary();
+  if(typeof renderSeasonalPattern==="function") renderSeasonalPattern();
+  renderSampleTrend();
+  setTimeout(notifyParentOfHeight,40);
+}
 
 let currentTrendMetric="nitrate";
 let currentTrendSite="all";
@@ -5007,6 +5594,8 @@ async function load(){
 
     renderSiteComparison();
     renderSiteConsistency();
+    populateSampleTrendSiteSelect();
+    renderSampleTrend();
     populateProjectTrendSiteSelect();
     renderProjectTrend();
     populateSeasonalSiteSelect();
@@ -5156,6 +5745,15 @@ document.getElementById("compareTurbidity").addEventListener("click",()=>setComp
 
 
 
+if(document.getElementById("sampleTrendNitrate")){
+  document.getElementById("sampleTrendNitrate").addEventListener("click",()=>setSampleTrendMetric("nitrate"));
+  document.getElementById("sampleTrendPhosphate").addEventListener("click",()=>setSampleTrendMetric("phosphate"));
+  document.getElementById("sampleTrendTurbidity").addEventListener("click",()=>setSampleTrendMetric("turbidity"));
+}
+if(document.getElementById("sampleTrendSiteSelect")){
+  document.getElementById("sampleTrendSiteSelect").addEventListener("change",event=>applySampleTrendSiteFocus(event.target.value));
+}
+
 const projectTrendSiteSelect=document.getElementById("projectTrendSiteSelect");
 if(projectTrendSiteSelect){
   projectTrendSiteSelect.addEventListener("change",()=>setProjectTrendSite(projectTrendSiteSelect.value));
@@ -5191,6 +5789,11 @@ const furtherPanels = [
     button:document.getElementById("siteConsistencyToggle"),
     content:document.getElementById("siteConsistencyContent"),
     icon:document.getElementById("siteConsistencyIcon")
+  },
+  {
+    button:document.getElementById("sampleTrendToggle"),
+    content:document.getElementById("sampleTrendContent"),
+    icon:document.getElementById("sampleTrendIcon")
   },
   {
     button:document.getElementById("projectTrendsToggle"),
@@ -5241,15 +5844,19 @@ function setFurtherPanel(index,open){
     renderSiteConsistency();
   }
 
-  if(open && index===6 && typeof renderProjectTrend==="function"){
+  if(open && index===6 && typeof renderSampleTrend==="function"){
+    renderSampleTrend();
+  }
+
+  if(open && index===7 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===7 && typeof renderSeasonalPattern==="function"){
+  if(open && index===8 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===8 && typeof renderRelationship==="function"){
+  if(open && index===9 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
