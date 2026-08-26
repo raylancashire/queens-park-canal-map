@@ -4862,9 +4862,9 @@ function monitoringGapGroups(){
     const ts=sampleDateValue(row);
     if(!ts) return;
     const raw=siteName(row);
-    const key=canonicalSiteKey(raw);
+    const key=normaliseSiteForMatch(raw);
     if(!key) return;
-    if(!groups.has(key)) groups.set(key,{site:canonicalSiteDisplay(raw),dates:new Set()});
+    if(!groups.has(key)) groups.set(key,{site:siteDisplayName(raw),dates:new Set()});
     groups.get(key).dates.add(monitoringGapDay(ts));
   });
   return [...groups.values()].map(group=>({
