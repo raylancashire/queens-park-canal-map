@@ -402,6 +402,26 @@ Current features include:
   - FreshWater Watch and additional-test dates shown separately when necessary
   - Interactive Overall Change wording: hovering over **improved**, **stable** or **deteriorated** highlights the corresponding result cards
 
+- **Coliform Recurrence Analysis**
+  - Uses the Earth Force LaMotte coliform screening results
+  - Shows usable tests, positive results, recurrence rate, current positive streak, longest positive streak and latest result
+  - Deduplicates same-site / same-date source rows
+  - Keeps streak calculations within individual sites in the All sites view
+  - Uses cautious screening language and does not present the result as a statutory microbiological classification
+
+- **Monitoring Gaps / Overdue Sampling**
+  - Shows monitored sites, overdue sites, sites due soon and the longest current sampling gap
+  - Uses each site's observed median sampling interval, with a project-wide fallback where history is limited
+  - Shows last sample date, days since sampling, typical interval, largest historical gap and sampling visits
+  - Uses the shared normalised site identity so prefix, apostrophe, dash, spacing and case variants are grouped together
+  - Hovering or keyboard-focusing the summary cards highlights the associated site row or rows
+
+- **Sampling Frequency Over Time**
+  - Monthly sampling-frequency heatmap by site
+  - Actual sample dates and intervals between consecutive samples
+  - Monitoring coverage and time-since-last-sampled summaries
+  - Uses the same normalised site identity as the other Further Analysis panels
+
 - **Site comparison**
   - Nitrate
   - Phosphate
@@ -420,7 +440,15 @@ Current features include:
   - Hover / keyboard explanations for Typical Level
   - Consistency is calculated using the coefficient of variation: standard deviation ÷ mean
 
-- **Project-wide trends**
+- **Sample Trend Analysis**
+  - All sites or individual site
+  - Nitrate, Phosphate and Turbidity
+  - Improving / Stable / Deteriorating / Insufficient data classification
+  - Linear fitted trend with supporting evidence and results-over-time chart
+
+- **Project / Site Trends**
+  - All sites for the project-wide view or an individual sampling site
+  - Nitrate, Phosphate and Turbidity
 
 - **Seasonal patterns**
 
@@ -612,6 +640,8 @@ Current features include:
 - Sampling-site names and the **Sampling site** column heading centred within the site column for clearer alignment with the frequency cells
 
 Sampling visits are deduplicated by site and calendar date so duplicate source rows do not inflate the frequency count.
+
+Sampling-site names are grouped using the shared normalised site identity, so optional `Grand Union Canal -` prefixes, apostrophe variants, dash variants, repeated whitespace and case differences do not create duplicate monitoring locations.
 
 The panel explicitly states that the heatmap represents **sampling frequency, not water-quality status**.
 
@@ -857,6 +887,25 @@ These changes are intended to improve readability, interpretation and accessibil
 
 ---
 
+## Update — 26 August 2026 — Further Analysis monitoring and trend tools
+
+The Canal Watch **Further Analysis** page was expanded and consolidated on **26 August 2026**, while retaining the existing analysis panels.
+
+1. Added **Coliform Recurrence Analysis** to distinguish isolated and recurring positive LaMotte coliform screening results.
+2. Added **Monitoring Gaps / Overdue Sampling**, using each site's actual sampling history to identify Current, Due soon and Overdue monitoring locations.
+3. Added interactive Monitoring Gaps summary cards so hovering or keyboard-focusing **Sites monitored**, **Overdue**, **Due soon** or **Longest current gap** highlights the associated table row or rows.
+4. Restored **Sampling Frequency Over Time** as a separate historical monitoring-coverage view rather than replacing Monitoring Gaps.
+5. Updated Sampling Frequency to use the same project-wide normalised site identity as the other analysis panels, preventing old prefix and punctuation variants from appearing as separate sites.
+6. Restored **Sample Trend Analysis**, including individual-site and All sites views for nitrate, phosphate and turbidity.
+7. Restored **Project / Site Trends** as a separate trend panel, with All sites and individual-site selection.
+8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels.
+9. Kept the single-open accordion behaviour and the existing site synchronisation / de-duplication logic.
+10. Matched the Coliform Recurrence typography to the sizing used elsewhere in Further Analysis.
+
+These changes separate three different monitoring questions clearly: **what needs sampling now** (Monitoring Gaps), **how regularly the programme has sampled over time** (Sampling Frequency), and **how measured results are changing** (Sample Trend Analysis and Project / Site Trends).
+
+---
+
 ## Update — 25 August 2026 — LaMotte coliform assessment
 
 The Canal Watch coliform interpretation has been aligned with the **Earth Force LaMotte** screening test and integrated with the visual assessment workflow.
@@ -886,3 +935,25 @@ Following the coliform assessment update, the site-list generation was corrected
 - Duplicate entries are removed from site dropdowns in Sample Analysis and Further Analysis.
 - Site-focused filters use the same normalised identity, so all records for a named site remain grouped together even when the source text varies slightly.
 - The LaMotte coliform assessment and overall-rating cap logic remain unchanged.
+
+
+### Coliform Snapshot persistence fix — 25 August 2026
+
+The **Overall Water Quality Snapshot** now treats LaMotte coliform results as threshold screening outcomes rather than averaging them numerically.
+
+- `0` / negative screening remains **Good**.
+- A single positive `>20 coliforms/100 mL` result is **Poor — elevated coliform**.
+- Two or more positive `>20 coliforms/100 mL` results at the same site are **Very Poor — persistent elevated coliform**.
+- Repeated-positive status is calculated from the full history for the selected site, even when the Snapshot is displaying the latest survey.
+- The project-average view no longer dilutes positive coliform screens by averaging positive and negative numerical values.
+- In the All sites view, repeated-positive status is only triggered when at least one individual site has two or more positive screening results.
+
+This reflects the LaMotte test's threshold-screening purpose and avoids reporting persistent positive results as Fair.
+
+### Site Comparison and Site Consistency duplicate-site correction — 25 August 2026
+
+- Updated **Site Comparison** and **Site Consistency** to group FreshWater Watch records using the shared normalised site-name key.
+- Prefix variants such as `Grand Union Canal - Burket Close` and `Burket Close` are now treated as one monitoring site in these sections.
+- Apostrophe, dash and whitespace variations are normalised before grouping.
+- One clean display name is retained for each grouped site.
+- This brings Site Comparison and Site Consistency into line with the site dropdowns, Snapshot and other site-aware analysis controls.
