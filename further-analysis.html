@@ -1494,6 +1494,514 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .monitoring-gap-status.insufficient{background:#edf1ee;color:#526158}
 .monitoring-gaps-note{margin-top:12px;color:#66746b;font-size:11px;line-height:1.5}
 
+
+
+/* Sampling Frequency Over Time (restored) */
+.sampling-frequency-intro{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.sampling-frequency-heatmap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sampling-frequency-grid{display:grid;gap:5px;min-width:max-content;align-items:center}
+.sampling-frequency-corner,.sampling-frequency-month{min-width:58px;padding:4px 5px;color:var(--muted);font-size:10px;font-weight:750;text-align:center;white-space:nowrap}
+.sampling-frequency-corner{min-width:150px;text-align:left}
+.sampling-frequency-site{min-width:150px;max-width:190px;padding:7px 8px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.3}
+.sampling-frequency-cell{width:58px;min-width:58px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #dce5df;border-radius:6px;background:#f5f8f5;color:#68766d;font-size:11px;font-weight:850;box-sizing:border-box}
+.sampling-frequency-cell.has-visits{color:#17321f;border-color:#b8cdbd}
+.sampling-frequency-cell.frequency-1{background:#e8f3eb}
+.sampling-frequency-cell.frequency-2{background:#cfe5d5}
+.sampling-frequency-cell.frequency-3{background:#a8d0b3}
+.sampling-frequency-cell.frequency-4plus{background:#7db28b;color:#102719}
+.sampling-frequency-cell{transition:background-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.sampling-frequency-cell:hover,.sampling-frequency-cell:focus{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+  outline:2px solid #17321f;
+  outline-offset:1px
+}
+.sampling-frequency-summary{margin-top:14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#f8faf8;color:var(--ink);font-size:12px;line-height:1.5}
+.sampling-frequency-summary strong{font-weight:850}
+.sampling-frequency-note{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
+@media(max-width:600px){.sampling-frequency-site,.sampling-frequency-corner{min-width:125px;max-width:145px}.sampling-frequency-cell,.sampling-frequency-month{width:52px;min-width:52px}}
+
+
+.sampling-frequency-last-title{
+  margin:16px 0 8px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:850;
+  line-height:1.3;
+}
+
+.sampling-frequency-last-visits{
+  margin-top:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:8px;
+}
+.sampling-frequency-last-visit{
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  font-size:11px;
+  line-height:1.4;
+  transition:background-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.sampling-frequency-last-visit:hover,
+.sampling-frequency-last-visit:focus-within{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+}
+.sampling-frequency-last-visit strong{
+  display:block;
+  margin-bottom:2px;
+  font-size:11px;
+  font-weight:850;
+}
+.sampling-frequency-last-visit span{
+  color:var(--muted);
+}
+
+
+.sampling-frequency-last-date{
+  display:block;
+  margin-top:3px;
+}
+
+
+.sampling-frequency-last-visit.linked-highlight{
+  background:#f2f7f3;
+  box-shadow:0 5px 14px rgba(23,50,31,.10);
+  transform:translateY(-1px);
+}
+
+
+.sampling-frequency-cell-wrap{
+  width:58px;
+  min-width:58px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
+}
+
+.sampling-frequency-date-lines{
+  min-height:24px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.3;
+  text-align:center;
+}
+
+.sampling-frequency-date-line{
+  display:block;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:block;
+  margin-top:1px;
+  color:#66746b;
+  font-size:8px;
+  line-height:1.25;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-cell-wrap{
+    width:52px;
+    min-width:52px;
+  }
+  .sampling-frequency-date-lines{
+    font-size:8px;
+  }
+  .sampling-frequency-gap{
+    font-size:7px;
+  }
+}
+
+
+.sampling-frequency-site{
+  align-self:start;
+  min-height:62px;
+  display:flex;
+  align-items:center;
+}
+
+.sampling-frequency-cell-wrap{
+  position:relative;
+}
+
+.sampling-frequency-between{
+  position:absolute;
+  left:-8px;
+  top:15px;
+  transform:translateX(-50%);
+  z-index:2;
+  min-width:18px;
+  padding:1px 3px;
+  border-radius:999px;
+  background:#fff;
+  color:#66746b;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.sampling-frequency-gap{
+  display:none;
+}
+
+
+/* Refined sampling-frequency alignment */
+.sampling-frequency-grid{
+  column-gap:0;
+  row-gap:10px;
+}
+
+.sampling-frequency-month{
+  width:76px;
+  min-width:76px;
+  box-sizing:border-box;
+}
+
+.sampling-frequency-cell-wrap{
+  width:76px;
+  min-width:76px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+.sampling-frequency-cell{
+  width:58px;
+  min-width:58px;
+}
+
+.sampling-frequency-site{
+  align-self:stretch;
+  min-height:0;
+  height:auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+/* The interval badge sits exactly halfway between the current and previous
+   58px cells: 9px side space + half of the 18px gap. */
+.sampling-frequency-between{
+  left:-9px;
+  top:15px;
+  transform:translateX(-50%);
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:68px;
+    min-width:68px;
+  }
+
+  .sampling-frequency-cell{
+    width:52px;
+    min-width:52px;
+  }
+
+  .sampling-frequency-between{
+    left:-8px;
+  }
+}
+
+
+/* Sampling-frequency interval placement */
+.sampling-frequency-month,
+.sampling-frequency-cell-wrap{
+  width:96px;
+  min-width:96px;
+}
+
+.sampling-frequency-cell-wrap{
+  align-items:center;
+}
+
+/* 58px cell centred in a 96px column leaves 19px each side.
+   The following sample's interval value is placed halfway through
+   the 38px space between the two neighbouring cells. */
+.sampling-frequency-between{
+  left:0;
+  top:17px;
+  transform:translate(-50%,-50%);
+  min-width:22px;
+  padding:2px 4px;
+  background:#fff;
+  border:0;
+  border-radius:999px;
+  box-shadow:none;
+  color:#66746b;
+  font-size:10px;
+  font-weight:850;
+  line-height:1;
+}
+
+/* Centre each site name against the complete row. */
+.sampling-frequency-site{
+  align-self:stretch;
+  display:flex;
+  align-items:center;
+  min-height:66px;
+  padding-top:0;
+  padding-bottom:0;
+}
+
+@media(max-width:600px){
+  .sampling-frequency-month,
+  .sampling-frequency-cell-wrap{
+    width:84px;
+    min-width:84px;
+  }
+
+  .sampling-frequency-between{
+    left:0;
+  }
+}
+
+
+/* Centre sampling-site names with the sampling cells */
+.sampling-frequency-corner{
+  text-align:center;
+}
+
+.sampling-frequency-site{
+  justify-content:center;
+  text-align:center;
+}
+
+
+/* Standard pale-green hover/focus highlight for Snapshot and Change panels */
+.snapshot-card,
+.change-card,
+.snapshot-result,
+.change-result,
+.results-watch-item,
+.snapshot-control,
+.change-summary-card{
+  transition:
+    background-color .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease;
+}
+
+.snapshot-card:hover,
+.snapshot-card:focus-within,
+.change-card:hover,
+.change-card:focus-within,
+.snapshot-result:hover,
+.snapshot-result:focus-within,
+.change-result:hover,
+.change-result:focus-within,
+.results-watch-item:hover,
+.results-watch-item:focus-within,
+.snapshot-control:hover,
+.snapshot-control:focus-within,
+.change-summary-card:hover,
+.change-summary-card:focus-within{
+  background:#eef7ef;
+  border-color:#bfd7c5;
+}
+
+@media (hover:none){
+  .snapshot-card:hover,
+  .change-card:hover,
+  .snapshot-result:hover,
+  .change-result:hover,
+  .results-watch-item:hover,
+  .snapshot-control:hover,
+  .change-summary-card:hover{
+    background:inherit;
+  }
+}
+
+
+/* Pale-green interaction highlight: Snapshot buttons + Site Consistency controls/rows */
+#snapshotSiteSelect:hover,
+#snapshotSiteSelect:focus,
+#snapshotMetricSelect:hover,
+#snapshotMetricSelect:focus,
+.snapshot-controls button:hover,
+.snapshot-controls button:focus-visible,
+.snapshot-button:hover,
+.snapshot-button:focus-visible,
+.site-consistency button:hover,
+.site-consistency button:focus-visible,
+.consistency-controls button:hover,
+.consistency-controls button:focus-visible,
+.consistency-button:hover,
+.consistency-button:focus-visible,
+.consistency-metric-button:hover,
+.consistency-metric-button:focus-visible,
+.consistency-row:hover,
+.consistency-line:hover,
+.site-consistency-row:hover,
+.site-consistency-line:hover,
+#consistencyTable tbody tr:hover{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+#snapshotSiteSelect,
+#snapshotMetricSelect,
+.snapshot-controls button,
+.snapshot-button,
+.site-consistency button,
+.consistency-controls button,
+.consistency-button,
+.consistency-metric-button,
+.consistency-row,
+.consistency-line,
+.site-consistency-row,
+.site-consistency-line,
+#consistencyTable tbody tr{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+
+/* Correct Site Consistency hover/focus targets */
+.site-consistency-toggle button:not(.active):hover,
+.site-consistency-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
+.site-consistency-table tbody tr:hover > td,
+.site-consistency-table tbody tr:focus-within > td{
+  background:#eef7ef !important;
+}
+
+.site-consistency-summary-card:hover,
+.site-consistency-summary-card:focus-within{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+}
+
+.site-consistency-toggle button,
+.site-consistency-table tbody td,
+.site-consistency-summary-card{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+/* Keep the selected consistency indicator visually selected. */
+.site-consistency-toggle button.active:hover,
+.site-consistency-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+}
+
+
+/* Restored Key Takeaways and Results to Watch */
+.key-takeaway{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border-left:4px solid #5f8a69;
+  border-radius:0 8px 8px 0;
+  background:#f2f7f3;
+  color:#35483b;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.key-takeaway-label{
+  display:block;
+  margin-bottom:2px;
+  color:#526158;
+  font-size:9px;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+/* Results to Watch */
+.results-watch{margin:0 0 16px}
+.results-watch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.results-watch-title{color:#526158;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.results-watch-count{padding:3px 7px;border-radius:999px;background:#f0f3f1;color:#526158;font-size:9px;font-weight:800}
+.results-watch-grid{display:grid;gap:8px}
+.results-watch-item{padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--watch-colour,#a66a35);border-radius:8px;background:#fffaf5;transition:.15s ease}
+.results-watch-item:hover,.results-watch-item:focus-visible{background:#fff3e7;box-shadow:0 4px 12px rgba(91,62,35,.10);transform:translateY(-1px);outline:none}
+.results-watch-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.results-watch-name{color:var(--ink);font-size:11px;font-weight:850}
+.results-watch-value{color:var(--ink);font-size:13px;font-weight:850;text-align:right}
+.results-watch-reason{margin-top:4px;color:#66746b;font-size:10px;line-height:1.4}
+.results-watch-clear{padding:10px 12px;border:1px solid #cfe1d3;border-radius:8px;background:#f2f8f3;color:#31563b;font-size:11px}
+.snapshot-card.watch-highlight{background:#fff5e9!important;box-shadow:0 0 0 2px rgba(166,106,53,.20),0 5px 14px rgba(91,62,35,.12)!important;transform:translateY(-1px)}
+
+
+
+/* More breathing room around concluding Key Takeaway boxes */
+.key-takeaway{
+  margin-top:20px;
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  .key-takeaway{
+    margin-top:16px;
+    margin-bottom:8px;
+  }
+}
+
+
+/* Extra breathing room for Results to Watch in the Overall Water Quality Snapshot */
+#resultsWatch{
+  margin-top:24px;
+  margin-bottom:22px;
+}
+#resultsWatch .results-watch-head{
+  margin-bottom:10px;
+}
+@media(max-width:580px){
+  #resultsWatch{
+    margin-top:20px;
+    margin-bottom:18px;
+  }
+}
+
+
+
+/* Link Results to Watch hover/focus to its Snapshot result card */
+.snapshot-card.watch-highlight{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  box-shadow:0 0 0 2px rgba(88,140,101,.14);
+}
+
+
+/* Keep the selected Overall Water Quality Snapshot period button fixed on hover/focus */
+.snapshot-period-toggle button.active:hover,
+.snapshot-period-toggle button.active:focus,
+.snapshot-period-toggle button.active:focus-visible{
+  background:var(--ink) !important;
+  border-color:var(--ink) !important;
+  color:#fff !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+
+/* Pale-green hover/focus applies only to the unselected Snapshot period button */
+.snapshot-period-toggle button:not(.active):hover,
+.snapshot-period-toggle button:not(.active):focus-visible{
+  background:#eef7ef !important;
+  border-color:#bfd7c5 !important;
+  color:var(--ink) !important;
+}
+
 /* Sample Trend Analysis */
 .sample-trend-panel{padding:18px}
 .sample-trend-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.55}
@@ -1747,6 +2255,36 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         Status is a project-management prompt rather than a water-quality assessment. Duplicate records on the same site and calendar date are counted as one sampling visit. “Overdue” means the current gap is substantially longer than the observed sampling rhythm, not that a statutory sampling deadline has been missed.
       </div>
     </div>
+  </div>
+</section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="samplingFrequencyToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="samplingFrequencyContent">
+    <span>Sampling frequency over time</span>
+    <span id="samplingFrequencyIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="samplingFrequencyContent" class="outer-analysis-content" hidden>
+    <p class="sampling-frequency-intro">
+      A compact view of when each monitoring location has been sampled.
+      The numbers show sampling visits, not water-quality status.
+    </p>
+
+    <div id="samplingFrequencyHeatmap" class="sampling-frequency-heatmap"></div>
+    <div id="samplingFrequencySummary" class="sampling-frequency-summary"></div>
+
+    <h3 class="sampling-frequency-last-title">Time since last sampled</h3>
+    <div id="samplingFrequencyLastVisits" class="sampling-frequency-last-visits"></div>
+
+    <p class="sampling-frequency-note">
+      The sample date is shown below each monthly frequency cell. Where consecutive samples are available, the small number between cells shows the number of days between samples.
+      Hover or focus a cell for the full survey date details. Days since last sample are calculated from each site's most recent sample date to today's date. When more than 12 months of data are available, the timeline shows the latest 12 months.
+    </p>
   </div>
 </section>
 
@@ -5316,6 +5854,179 @@ function renderChangeSummary(){
 }
 
 
+
+
+/* Sampling Frequency Over Time (restored) */
+function samplingFrequencyMonthKey(ts){
+  const d=new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function samplingFrequencyMonthLabel(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"short",year:"2-digit"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyLongMonth(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB",{month:"long",year:"numeric"}).format(new Date(y,m-1,1));
+}
+function samplingFrequencyDateLabel(ts){
+  return new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric"}).format(new Date(ts));
+}
+function samplingFrequencyMonths(firstTs,lastTs){
+  if(!firstTs||!lastTs)return[];
+  const first=new Date(firstTs),last=new Date(lastTs);
+  let d=new Date(first.getFullYear(),first.getMonth(),1);
+  const end=new Date(last.getFullYear(),last.getMonth(),1),months=[];
+  while(d<=end){
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`);
+    d=new Date(d.getFullYear(),d.getMonth()+1,1);
+  }
+  return months.length>12?months.slice(-12):months;
+}
+function renderSamplingFrequency(){
+  const chart=document.getElementById("samplingFrequencyHeatmap");
+  const summary=document.getElementById("samplingFrequencySummary");
+  if(!chart||!summary)return;
+
+  const visitMap=new Map();
+  freshwaterDataForChanges.forEach(row=>{
+    const site=siteName(row),ts=sampleDateValue(row);
+    if(!site||!ts)return;
+    const d=new Date(ts);
+    const dayKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const key=`${site}||${dayKey}`;
+    if(!visitMap.has(key)){
+      visitMap.set(key,{site,timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()});
+    }
+  });
+
+  const visits=[...visitMap.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  if(!visits.length){
+    chart.innerHTML='<div class="site-comparison-empty">No sampling dates are available yet.</div>';
+    summary.textContent="";
+    return;
+  }
+
+  const months=samplingFrequencyMonths(visits[0].timestamp,visits[visits.length-1].timestamp);
+  const monthSet=new Set(months);
+  const sites=[...new Set(visits.map(v=>v.site))].sort((a,b)=>a.localeCompare(b));
+  const grouped={};
+  sites.forEach(site=>{grouped[site]={};months.forEach(month=>grouped[site][month]=[])});
+
+  const siteIntervals={};
+  sites.forEach(site=>{
+    const siteVisits=visits
+      .filter(v=>v.site===site)
+      .sort((a,b)=>a.timestamp-b.timestamp);
+
+    siteIntervals[site]=new Map();
+
+    siteVisits.forEach((visit,index)=>{
+      const previous=index>0 ? siteVisits[index-1] : null;
+      const daysBetween=previous
+        ? Math.round((visit.timestamp-previous.timestamp)/(24*60*60*1000))
+        : null;
+
+      siteIntervals[site].set(visit.timestamp,daysBetween);
+    });
+  });
+
+  visits.forEach(v=>{
+    const month=samplingFrequencyMonthKey(v.timestamp);
+    if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
+  });
+
+  const columns=`150px repeat(${months.length},96px)`;
+  const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
+    months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
+
+  const rows=sites.map(site=>{
+    const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+    return `<div class="sampling-frequency-site">${esc(shortSite)}</div>`+
+      months.map(month=>{
+        const dates=(grouped[site][month]||[]).sort((a,b)=>a-b),count=dates.length;
+        const cls=count===0?"":count===1?" frequency-1":count===2?" frequency-2":count===3?" frequency-3":" frequency-4plus";
+        const dateText=count?dates.map(samplingFrequencyDateLabel).join(", "):`No recorded visit in ${samplingFrequencyLongMonth(month)}`;
+
+        const visibleDates=count
+          ? dates.map(ts=>{
+              const shortDate=new Intl.DateTimeFormat("en-GB",{
+                day:"numeric",
+                month:"short"
+              }).format(new Date(ts));
+              return `<span class="sampling-frequency-date-line">${esc(shortDate)}</span>`;
+            }).join("")
+          : '<span class="sampling-frequency-date-line">—</span>';
+
+        const aria=count
+          ? `${shortSite}: ${count} ${count===1?"sampling visit":"sampling visits"} in ${samplingFrequencyLongMonth(month)}. ${dateText}`
+          : `${shortSite}: no recorded sampling visit in ${samplingFrequencyLongMonth(month)}`;
+
+        let intervalBadge="";
+        if(count){
+          const firstDate=dates[0];
+          const gap=siteIntervals[site]?.get(firstDate);
+          if(Number.isFinite(gap)){
+            intervalBadge=`<span class="sampling-frequency-between" title="${gap} ${gap===1?"day":"days"} since previous sample" aria-label="${gap} ${gap===1?"day":"days"} between samples">${gap}</span>`;
+          }
+        }
+
+        return `<div class="sampling-frequency-cell-wrap">
+          ${intervalBadge}
+          <div class="sampling-frequency-cell${count?" has-visits":""}${cls}"
+            data-site="${esc(site)}"
+            tabindex="0"
+            title="${esc(dateText)}"
+            aria-label="${esc(aria)}">${count||"—"}</div>
+          <div class="sampling-frequency-date-lines">${visibleDates}</div>
+        </div>`;
+      }).join("");
+  }).join("");
+
+  chart.innerHTML=`<div class="sampling-frequency-grid" style="grid-template-columns:${columns}">${headers}${rows}</div>`;
+
+  const visibleVisits=visits.filter(v=>monthSet.has(samplingFrequencyMonthKey(v.timestamp)));
+  const range=`${samplingFrequencyLongMonth(months[0])} – ${samplingFrequencyLongMonth(months[months.length-1])}`;
+  summary.innerHTML=`<strong>Monitoring coverage:</strong> ${sites.length} ${sites.length===1?"site":"sites"} · ${visibleVisits.length} ${visibleVisits.length===1?"sampling visit":"sampling visits"} · ${esc(range)}${visibleVisits.length!==visits.length?` · latest 12 months of ${visits.length} total visits`:""}`;
+
+  const lastVisits=document.getElementById("samplingFrequencyLastVisits");
+  if(lastVisits){
+    const now=new Date();
+    const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+    const dayMs=24*60*60*1000;
+
+    lastVisits.innerHTML=sites.map(site=>{
+      const siteVisits=visits.filter(v=>v.site===site);
+      const latest=siteVisits[siteVisits.length-1];
+      const days=Math.max(0,Math.floor((today-latest.timestamp)/dayMs));
+      const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+      const daysText=days===0
+        ? "Sampled today"
+        : `${days} ${days===1?"day":"days"} since last sample`;
+
+      return `<div class="sampling-frequency-last-visit" data-site="${esc(site)}">
+        <strong>${esc(shortSite)}</strong>
+        <span>${esc(daysText)}</span>
+        <span class="sampling-frequency-last-date">Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
+      </div>`;
+    }).join("");
+
+    const setLinkedLastSampleHighlight=(site,active)=>{
+      lastVisits.querySelectorAll(".sampling-frequency-last-visit").forEach(card=>{
+        const match=card.dataset.site===site;
+        if(match) card.classList.toggle("linked-highlight",active);
+      });
+    };
+
+    chart.querySelectorAll(".sampling-frequency-cell[data-site]").forEach(cell=>{
+      cell.addEventListener("mouseenter",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("mouseleave",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+      cell.addEventListener("focus",()=>setLinkedLastSampleHighlight(cell.dataset.site,true));
+      cell.addEventListener("blur",()=>setLinkedLastSampleHighlight(cell.dataset.site,false));
+    });
+  }
+}
+
 let currentComparisonMetric="nitrate";
 
 function latestMetricResultForSite(rows,metric){
@@ -5781,6 +6492,11 @@ const furtherPanels = [
     icon:document.getElementById("monitoringGapsIcon")
   },
   {
+    button:document.getElementById("samplingFrequencyToggle"),
+    content:document.getElementById("samplingFrequencyContent"),
+    icon:document.getElementById("samplingFrequencyIcon")
+  },
+  {
     button:document.getElementById("siteComparisonToggle"),
     content:document.getElementById("siteComparisonContent"),
     icon:document.getElementById("siteComparisonIcon")
@@ -5836,27 +6552,31 @@ function setFurtherPanel(index,open){
     renderMonitoringGaps();
   }
 
-  if(open && index===4 && typeof renderSiteComparison==="function"){
+  if(open && index===4 && typeof renderSamplingFrequency==="function"){
+    renderSamplingFrequency();
+  }
+
+  if(open && index===5 && typeof renderSiteComparison==="function"){
     renderSiteComparison();
   }
 
-  if(open && index===5 && typeof renderSiteConsistency==="function"){
+  if(open && index===6 && typeof renderSiteConsistency==="function"){
     renderSiteConsistency();
   }
 
-  if(open && index===6 && typeof renderSampleTrend==="function"){
+  if(open && index===7 && typeof renderSampleTrend==="function"){
     renderSampleTrend();
   }
 
-  if(open && index===7 && typeof renderProjectTrend==="function"){
+  if(open && index===8 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===8 && typeof renderSeasonalPattern==="function"){
+  if(open && index===9 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===9 && typeof renderRelationship==="function"){
+  if(open && index===10 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
