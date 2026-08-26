@@ -496,6 +496,13 @@ select {
 }
 
 </style>
+
+<style>
+/* Keyless Light basemap: soften standard OpenStreetMap tiles. */
+.qpt-light-basemap {
+  filter: grayscale(100%) brightness(1.16) contrast(0.78) saturate(70%);
+}
+</style>
 </head>
 <body>
 
@@ -651,28 +658,16 @@ function publishSiteFocus(site) {
 }
 
 // Basemap choices
-// Light map uses Esri World Light Gray Canvas instead of CARTO raster tiles.
-// The legacy Esri service is split into a base layer and a reference/labels layer,
-// so they are grouped and behave as one Leaflet basemap.
-const lightBase = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+// Light map: keyless OpenStreetMap tiles with a light visual treatment.
+// This avoids CARTO/Esri basemap API-key requirements while preserving a pale map style.
+const lightMap = L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   {
-    maxNativeZoom:16,
     maxZoom:19,
-    attribution:"Tiles &copy; Esri &mdash; map data &copy; OpenStreetMap contributors"
+    className:"qpt-light-basemap",
+    attribution:"&copy; OpenStreetMap contributors"
   }
 );
-
-const lightLabels = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
-  {
-    maxNativeZoom:16,
-    maxZoom:19,
-    attribution:"Tiles &copy; Esri"
-  }
-);
-
-const lightMap = L.layerGroup([lightBase, lightLabels]);
 
 const streetMap = L.tileLayer(
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
