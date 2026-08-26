@@ -1470,6 +1470,30 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   line-height:1.5;
 }
 
+
+/* Monitoring gaps / overdue sampling --------------------------------- */
+.monitoring-gaps-panel{padding:18px 20px 22px}
+.monitoring-gaps-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.5}
+.monitoring-gaps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 14px}
+.monitoring-gaps-card{border:1px solid #d8e2dc;border-top:4px solid #50675a;border-radius:9px;padding:12px;background:#fff}
+.monitoring-gaps-card small{display:block;color:#66746b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.monitoring-gaps-card strong{display:block;color:var(--ink);font-size:16px;line-height:1.25}
+.monitoring-gaps-summary{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-left:5px solid #50675a;border-radius:8px;background:#f8faf8;color:var(--ink);font-size:13px;line-height:1.5}
+.monitoring-gaps-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.monitoring-gaps-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;min-width:760px;font-size:12px}
+.monitoring-gaps-table th,.monitoring-gaps-table td{padding:9px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.monitoring-gaps-table th{background:#f2f6f3;font-weight:800}
+.monitoring-gaps-table th:last-child,.monitoring-gaps-table td:last-child{border-right:0}
+.monitoring-gaps-table tbody tr:last-child td{border-bottom:0}
+.monitoring-gaps-table tbody tr:hover td{background:#f2f7f3}
+.monitoring-gap-site{font-weight:750;color:var(--ink)}
+.monitoring-gap-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850;white-space:nowrap}
+.monitoring-gap-status.current{background:#e4f3e8;color:#245c37}
+.monitoring-gap-status.due-soon{background:#fff3cd;color:#6a5200}
+.monitoring-gap-status.overdue{background:#fde8e7;color:#8f2d25}
+.monitoring-gap-status.insufficient{background:#edf1ee;color:#526158}
+.monitoring-gaps-note{margin-top:12px;color:#66746b;font-size:11px;line-height:1.5}
+
 </style>
 </head>
 <body>
@@ -1593,6 +1617,33 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div class="coliform-recurrence-note">
         This is a recurrence analysis of citizen-science screening results, not a statutory microbiological water-quality classification.
         A positive or recurring result should prompt repeat testing and, where appropriate, investigation of possible contamination sources.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="outer-analysis-panel">
+  <button
+    id="monitoringGapsToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="monitoringGapsContent">
+    <span>Monitoring gaps / overdue sampling</span>
+    <span id="monitoringGapsIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="monitoringGapsContent" class="outer-analysis-content" hidden>
+    <div class="monitoring-gaps-panel">
+      <p class="monitoring-gaps-intro">
+        Identify sampling sites that may be falling behind their usual monitoring pattern. The expected interval is based on each site's own survey history, with the project-wide typical interval used when a site has limited history.
+      </p>
+      <div id="monitoringGapsGrid" class="monitoring-gaps-grid"></div>
+      <div id="monitoringGapsSummary" class="monitoring-gaps-summary"></div>
+      <div id="monitoringGapsTable"></div>
+      <div class="monitoring-gaps-note">
+        Status is a project-management prompt rather than a water-quality assessment. Duplicate records on the same site and calendar date are counted as one sampling visit. “Overdue” means the current gap is substantially longer than the observed sampling rhythm, not that a statutory sampling deadline has been missed.
       </div>
     </div>
   </div>
@@ -4791,6 +4842,127 @@ function setComparisonMetric(metric){
 }
 
 
+
+/* Monitoring gaps / overdue sampling --------------------------------- */
+function monitoringGapMedian(values){
+  const nums=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!nums.length) return NaN;
+  const mid=Math.floor(nums.length/2);
+  return nums.length%2 ? nums[mid] : (nums[mid-1]+nums[mid])/2;
+}
+
+function monitoringGapDay(ts){
+  const d=new Date(ts);
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+}
+
+function monitoringGapGroups(){
+  const groups=new Map();
+  freshwaterDataForChanges.forEach(row=>{
+    const ts=sampleDateValue(row);
+    if(!ts) return;
+    const raw=siteName(row);
+    const key=canonicalSiteKey(raw);
+    if(!key) return;
+    if(!groups.has(key)) groups.set(key,{site:canonicalSiteDisplay(raw),dates:new Set()});
+    groups.get(key).dates.add(monitoringGapDay(ts));
+  });
+  return [...groups.values()].map(group=>({
+    site:group.site,
+    dates:[...group.dates].sort((a,b)=>a-b)
+  }));
+}
+
+function monitoringGapIntervals(dates){
+  const DAY=86400000;
+  const gaps=[];
+  for(let i=1;i<dates.length;i++){
+    const days=Math.round((dates[i]-dates[i-1])/DAY);
+    if(days>0) gaps.push(days);
+  }
+  return gaps;
+}
+
+function monitoringGapDateLabel(ts){
+  if(!ts) return "—";
+  return new Date(ts).toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+function monitoringGapStatus(daysSince,expected,hasHistory){
+  if(!Number.isFinite(daysSince) || !Number.isFinite(expected)) return {label:"Insufficient history",cls:"insufficient",rank:0};
+  const currentLimit=Math.max(Math.ceil(expected*1.25),Math.ceil(expected+3));
+  const overdueLimit=Math.max(Math.ceil(expected*1.75),Math.ceil(expected+7));
+  if(daysSince>overdueLimit) return {label:"Overdue",cls:"overdue",rank:3};
+  if(daysSince>currentLimit) return {label:"Due soon",cls:"due-soon",rank:2};
+  return {label:hasHistory ? "Current" : "Current · limited history",cls:"current",rank:1};
+}
+
+function renderMonitoringGaps(){
+  const grid=document.getElementById("monitoringGapsGrid");
+  const summary=document.getElementById("monitoringGapsSummary");
+  const tableTarget=document.getElementById("monitoringGapsTable");
+  if(!grid || !summary || !tableTarget) return;
+
+  const groups=monitoringGapGroups();
+  if(!groups.length){
+    grid.innerHTML="";
+    summary.textContent="No dated sampling records are available yet.";
+    tableTarget.innerHTML="";
+    return;
+  }
+
+  const allIntervals=groups.flatMap(group=>monitoringGapIntervals(group.dates));
+  const projectTypical=monitoringGapMedian(allIntervals);
+  const fallbackTypical=Number.isFinite(projectTypical) ? projectTypical : 14;
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const DAY=86400000;
+
+  const rows=groups.map(group=>{
+    const intervals=monitoringGapIntervals(group.dates);
+    const ownTypical=monitoringGapMedian(intervals);
+    const expected=Number.isFinite(ownTypical) ? ownTypical : fallbackTypical;
+    const latest=group.dates[group.dates.length-1];
+    const daysSince=Math.max(0,Math.floor((today-latest)/DAY));
+    const largest=intervals.length ? Math.max(...intervals) : NaN;
+    const status=monitoringGapStatus(daysSince,expected,intervals.length>0);
+    return {site:group.site,count:group.dates.length,latest,daysSince,expected,ownTypical,largest,status};
+  }).sort((a,b)=>b.status.rank-a.status.rank || b.daysSince-a.daysSince || a.site.localeCompare(b.site));
+
+  const overdue=rows.filter(r=>r.status.cls==="overdue").length;
+  const dueSoon=rows.filter(r=>r.status.cls==="due-soon").length;
+  const longest=rows.reduce((best,row)=>!best || row.daysSince>best.daysSince ? row : best,null);
+
+  grid.innerHTML=`
+    <div class="monitoring-gaps-card"><small>Sites monitored</small><strong>${rows.length}</strong></div>
+    <div class="monitoring-gaps-card"><small>Overdue</small><strong>${overdue}</strong></div>
+    <div class="monitoring-gaps-card"><small>Due soon</small><strong>${dueSoon}</strong></div>
+    <div class="monitoring-gaps-card"><small>Longest current gap</small><strong>${longest ? `${longest.daysSince} days` : "—"}</strong></div>`;
+
+  if(overdue){
+    summary.innerHTML=`<strong>${overdue} ${overdue===1?"site is":"sites are"} currently flagged as overdue.</strong> These sites have gone substantially longer without a survey than the monitoring pattern seen in the project data. ${dueSoon ? `${dueSoon} additional ${dueSoon===1?"site is":"sites are"} due soon.` : ""}`;
+  }else if(dueSoon){
+    summary.innerHTML=`<strong>No sites are currently overdue.</strong> ${dueSoon} ${dueSoon===1?"site is":"sites are"} approaching the upper end of the usual sampling interval and may be worth prioritising next.`;
+  }else{
+    summary.innerHTML=`<strong>No current monitoring gaps are flagged.</strong> All sites are within their observed sampling rhythm based on the available survey history.`;
+  }
+
+  tableTarget.innerHTML=`<div class="monitoring-gaps-table-wrap"><table class="monitoring-gaps-table">
+    <thead><tr><th>Sampling site</th><th>Last sample</th><th>Days since</th><th>Typical interval</th><th>Largest previous gap</th><th>Visits</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(row=>`<tr>
+      <td class="monitoring-gap-site">${esc(row.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</td>
+      <td>${esc(monitoringGapDateLabel(row.latest))}</td>
+      <td>${row.daysSince}</td>
+      <td>${Math.round(row.expected)} days${Number.isFinite(row.ownTypical)?"":"*"}</td>
+      <td>${Number.isFinite(row.largest)?`${row.largest} days`:"—"}</td>
+      <td>${row.count}</td>
+      <td><span class="monitoring-gap-status ${row.status.cls}">${esc(row.status.label)}</span></td>
+    </tr>`).join("")}</tbody>
+  </table></div>${rows.some(r=>!Number.isFinite(r.ownTypical)) ? `<div class="monitoring-gaps-note">* Project-wide typical interval used because this site does not yet have enough repeated visits to establish its own interval.</div>` : ""}`;
+
+  setTimeout(notifyParentOfHeight,40);
+}
+
 async function load(){
   try{
     const data=parseCSV(await fetchCSV());
@@ -4806,6 +4978,7 @@ async function load(){
     populateChangeSummarySiteSelect();
     renderSnapshot();
     renderChangeSummary();
+    renderMonitoringGaps();
 
     renderSiteComparison();
     renderSiteConsistency();
@@ -4973,6 +5146,11 @@ const furtherPanels = [
     icon:document.getElementById("coliformRecurrenceIcon")
   },
   {
+    button:document.getElementById("monitoringGapsToggle"),
+    content:document.getElementById("monitoringGapsContent"),
+    icon:document.getElementById("monitoringGapsIcon")
+  },
+  {
     button:document.getElementById("siteComparisonToggle"),
     content:document.getElementById("siteComparisonContent"),
     icon:document.getElementById("siteComparisonIcon")
@@ -5019,23 +5197,27 @@ function setFurtherPanel(index,open){
     renderColiformRecurrence();
   }
 
-  if(open && index===3 && typeof renderSiteComparison==="function"){
+  if(open && index===3 && typeof renderMonitoringGaps==="function"){
+    renderMonitoringGaps();
+  }
+
+  if(open && index===4 && typeof renderSiteComparison==="function"){
     renderSiteComparison();
   }
 
-  if(open && index===4 && typeof renderSiteConsistency==="function"){
+  if(open && index===5 && typeof renderSiteConsistency==="function"){
     renderSiteConsistency();
   }
 
-  if(open && index===5 && typeof renderProjectTrend==="function"){
+  if(open && index===6 && typeof renderProjectTrend==="function"){
     renderProjectTrend();
   }
 
-  if(open && index===6 && typeof renderSeasonalPattern==="function"){
+  if(open && index===7 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===7 && typeof renderRelationship==="function"){
+  if(open && index===8 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
