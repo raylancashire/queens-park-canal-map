@@ -651,14 +651,28 @@ function publishSiteFocus(site) {
 }
 
 // Basemap choices
-const lightMap = L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+// Light map uses Esri World Light Gray Canvas instead of CARTO raster tiles.
+// The legacy Esri service is split into a base layer and a reference/labels layer,
+// so they are grouped and behave as one Leaflet basemap.
+const lightBase = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
   {
-    maxZoom:20,
-    subdomains:"abcd",
-    attribution:"&copy; OpenStreetMap contributors &copy; CARTO"
+    maxNativeZoom:16,
+    maxZoom:19,
+    attribution:"Tiles &copy; Esri &mdash; map data &copy; OpenStreetMap contributors"
   }
 );
+
+const lightLabels = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxNativeZoom:16,
+    maxZoom:19,
+    attribution:"Tiles &copy; Esri"
+  }
+);
+
+const lightMap = L.layerGroup([lightBase, lightLabels]);
 
 const streetMap = L.tileLayer(
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
