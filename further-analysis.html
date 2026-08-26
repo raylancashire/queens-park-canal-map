@@ -1733,17 +1733,22 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       type="button"
       aria-expanded="false"
       aria-controls="projectTrendsContent">
-      <span>Project-wide trends</span>
+      <span>Project / site trends</span>
       <span id="projectTrendsIcon" aria-hidden="true">＋</span>
     </button>
 
     <div id="projectTrendsContent" class="outer-analysis-content" hidden>
       <p class="site-comparison-intro">
-        Shows the overall direction of results across the project by survey date.
-        Each point combines all sites sampled on that date.
+        Shows the direction of results by survey date. Choose All sites for the project-wide view,
+        or select an individual sampling site to see that site's trend.
       </p>
 
-      <div class="site-comparison-tabs" role="tablist" aria-label="Choose project-wide trend measure">
+      <div class="seasonal-site-control">
+        <label for="trendSiteSelect">Sampling site:</label>
+        <select id="trendSiteSelect"><option value="all">All sites</option></select>
+      </div>
+
+      <div class="site-comparison-tabs" role="tablist" aria-label="Choose project or site trend measure">
         <button id="trendNitrate" class="active" type="button" aria-pressed="true">Nitrate</button>
         <button id="trendPhosphate" type="button" aria-pressed="false">Phosphate</button>
         <button id="trendTurbidity" type="button" aria-pressed="false">Turbidity</button>
@@ -2912,11 +2917,13 @@ function setRelationship(key){
 
 
 let currentTrendMetric="nitrate";
+let currentTrendSite="all";
 
 function projectTrendPoints(metric){
   const groups={};
 
   freshwaterDataForChanges.forEach(row=>{
+    if(currentTrendSite!=="all" && normaliseSiteForMatch(siteName(row))!==normaliseSiteForMatch(currentTrendSite)) return;
     const ts=sampleDateValue(row);
     if(!ts) return;
 
@@ -2960,14 +2967,14 @@ function trendMetricInfo(metric){
 
 function trendDirection(points){
   if(points.length<2){
-    return "Not enough survey dates yet to identify a project-wide direction.";
+    return currentTrendSite==="all" ? "Not enough survey dates yet to identify a project-wide direction." : "Not enough survey dates yet to identify a site trend.";
   }
 
   const first=points[0].value;
   const last=points[points.length-1].value;
 
   if(first===0){
-    return "The project-wide trend is still developing as more survey rounds are added.";
+    return currentTrendSite==="all" ? "The project-wide trend is still developing as more survey rounds are added." : "This site trend is still developing as more survey rounds are added.";
   }
 
   const pct=((last-first)/Math.abs(first))*100;
@@ -2989,7 +2996,7 @@ function renderProjectTrend(){
   const info=trendMetricInfo(currentTrendMetric);
 
   if(!points.length){
-    chart.innerHTML='<div class="site-comparison-empty">No project-wide trend data available for this measure.</div>';
+    chart.innerHTML='<div class="site-comparison-empty">No trend data available for this measure and site selection.</div>';
     summary.textContent="";
     return;
   }
@@ -3041,7 +3048,7 @@ function renderProjectTrend(){
   }).join("");
 
   chart.innerHTML=`<svg class="project-trend-svg" viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="${esc(info.label)} across all sampling sites by survey date">
+    aria-label="${esc(info.label)} ${currentTrendSite==="all"?"across all sampling sites":`at ${esc(currentTrendSite)}`} by survey date">
     ${grid}
     <text x="16" y="${top+plotH/2}" text-anchor="middle"
       transform="rotate(-90 16 ${top+plotH/2})" class="project-trend-axis">
@@ -3052,6 +3059,29 @@ function renderProjectTrend(){
   </svg>`;
 
   summary.textContent=trendDirection(points);
+}
+
+function populateTrendSiteSelect(){
+  const select=document.getElementById("trendSiteSelect");
+  if(!select) return;
+  const sites=uniqueNormalisedSiteNames(freshwaterDataForChanges);
+  select.innerHTML='<option value="all">All sites</option>'+sites.map(site=>`<option value="${esc(site)}">${esc(site.replace(/^Grand Union Canal\s*-\s*/i,""))}</option>`).join("");
+  syncTrendSiteUI();
+}
+
+function syncTrendSiteUI(){
+  const select=document.getElementById("trendSiteSelect");
+  if(!select) return;
+  if(currentTrendSite==="all") { select.value="all"; return; }
+  const match=[...select.options].find(o=>normaliseSiteForMatch(o.value)===normaliseSiteForMatch(currentTrendSite));
+  select.value=match ? match.value : "all";
+}
+
+function setTrendSite(site){
+  currentTrendSite=site || "all";
+  syncTrendSiteUI();
+  renderProjectTrend();
+  setTimeout(notifyParentOfHeight,40);
 }
 
 function setTrendMetric(metric){
@@ -4975,6 +5005,7 @@ async function load(){
       Render Site Comparison immediately once the CSV has loaded.
     */
     populateSnapshotSiteSelect();
+    populateTrendSiteSelect();
     populateChangeSummarySiteSelect();
     renderSnapshot();
     renderChangeSummary();
@@ -5252,6 +5283,10 @@ if(document.getElementById("relationNitratePhosphate")){
   document.getElementById("relationNitratePhosphate").addEventListener("click",()=>setRelationship("nitrate-phosphate"));
   document.getElementById("relationPhosphateTurbidity").addEventListener("click",()=>setRelationship("phosphate-turbidity"));
   document.getElementById("relationNitrateTurbidity").addEventListener("click",()=>setRelationship("nitrate-turbidity"));
+}
+
+if(document.getElementById("trendSiteSelect")){
+  document.getElementById("trendSiteSelect").addEventListener("change",event=>setTrendSite(event.target.value));
 }
 
 if(document.getElementById("trendNitrate")){
