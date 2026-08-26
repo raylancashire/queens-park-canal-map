@@ -1487,6 +1487,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .monitoring-gaps-table tbody tr:last-child td{border-bottom:0}
 .monitoring-gaps-table tbody tr:hover td{background:#f2f7f3}
 .monitoring-gap-site{font-weight:750;color:var(--ink)}
+.monitoring-gap-site-name{display:inline-block;padding:4px 8px;border-radius:7px;border-left:4px solid #a9b7ad;background:#f4f7f5;font-weight:850;line-height:1.35}
+.monitoring-gap-site-name.current{border-left-color:#4f8a61;background:#eef7f0;color:#245c37}
+.monitoring-gap-site-name.due-soon{border-left-color:#d3a522;background:#fff8df;color:#6a5200}
+.monitoring-gap-site-name.overdue{border-left-color:#c44e44;background:#fff0ef;color:#8f2d25}
+.monitoring-gap-site-name.insufficient{border-left-color:#9aa69f;background:#f2f4f3;color:#526158}
+.monitoring-gap-card-site{display:block;margin-top:3px;color:#66746b;font-size:10px;font-weight:750;line-height:1.3}
 .monitoring-gap-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850;white-space:nowrap}
 .monitoring-gap-status.current{background:#e4f3e8;color:#245c37}
 .monitoring-gap-status.due-soon{background:#fff3cd;color:#6a5200}
@@ -5888,15 +5894,24 @@ function renderSamplingFrequency(){
   const summary=document.getElementById("samplingFrequencySummary");
   if(!chart||!summary)return;
 
+  /* Use the same current site normalisation as the rest of Further Analysis.
+     This merges prefixed/unprefixed, punctuation and whitespace variants so
+     Sampling Frequency cannot recreate an older duplicate site list. */
   const visitMap=new Map();
   freshwaterDataForChanges.forEach(row=>{
-    const site=siteName(row),ts=sampleDateValue(row);
-    if(!site||!ts)return;
+    const rawSite=siteName(row),ts=sampleDateValue(row);
+    const siteKey=normaliseSiteForMatch(rawSite);
+    if(!siteKey||!ts)return;
+    const site=siteDisplayName(rawSite);
     const d=new Date(ts);
     const dayKey=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    const key=`${site}||${dayKey}`;
+    const key=`${siteKey}||${dayKey}`;
     if(!visitMap.has(key)){
-      visitMap.set(key,{site,timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()});
+      visitMap.set(key,{
+        siteKey,
+        site,
+        timestamp:new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()
+      });
     }
   });
 
@@ -5909,17 +5924,28 @@ function renderSamplingFrequency(){
 
   const months=samplingFrequencyMonths(visits[0].timestamp,visits[visits.length-1].timestamp);
   const monthSet=new Set(months);
-  const sites=[...new Set(visits.map(v=>v.site))].sort((a,b)=>a.localeCompare(b));
+
+  const siteMap=new Map();
+  visits.forEach(v=>{
+    if(!siteMap.has(v.siteKey)) siteMap.set(v.siteKey,v.site);
+  });
+  const sites=[...siteMap.entries()]
+    .map(([key,display])=>({key,display}))
+    .sort((a,b)=>a.display.localeCompare(b.display));
+
   const grouped={};
-  sites.forEach(site=>{grouped[site]={};months.forEach(month=>grouped[site][month]=[])});
+  sites.forEach(({key})=>{
+    grouped[key]={};
+    months.forEach(month=>grouped[key][month]=[]);
+  });
 
   const siteIntervals={};
-  sites.forEach(site=>{
+  sites.forEach(({key})=>{
     const siteVisits=visits
-      .filter(v=>v.site===site)
+      .filter(v=>v.siteKey===key)
       .sort((a,b)=>a.timestamp-b.timestamp);
 
-    siteIntervals[site]=new Map();
+    siteIntervals[key]=new Map();
 
     siteVisits.forEach((visit,index)=>{
       const previous=index>0 ? siteVisits[index-1] : null;
@@ -5927,24 +5953,24 @@ function renderSamplingFrequency(){
         ? Math.round((visit.timestamp-previous.timestamp)/(24*60*60*1000))
         : null;
 
-      siteIntervals[site].set(visit.timestamp,daysBetween);
+      siteIntervals[key].set(visit.timestamp,daysBetween);
     });
   });
 
   visits.forEach(v=>{
     const month=samplingFrequencyMonthKey(v.timestamp);
-    if(monthSet.has(month))(grouped[v.site][month]||=[]).push(v.timestamp);
+    if(monthSet.has(month))(grouped[v.siteKey][month]||=[]).push(v.timestamp);
   });
 
   const columns=`150px repeat(${months.length},96px)`;
   const headers=`<div class="sampling-frequency-corner">Sampling site</div>`+
     months.map(m=>`<div class="sampling-frequency-month" title="${esc(samplingFrequencyLongMonth(m))}">${esc(samplingFrequencyMonthLabel(m))}</div>`).join("");
 
-  const rows=sites.map(site=>{
-    const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
+  const rows=sites.map(({key,display})=>{
+    const shortSite=display;
     return `<div class="sampling-frequency-site">${esc(shortSite)}</div>`+
       months.map(month=>{
-        const dates=(grouped[site][month]||[]).sort((a,b)=>a-b),count=dates.length;
+        const dates=(grouped[key][month]||[]).sort((a,b)=>a-b),count=dates.length;
         const cls=count===0?"":count===1?" frequency-1":count===2?" frequency-2":count===3?" frequency-3":" frequency-4plus";
         const dateText=count?dates.map(samplingFrequencyDateLabel).join(", "):`No recorded visit in ${samplingFrequencyLongMonth(month)}`;
 
@@ -5965,7 +5991,7 @@ function renderSamplingFrequency(){
         let intervalBadge="";
         if(count){
           const firstDate=dates[0];
-          const gap=siteIntervals[site]?.get(firstDate);
+          const gap=siteIntervals[key]?.get(firstDate);
           if(Number.isFinite(gap)){
             intervalBadge=`<span class="sampling-frequency-between" title="${gap} ${gap===1?"day":"days"} since previous sample" aria-label="${gap} ${gap===1?"day":"days"} between samples">${gap}</span>`;
           }
@@ -5974,7 +6000,7 @@ function renderSamplingFrequency(){
         return `<div class="sampling-frequency-cell-wrap">
           ${intervalBadge}
           <div class="sampling-frequency-cell${count?" has-visits":""}${cls}"
-            data-site="${esc(site)}"
+            data-site="${esc(key)}"
             tabindex="0"
             title="${esc(dateText)}"
             aria-label="${esc(aria)}">${count||"—"}</div>
@@ -5995,25 +6021,24 @@ function renderSamplingFrequency(){
     const today=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
     const dayMs=24*60*60*1000;
 
-    lastVisits.innerHTML=sites.map(site=>{
-      const siteVisits=visits.filter(v=>v.site===site);
+    lastVisits.innerHTML=sites.map(({key,display})=>{
+      const siteVisits=visits.filter(v=>v.siteKey===key);
       const latest=siteVisits[siteVisits.length-1];
       const days=Math.max(0,Math.floor((today-latest.timestamp)/dayMs));
-      const shortSite=site.replace(/^Grand Union Canal\s*-\s*/i,"");
       const daysText=days===0
         ? "Sampled today"
         : `${days} ${days===1?"day":"days"} since last sample`;
 
-      return `<div class="sampling-frequency-last-visit" data-site="${esc(site)}">
-        <strong>${esc(shortSite)}</strong>
+      return `<div class="sampling-frequency-last-visit" data-site="${esc(key)}">
+        <strong>${esc(display)}</strong>
         <span>${esc(daysText)}</span>
         <span class="sampling-frequency-last-date">Last sampled ${esc(samplingFrequencyDateLabel(latest.timestamp))}</span>
       </div>`;
     }).join("");
 
-    const setLinkedLastSampleHighlight=(site,active)=>{
+    const setLinkedLastSampleHighlight=(siteKey,active)=>{
       lastVisits.querySelectorAll(".sampling-frequency-last-visit").forEach(card=>{
-        const match=card.dataset.site===site;
+        const match=card.dataset.site===siteKey;
         if(match) card.classList.toggle("linked-highlight",active);
       });
     };
@@ -6260,7 +6285,7 @@ function renderMonitoringGaps(){
     <div class="monitoring-gaps-card"><small>Sites monitored</small><strong>${rows.length}</strong></div>
     <div class="monitoring-gaps-card"><small>Overdue</small><strong>${overdue}</strong></div>
     <div class="monitoring-gaps-card"><small>Due soon</small><strong>${dueSoon}</strong></div>
-    <div class="monitoring-gaps-card"><small>Longest current gap</small><strong>${longest ? `${longest.daysSince} days` : "—"}</strong></div>`;
+    <div class="monitoring-gaps-card"><small>Longest current gap</small><strong>${longest ? `${longest.daysSince} days` : "—"}</strong>${longest ? `<span class="monitoring-gap-card-site">${esc(longest.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</span>` : ""}</div>`;
 
   if(overdue){
     summary.innerHTML=`<strong>${overdue} ${overdue===1?"site is":"sites are"} currently flagged as overdue.</strong> These sites have gone substantially longer without a survey than the monitoring pattern seen in the project data. ${dueSoon ? `${dueSoon} additional ${dueSoon===1?"site is":"sites are"} due soon.` : ""}`;
@@ -6273,7 +6298,7 @@ function renderMonitoringGaps(){
   tableTarget.innerHTML=`<div class="monitoring-gaps-table-wrap"><table class="monitoring-gaps-table">
     <thead><tr><th>Sampling site</th><th>Last sample</th><th>Days since</th><th>Typical interval</th><th>Largest previous gap</th><th>Visits</th><th>Status</th></tr></thead>
     <tbody>${rows.map(row=>`<tr>
-      <td class="monitoring-gap-site">${esc(row.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</td>
+      <td class="monitoring-gap-site"><span class="monitoring-gap-site-name ${row.status.cls}">${esc(row.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</span></td>
       <td>${esc(monitoringGapDateLabel(row.latest))}</td>
       <td>${row.daysSince}</td>
       <td>${Math.round(row.expected)} days${Number.isFinite(row.ownTypical)?"":"*"}</td>
