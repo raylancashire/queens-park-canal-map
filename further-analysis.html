@@ -1475,7 +1475,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .monitoring-gaps-panel{padding:18px 20px 22px}
 .monitoring-gaps-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.5}
 .monitoring-gaps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 14px}
-.monitoring-gaps-card{border:1px solid #d8e2dc;border-top:4px solid #50675a;border-radius:9px;padding:12px;background:#fff}
+.monitoring-gaps-card{border:1px solid #d8e2dc;border-top:4px solid #50675a;border-radius:9px;padding:12px;background:#fff;cursor:default;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.monitoring-gaps-card[data-highlight]{cursor:pointer}
+.monitoring-gaps-card[data-highlight]:hover,.monitoring-gaps-card[data-highlight]:focus-visible{background:#eef7ef;border-color:#bfd7c5;box-shadow:0 5px 14px rgba(23,50,31,.10);transform:translateY(-1px);outline:none}
+.monitoring-gaps-table tbody tr{transition:opacity .16s ease}
+.monitoring-gaps-table tbody.monitoring-gap-highlighting tr{opacity:.30}
+.monitoring-gaps-table tbody.monitoring-gap-highlighting tr.monitoring-gap-match{opacity:1}
+.monitoring-gaps-table tbody tr.monitoring-gap-match td{background:#e9f4ec}
+.monitoring-gaps-table tbody tr.monitoring-gap-match td:first-child{box-shadow:inset 4px 0 0 #2f6b45}
 .monitoring-gaps-card small{display:block;color:#66746b;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
 .monitoring-gaps-card strong{display:block;color:var(--ink);font-size:16px;line-height:1.25}
 .monitoring-gaps-summary{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-left:5px solid #50675a;border-radius:8px;background:#f8faf8;color:var(--ink);font-size:13px;line-height:1.5}
@@ -6281,11 +6288,13 @@ function renderMonitoringGaps(){
   const dueSoon=rows.filter(r=>r.status.cls==="due-soon").length;
   const longest=rows.reduce((best,row)=>!best || row.daysSince>best.daysSince ? row : best,null);
 
+  const longestIndex=longest ? rows.indexOf(longest) : -1;
+
   grid.innerHTML=`
-    <div class="monitoring-gaps-card"><small>Sites monitored</small><strong>${rows.length}</strong></div>
-    <div class="monitoring-gaps-card"><small>Overdue</small><strong>${overdue}</strong></div>
-    <div class="monitoring-gaps-card"><small>Due soon</small><strong>${dueSoon}</strong></div>
-    <div class="monitoring-gaps-card"><small>Longest current gap</small><strong>${longest ? `${longest.daysSince} days` : "—"}</strong>${longest ? `<span class="monitoring-gap-card-site">${esc(longest.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</span>` : ""}</div>`;
+    <div class="monitoring-gaps-card" data-highlight="all" tabindex="0" aria-label="Highlight all monitored sites"><small>Sites monitored</small><strong>${rows.length}</strong></div>
+    <div class="monitoring-gaps-card" data-highlight="overdue" tabindex="0" aria-label="Highlight overdue sites"><small>Overdue</small><strong>${overdue}</strong></div>
+    <div class="monitoring-gaps-card" data-highlight="due-soon" tabindex="0" aria-label="Highlight sites due soon"><small>Due soon</small><strong>${dueSoon}</strong></div>
+    <div class="monitoring-gaps-card" data-highlight="longest" tabindex="0" aria-label="Highlight site with longest current gap"><small>Longest current gap</small><strong>${longest ? `${longest.daysSince} days` : "—"}</strong>${longest ? `<span class="monitoring-gap-card-site">${esc(longest.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</span>` : ""}</div>`;
 
   if(overdue){
     summary.innerHTML=`<strong>${overdue} ${overdue===1?"site is":"sites are"} currently flagged as overdue.</strong> These sites have gone substantially longer without a survey than the monitoring pattern seen in the project data. ${dueSoon ? `${dueSoon} additional ${dueSoon===1?"site is":"sites are"} due soon.` : ""}`;
@@ -6297,7 +6306,7 @@ function renderMonitoringGaps(){
 
   tableTarget.innerHTML=`<div class="monitoring-gaps-table-wrap"><table class="monitoring-gaps-table">
     <thead><tr><th>Sampling site</th><th>Last sample</th><th>Days since</th><th>Typical interval</th><th>Largest previous gap</th><th>Visits</th><th>Status</th></tr></thead>
-    <tbody>${rows.map(row=>`<tr>
+    <tbody>${rows.map((row,index)=>`<tr data-monitoring-gap-index="${index}" data-monitoring-gap-status="${row.status.cls}">
       <td class="monitoring-gap-site"><span class="monitoring-gap-site-name ${row.status.cls}">${esc(row.site.replace(/^Grand Union Canal\s*-\s*/i,""))}</span></td>
       <td>${esc(monitoringGapDateLabel(row.latest))}</td>
       <td>${row.daysSince}</td>
@@ -6307,6 +6316,38 @@ function renderMonitoringGaps(){
       <td><span class="monitoring-gap-status ${row.status.cls}">${esc(row.status.label)}</span></td>
     </tr>`).join("")}</tbody>
   </table></div>${rows.some(r=>!Number.isFinite(r.ownTypical)) ? `<div class="monitoring-gaps-note">* Project-wide typical interval used because this site does not yet have enough repeated visits to establish its own interval.</div>` : ""}`;
+
+  const body=tableTarget.querySelector(".monitoring-gaps-table tbody");
+  const tableRows=body ? [...body.querySelectorAll("tr")] : [];
+  const cards=[...grid.querySelectorAll(".monitoring-gaps-card[data-highlight]")];
+
+  function clearMonitoringGapHighlight(){
+    if(body) body.classList.remove("monitoring-gap-highlighting");
+    tableRows.forEach(row=>row.classList.remove("monitoring-gap-match"));
+  }
+
+  function applyMonitoringGapHighlight(kind){
+    clearMonitoringGapHighlight();
+    if(!body) return;
+    const matches=tableRows.filter(row=>{
+      if(kind==="all") return true;
+      if(kind==="overdue") return row.dataset.monitoringGapStatus==="overdue";
+      if(kind==="due-soon") return row.dataset.monitoringGapStatus==="due-soon";
+      if(kind==="longest") return Number(row.dataset.monitoringGapIndex)===longestIndex;
+      return false;
+    });
+    if(!matches.length) return;
+    body.classList.add("monitoring-gap-highlighting");
+    matches.forEach(row=>row.classList.add("monitoring-gap-match"));
+  }
+
+  cards.forEach(card=>{
+    const kind=card.dataset.highlight;
+    card.addEventListener("mouseenter",()=>applyMonitoringGapHighlight(kind));
+    card.addEventListener("mouseleave",clearMonitoringGapHighlight);
+    card.addEventListener("focus",()=>applyMonitoringGapHighlight(kind));
+    card.addEventListener("blur",clearMonitoringGapHighlight);
+  });
 
   setTimeout(notifyParentOfHeight,40);
 }
