@@ -4380,13 +4380,14 @@ function populatePHAnalysisSiteSelect(){
      * Keep all valid named sites and preserve the
      * existing normalisation/deduplication rules.
      */
+    const placeholderSite =
+      /^(?:unnamed(?:\s+site)?|unknown(?:\s+site)?|n\/?a|none|null|not\s+known|not\s+recorded)$/i.test(display) ||
+      /^[\s\-–—_.]+$/.test(display);
+
     if(
       !raw ||
       !display ||
-      /^unnamed$/i.test(display) ||
-      /^unknown$/i.test(display) ||
-      /^n\/?a$/i.test(display) ||
-      /^null$/i.test(display)
+      placeholderSite
     ){
       return;
     }
