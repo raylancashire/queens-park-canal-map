@@ -823,8 +823,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .ph-analysis-intro{
   margin:0 0 14px;
   color:#4f6255;
-  font-size:14px;
-  line-height:1.55;
+  font-size:13px;
+  line-height:1.5;
 }
 .ph-analysis-controls{
   display:flex;
@@ -840,7 +840,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   display:block;
   margin:0 0 6px;
   color:#43594a;
-  font-size:12px;
+  font-size:11px;
   font-weight:800;
 }
 .ph-analysis-control select{
@@ -868,7 +868,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .ph-analysis-card small{
   display:block;
   color:#637269;
-  font-size:11px;
+  font-size:10px;
   font-weight:800;
   text-transform:uppercase;
   letter-spacing:.25px;
@@ -877,14 +877,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   display:block;
   margin-top:5px;
   color:#17321f;
-  font-size:20px;
+  font-size:17px;
   line-height:1.2;
 }
 .ph-analysis-card span{
   display:block;
   margin-top:4px;
   color:#5f6f64;
-  font-size:12px;
+  font-size:11px;
   line-height:1.35;
 }
 .ph-analysis-chart{
@@ -926,21 +926,21 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 .ph-axis-text{
   fill:#5f6f64;
-  font-size:11px;
+  font-size:10px;
 }
 .ph-value-text{
   fill:#17321f;
-  font-size:11px;
+  font-size:10px;
   font-weight:800;
 }
 .ph-zone-label{
   fill:#43594a;
-  font-size:12px;
+  font-size:11px;
   font-weight:800;
 }
 .ph-neutral-label{
   fill:#17321f;
-  font-size:12px;
+  font-size:11px;
   font-weight:900;
 }
 .ph-analysis-note{
@@ -950,8 +950,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:8px;
   background:#f8faf8;
   color:#43594a;
-  font-size:13px;
-  line-height:1.55;
+  font-size:12px;
+  line-height:1.5;
 }
 .ph-distance{
   font-variant-numeric:tabular-nums;
@@ -4357,8 +4357,29 @@ function populatePHAnalysisSiteSelect(){
 
   const seen=new Map();
   combined.forEach(site=>{
-    const key=normaliseSiteForMatch(site);
-    if(key && !seen.has(key)) seen.set(key,siteDisplayName(site));
+    const raw=String(site || "").trim();
+    const display=siteDisplayName(raw);
+    const key=normaliseSiteForMatch(raw);
+
+    /*
+     * Ignore genuinely blank or unnamed locations.
+     * Keep all valid named sites and preserve the
+     * existing normalisation/deduplication rules.
+     */
+    if(
+      !raw ||
+      !display ||
+      /^unnamed$/i.test(display) ||
+      /^unknown$/i.test(display) ||
+      /^n\/?a$/i.test(display) ||
+      /^null$/i.test(display)
+    ){
+      return;
+    }
+
+    if(key && !seen.has(key)){
+      seen.set(key,display);
+    }
   });
 
   const sites=[...seen.values()]
