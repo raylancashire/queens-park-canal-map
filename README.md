@@ -450,6 +450,17 @@ Current features include:
   - All sites for the project-wide view or an individual sampling site
   - Nitrate, Phosphate and Turbidity
 
+- **pH Analysis**
+  - Uses pH results from `additional-water-quality.csv`
+  - All sites or an individual sampling site
+  - Fixed pH scale from 1 to 14 with a clear **pH 7 Neutral** reference line
+  - Values below 7 are shown on the acidic side; values above 7 are shown on the alkaline side
+  - Shows **Latest pH**, **Distance from neutral** and **Observed range** summary cards
+  - Distance from neutral is calculated as `pH - 7`, so negative values are acidic-side and positive values are alkaline-side
+  - All sites averages same-date pH results across the available sampling locations after same-site / same-date de-duplication
+  - Uses the shared normalised site identity and excludes blank / placeholder site names from the selector
+  - Summary cards include matching hover and keyboard-focus states
+
 - **Seasonal patterns**
 
 - **Relationship between indicators**
@@ -887,6 +898,25 @@ These changes are intended to improve readability, interpretation and accessibil
 
 ---
 
+## Update — 27 August 2026 — pH Analysis added
+
+A new **pH Analysis** panel was added to the Canal Watch **Further Analysis** page on **27 August 2026**.
+
+1. Added a dedicated pH results graph using a fixed **pH 1–14** vertical scale.
+2. Added a prominent **pH 7 Neutral** reference line so results can be read immediately as acidic or alkaline relative to neutral.
+3. Added summary cards for **Latest pH**, **Distance from neutral** and **Observed range**.
+4. Added a distance-from-neutral calculation using `pH - 7`, with negative values on the acidic side and positive values on the alkaline side.
+5. Added **All sites** and individual-site selection, using the same project-wide site normalisation and de-duplication rules as the other Further Analysis panels.
+6. In the All sites view, same-date pH results are averaged across the available sampling locations after same-site / same-date de-duplication.
+7. Removed blank or placeholder site names such as **Unnamed**, **Unknown** and **N/A** from the pH site selector.
+8. Reduced the pH panel typography and standardised the site dropdown sizing so the panel matches the visual scale of the surrounding analysis tools.
+9. Added subtle hover and keyboard-focus states to the **Latest pH**, **Distance from neutral** and **Observed range** cards.
+10. Retained the existing single-open accordion behaviour and all previous analysis panels.
+
+The pH panel is intended to make the meaning of each result clearer than a raw number alone: **below 7 = acidic, 7 = neutral, above 7 = alkaline**.
+
+---
+
 ## Update — 26 August 2026 — Further Analysis monitoring and trend tools
 
 The Canal Watch **Further Analysis** page was expanded and consolidated on **26 August 2026**, while retaining the existing analysis panels.
@@ -898,7 +928,7 @@ The Canal Watch **Further Analysis** page was expanded and consolidated on **26 
 5. Updated Sampling Frequency to use the same project-wide normalised site identity as the other analysis panels, preventing old prefix and punctuation variants from appearing as separate sites.
 6. Restored **Sample Trend Analysis**, including individual-site and All sites views for nitrate, phosphate and turbidity.
 7. Restored **Project / Site Trends** as a separate trend panel, with All sites and individual-site selection.
-8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels.
+8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels; **pH Analysis** was added subsequently on 27 August 2026.
 9. Kept the single-open accordion behaviour and the existing site synchronisation / de-duplication logic.
 10. Matched the Coliform Recurrence typography to the sizing used elsewhere in Further Analysis.
 
