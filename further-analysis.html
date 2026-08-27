@@ -819,6 +819,150 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 
+/* pH Analysis */
+.ph-analysis-intro{
+  margin:0 0 14px;
+  color:#4f6255;
+  font-size:14px;
+  line-height:1.55;
+}
+.ph-analysis-controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:end;
+  margin:0 0 14px;
+}
+.ph-analysis-control{
+  min-width:220px;
+}
+.ph-analysis-control label{
+  display:block;
+  margin:0 0 6px;
+  color:#43594a;
+  font-size:12px;
+  font-weight:800;
+}
+.ph-analysis-control select{
+  width:100%;
+  min-height:40px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--ink);
+  padding:8px 10px;
+  font:inherit;
+}
+.ph-analysis-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 14px;
+}
+.ph-analysis-card{
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#f8faf8;
+  padding:12px 14px;
+}
+.ph-analysis-card small{
+  display:block;
+  color:#637269;
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.25px;
+}
+.ph-analysis-card strong{
+  display:block;
+  margin-top:5px;
+  color:#17321f;
+  font-size:20px;
+  line-height:1.2;
+}
+.ph-analysis-card span{
+  display:block;
+  margin-top:4px;
+  color:#5f6f64;
+  font-size:12px;
+  line-height:1.35;
+}
+.ph-analysis-chart{
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+}
+.ph-analysis-svg{
+  width:100%;
+  min-width:620px;
+  height:auto;
+  display:block;
+}
+.ph-zone-acidic{
+  fill:#fff1f1;
+}
+.ph-zone-alkaline{
+  fill:#eef7f1;
+}
+.ph-grid{
+  stroke:#dfe7e2;
+  stroke-width:1;
+}
+.ph-neutral-line{
+  stroke:#17321f;
+  stroke-width:2.2;
+  stroke-dasharray:7 5;
+}
+.ph-series-line{
+  fill:none;
+  stroke:#2f6b45;
+  stroke-width:3;
+}
+.ph-point{
+  fill:#2f6b45;
+  stroke:#fff;
+  stroke-width:2;
+}
+.ph-axis-text{
+  fill:#5f6f64;
+  font-size:11px;
+}
+.ph-value-text{
+  fill:#17321f;
+  font-size:11px;
+  font-weight:800;
+}
+.ph-zone-label{
+  fill:#43594a;
+  font-size:12px;
+  font-weight:800;
+}
+.ph-neutral-label{
+  fill:#17321f;
+  font-size:12px;
+  font-weight:900;
+}
+.ph-analysis-note{
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#f8faf8;
+  color:#43594a;
+  font-size:13px;
+  line-height:1.55;
+}
+.ph-distance{
+  font-variant-numeric:tabular-nums;
+}
+@media (max-width:700px){
+  .ph-analysis-summary{
+    grid-template-columns:1fr;
+  }
+}
+
+
 .relationship-chart{
   overflow-x:auto;
 }
@@ -2464,6 +2608,48 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <div id="projectTrendSummary" class="project-trend-summary"></div>
     </div>
   </section>
+
+<section class="outer-analysis-panel">
+  <button
+    id="phAnalysisToggle"
+    class="outer-analysis-toggle"
+    type="button"
+    aria-expanded="false"
+    aria-controls="phAnalysisContent">
+    <span>pH Analysis</span>
+    <span id="phAnalysisIcon" aria-hidden="true">＋</span>
+  </button>
+
+  <div id="phAnalysisContent" class="outer-analysis-content" hidden>
+    <div class="ph-analysis-panel">
+      <p class="ph-analysis-intro">
+        View recorded pH results against a fixed pH scale, using pH 7 as the neutral reference point.
+        Values below 7 are acidic and values above 7 are alkaline. The summary also shows how far the latest result is from neutral.
+      </p>
+
+      <div class="ph-analysis-controls">
+        <div class="ph-analysis-control">
+          <label for="phAnalysisSiteSelect">Sampling site</label>
+          <select id="phAnalysisSiteSelect">
+            <option value="all">All sites</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="phAnalysisSummary" class="ph-analysis-summary"></div>
+      <div id="phAnalysisChart" class="ph-analysis-chart"></div>
+
+      <div class="ph-analysis-note">
+        <strong>How to read the graph:</strong>
+        pH 7 is neutral. Results below 7 are acidic; results above 7 are alkaline.
+        The distance from neutral is calculated as pH − 7, so negative values are on the acidic side
+        and positive values are on the alkaline side. For All sites, results recorded on the same date
+        are averaged across the available sampling locations.
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="outer-analysis-panel">
     <button id="seasonalPatternsToggle" class="outer-analysis-toggle" type="button"
       aria-expanded="false" aria-controls="seasonalPatternsContent">
@@ -4054,6 +4240,335 @@ function applySampleTrendSiteFocus(site){
   setTimeout(notifyParentOfHeight,40);
 }
 
+
+/* =========================================================
+   pH ANALYSIS — NEUTRAL-CENTRED VIEW
+   ========================================================= */
+
+function phAnalysisValue(row){
+  return snapshotFirstNumber(row,["pH","PH"]);
+}
+
+function phAnalysisRows(){
+  const source=snapshotAdditionalData || [];
+
+  if(currentFocusedSite==="all") return source;
+
+  return filterAdditionalForSite(
+    source,
+    currentFocusedSite
+  );
+}
+
+function phAnalysisPoints(){
+  const rows=phAnalysisRows();
+  const groups=new Map();
+
+  /*
+   * Deduplicate a same-site / same-date pH result first, then
+   * average across sites for the All-sites view.
+   */
+  const sameSiteDate=new Map();
+
+  rows.forEach((row,index)=>{
+    const value=phAnalysisValue(row);
+    if(!Number.isFinite(value)) return;
+
+    const timestamp=snapshotAdditionalDateValue(row);
+    if(!timestamp) return;
+
+    const siteRaw=getField(row,"Location","Site Name","Site","Sampling Site");
+    const siteKey=normaliseSiteForMatch(siteRaw) || `site-${index}`;
+    const dateKey=snapshotDayKey(timestamp);
+    const key=`${siteKey}|${dateKey}`;
+
+    if(!sameSiteDate.has(key)){
+      sameSiteDate.set(key,{
+        siteKey,
+        dateKey,
+        timestamp,
+        values:[value]
+      });
+    }else{
+      sameSiteDate.get(key).values.push(value);
+    }
+  });
+
+  sameSiteDate.forEach(item=>{
+    const siteAverage=
+      item.values.reduce((a,b)=>a+b,0) /
+      item.values.length;
+
+    if(!groups.has(item.dateKey)){
+      groups.set(item.dateKey,{
+        timestamp:item.timestamp,
+        values:[],
+        sites:new Set()
+      });
+    }
+
+    const group=groups.get(item.dateKey);
+    group.values.push(siteAverage);
+    group.sites.add(item.siteKey);
+  });
+
+  return [...groups.entries()]
+    .map(([dateKey,group])=>({
+      dateKey,
+      timestamp:group.timestamp,
+      value:
+        group.values.reduce((a,b)=>a+b,0) /
+        group.values.length,
+      siteCount:group.sites.size
+    }))
+    .filter(point=>Number.isFinite(point.value))
+    .sort((a,b)=>a.timestamp-b.timestamp);
+}
+
+function phAnalysisNature(value){
+  if(!Number.isFinite(value)) return "No result";
+  if(value<7) return "Acidic";
+  if(value>7) return "Alkaline";
+  return "Neutral";
+}
+
+function phAnalysisDistanceText(value){
+  if(!Number.isFinite(value)) return "—";
+  const distance=value-7;
+  if(Math.abs(distance)<0.005) return "0.0 · Neutral";
+  const sign=distance>0 ? "+" : "−";
+  return `${sign}${Math.abs(distance).toFixed(1)} · ${distance>0?"Alkaline side":"Acidic side"}`;
+}
+
+function phAnalysisSiteLabel(){
+  return currentFocusedSite==="all"
+    ? "All sites"
+    : siteDisplayName(currentFocusedSite);
+}
+
+function populatePHAnalysisSiteSelect(){
+  const select=document.getElementById("phAnalysisSiteSelect");
+  if(!select) return;
+
+  const combined=[
+    ...uniqueNormalisedSiteNames(freshwaterDataForChanges),
+    ...uniqueNormalisedSiteNames(snapshotAdditionalData)
+  ];
+
+  const seen=new Map();
+  combined.forEach(site=>{
+    const key=normaliseSiteForMatch(site);
+    if(key && !seen.has(key)) seen.set(key,siteDisplayName(site));
+  });
+
+  const sites=[...seen.values()]
+    .sort((a,b)=>a.localeCompare(b));
+
+  select.innerHTML=
+    `<option value="all">All sites</option>`+
+    sites.map(site=>
+      `<option value="${esc(site)}">${esc(site)}</option>`
+    ).join("");
+
+  syncPHAnalysisSiteUI();
+}
+
+function syncPHAnalysisSiteUI(){
+  const select=document.getElementById("phAnalysisSiteSelect");
+  if(!select) return;
+
+  if(currentFocusedSite==="all"){
+    select.value="all";
+    return;
+  }
+
+  const match=[...select.options].find(
+    option=>
+      normaliseSiteForMatch(option.value)===
+      normaliseSiteForMatch(currentFocusedSite)
+  );
+
+  if(match){
+    select.value=match.value;
+  }else{
+    select.value="all";
+  }
+}
+
+function applyPHAnalysisSiteFocus(site){
+  currentFocusedSite=site || "all";
+
+  syncPHAnalysisSiteUI();
+  syncSnapshotSiteUI();
+  syncSeasonalSiteUI();
+  syncChangeSummarySiteUI();
+  syncColiformRecurrenceSiteUI();
+
+  try{
+    localStorage.setItem(
+      SITE_SYNC_KEY,
+      currentFocusedSite
+    );
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({
+      type:"site-focus",
+      site:currentFocusedSite
+    });
+  }
+
+  renderPHAnalysis();
+  if(typeof renderSnapshot==="function") renderSnapshot();
+  if(typeof renderChangeSummary==="function") renderChangeSummary();
+  if(typeof renderSeasonalPattern==="function") renderSeasonalPattern();
+  if(typeof renderColiformRecurrence==="function") renderColiformRecurrence();
+
+  setTimeout(notifyParentOfHeight,40);
+}
+
+function renderPHAnalysis(){
+  const chart=document.getElementById("phAnalysisChart");
+  const summary=document.getElementById("phAnalysisSummary");
+  if(!chart || !summary) return;
+
+  const points=phAnalysisPoints();
+
+  if(!points.length){
+    summary.innerHTML=`
+      <article class="ph-analysis-card">
+        <small>pH results</small>
+        <strong>—</strong>
+        <span>No usable pH results for ${esc(phAnalysisSiteLabel())}.</span>
+      </article>`;
+    chart.innerHTML=
+      '<div class="site-comparison-empty">No pH results available for this selection.</div>';
+    return;
+  }
+
+  const latest=points[points.length-1];
+  const average=
+    points.reduce((sum,p)=>sum+p.value,0) /
+    points.length;
+
+  const min=Math.min(...points.map(p=>p.value));
+  const max=Math.max(...points.map(p=>p.value));
+
+  summary.innerHTML=`
+    <article class="ph-analysis-card">
+      <small>Latest pH</small>
+      <strong>${latest.value.toFixed(1)}</strong>
+      <span>${esc(phAnalysisNature(latest.value))}</span>
+    </article>
+    <article class="ph-analysis-card">
+      <small>Distance from neutral</small>
+      <strong class="ph-distance">${esc(phAnalysisDistanceText(latest.value).split(" · ")[0])}</strong>
+      <span>${esc(phAnalysisDistanceText(latest.value).split(" · ")[1] || "Neutral")}</span>
+    </article>
+    <article class="ph-analysis-card">
+      <small>Observed range</small>
+      <strong>${min.toFixed(1)}–${max.toFixed(1)}</strong>
+      <span>Average ${average.toFixed(1)} across ${points.length} ${points.length===1?"date":"dates"}</span>
+    </article>`;
+
+  const W=Math.max(620,points.length*105);
+  const H=360;
+  const left=64;
+  const right=34;
+  const top=34;
+  const bottom=78;
+  const plotW=W-left-right;
+  const plotH=H-top-bottom;
+
+  const yMin=1;
+  const yMax=14;
+
+  const x=i=>
+    points.length===1
+      ? left+plotW/2
+      : left+(i/(points.length-1))*plotW;
+
+  const y=value=>
+    top+((yMax-value)/(yMax-yMin))*plotH;
+
+  const ticks=[1,3,5,7,9,11,14];
+
+  const zoneAcidic=`
+    <rect x="${left}" y="${y(7)}" width="${plotW}" height="${y(1)-y(7)}" class="ph-zone-acidic"></rect>`;
+
+  const zoneAlkaline=`
+    <rect x="${left}" y="${y(14)}" width="${plotW}" height="${y(7)-y(14)}" class="ph-zone-alkaline"></rect>`;
+
+  const grid=ticks.map(value=>`
+    <line x1="${left}" y1="${y(value)}" x2="${W-right}" y2="${y(value)}"
+      class="${value===7?"ph-neutral-line":"ph-grid"}"></line>
+    <text x="${left-10}" y="${y(value)+4}" text-anchor="end" class="ph-axis-text">
+      ${value}
+    </text>
+  `).join("");
+
+  const path=points.map((point,index)=>
+    `${index===0?"M":"L"} ${x(index).toFixed(1)} ${y(point.value).toFixed(1)}`
+  ).join(" ");
+
+  const marks=points.map((point,index)=>{
+    const date=new Date(point.timestamp);
+    const dateLabel=date.toLocaleDateString(
+      "en-GB",
+      {day:"2-digit",month:"short",year:"numeric"}
+    );
+    const distance=point.value-7;
+    const distanceLabel=
+      Math.abs(distance)<0.005
+        ? "neutral"
+        : `${distance>0?"+":"−"}${Math.abs(distance).toFixed(1)} from neutral`;
+
+    const title=
+      `${dateLabel}: pH ${point.value.toFixed(1)} (${phAnalysisNature(point.value)}; ${distanceLabel})`+
+      (currentFocusedSite==="all"
+        ? `; ${point.siteCount} ${point.siteCount===1?"site":"sites"}`
+        : "");
+
+    return `
+      <circle cx="${x(index)}" cy="${y(point.value)}" r="5" class="ph-point">
+        <title>${esc(title)}</title>
+      </circle>
+      <text x="${x(index)}" y="${y(point.value)-11}" text-anchor="middle" class="ph-value-text">
+        ${point.value.toFixed(1)}
+      </text>
+      <text x="${x(index)}" y="${H-40}" text-anchor="middle" class="ph-axis-text">
+        ${esc(dateLabel)}
+      </text>
+      ${currentFocusedSite==="all"
+        ? `<text x="${x(index)}" y="${H-23}" text-anchor="middle" class="ph-axis-text">
+             ${point.siteCount} ${point.siteCount===1?"site":"sites"}
+           </text>`
+        : ""}
+    `;
+  }).join("");
+
+  chart.innerHTML=`
+    <svg class="ph-analysis-svg" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="pH results for ${esc(phAnalysisSiteLabel())}, plotted on a scale from 1 to 14 with pH 7 marked as neutral">
+      ${zoneAcidic}
+      ${zoneAlkaline}
+      ${grid}
+
+      <text x="${left+10}" y="${top+18}" class="ph-zone-label">Alkaline &gt; 7</text>
+      <text x="${left+10}" y="${H-bottom-10}" class="ph-zone-label">Acidic &lt; 7</text>
+      <text x="${W-right-8}" y="${y(7)-8}" text-anchor="end" class="ph-neutral-label">7 · Neutral</text>
+
+      <text x="18" y="${top+plotH/2}" text-anchor="middle"
+        transform="rotate(-90 18 ${top+plotH/2})" class="ph-axis-text">pH</text>
+
+      <path d="${path}" class="ph-series-line"></path>
+      ${marks}
+    </svg>`;
+
+  setTimeout(notifyParentOfHeight,30);
+}
+
+
 let currentTrendMetric="nitrate";
 let currentTrendSite="all";
 
@@ -4331,6 +4846,7 @@ function setFocusedSite(site){
   syncSnapshotSiteUI();
   syncChangeSummarySiteUI();
   syncColiformRecurrenceSiteUI();
+  syncPHAnalysisSiteUI();
 
   if(typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
@@ -4346,6 +4862,10 @@ function setFocusedSite(site){
 
   if(typeof renderColiformRecurrence==="function"){
     renderColiformRecurrence();
+  }
+
+  if(typeof renderPHAnalysis==="function"){
+    renderPHAnalysis();
   }
 }
 
@@ -4826,9 +5346,11 @@ async function loadSnapshotAdditionalData(){
     snapshotAdditionalData=[];
   }
   populateColiformRecurrenceSiteSelect();
+  populatePHAnalysisSiteSelect();
   renderSnapshot();
   renderChangeSummary();
   renderColiformRecurrence();
+  renderPHAnalysis();
   setTimeout(notifyParentOfHeight,40);
 }
 
@@ -6583,6 +7105,11 @@ const furtherPanels = [
     icon:document.getElementById("projectTrendsIcon")
   },
   {
+    button:document.getElementById("phAnalysisToggle"),
+    content:document.getElementById("phAnalysisContent"),
+    icon:document.getElementById("phAnalysisIcon")
+  },
+  {
     button:document.getElementById("seasonalPatternsToggle"),
     content:document.getElementById("seasonalPatternsContent"),
     icon:document.getElementById("seasonalPatternsIcon")
@@ -6638,11 +7165,15 @@ function setFurtherPanel(index,open){
     renderProjectTrend();
   }
 
-  if(open && index===9 && typeof renderSeasonalPattern==="function"){
+  if(open && index===9 && typeof renderPHAnalysis==="function"){
+    renderPHAnalysis();
+  }
+
+  if(open && index===10 && typeof renderSeasonalPattern==="function"){
     renderSeasonalPattern();
   }
 
-  if(open && index===10 && typeof renderRelationship==="function"){
+  if(open && index===11 && typeof renderRelationship==="function"){
     renderRelationship();
   }
 
@@ -6658,6 +7189,12 @@ furtherPanels.forEach((panel,index)=>{
     setFurtherPanel(index,!isOpen);
   });
 });
+
+if(document.getElementById("phAnalysisSiteSelect")){
+  document.getElementById("phAnalysisSiteSelect").addEventListener("change",event=>{
+    applyPHAnalysisSiteFocus(event.target.value);
+  });
+}
 
 if(document.getElementById("seasonalMonthlyMode")){
   document.getElementById("seasonalMonthlyMode").addEventListener("click",()=>setSeasonalMode("monthly"));
