@@ -1570,6 +1570,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:9px;
   padding:12px;
   background:#fff;
+  transition:
+    transform .14s ease,
+    box-shadow .14s ease,
+    border-color .14s ease,
+    background-color .14s ease;
+}
+.coliform-recurrence-card:hover,
+.coliform-recurrence-card:focus{
+  transform:translateY(-1px);
+  border-color:#b8c9be;
+  background:#fbfdfb;
+  box-shadow:0 3px 10px rgba(24,50,31,.08);
+  outline:none;
 }
 .coliform-recurrence-card small{
   display:block;
@@ -5615,7 +5628,7 @@ function renderColiformRecurrence(){
     [currentStreakLabel,String(stats.currentPositiveStreak)],
     [longestStreakLabel,String(stats.longestPositiveStreak)],
     ["Latest result",latestLabel]
-  ].map(([label,value])=>`<div class="coliform-recurrence-card"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join("");
+  ].map(([label,value])=>`<div class="coliform-recurrence-card" tabindex="0"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join("");
 
   status.innerHTML=`<strong>${esc(interpretation.title)}</strong>${esc(interpretation.text)}`;
 
