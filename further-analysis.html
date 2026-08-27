@@ -834,7 +834,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   margin:0 0 14px;
 }
 .ph-analysis-control{
-  min-width:220px;
+  min-width:210px;
+  max-width:320px;
 }
 .ph-analysis-control label{
   display:block;
@@ -845,13 +846,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 .ph-analysis-control select{
   width:100%;
-  min-height:40px;
+  min-height:36px;
   border:1px solid var(--line);
-  border-radius:8px;
+  border-radius:7px;
   background:#fff;
   color:var(--ink);
-  padding:8px 10px;
+  padding:6px 9px;
   font:inherit;
+  font-size:12px;
 }
 .ph-analysis-summary{
   display:grid;
@@ -864,6 +866,18 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:9px;
   background:#f8faf8;
   padding:12px 14px;
+  transition:
+    transform .14s ease,
+    box-shadow .14s ease,
+    border-color .14s ease,
+    background-color .14s ease;
+}
+.ph-analysis-card:hover,
+.ph-analysis-card:focus-within{
+  transform:translateY(-1px);
+  border-color:#b8c9be;
+  background:#fbfdfb;
+  box-shadow:0 3px 10px rgba(24,50,31,.08);
 }
 .ph-analysis-card small{
   display:block;
@@ -4457,7 +4471,7 @@ function renderPHAnalysis(){
 
   if(!points.length){
     summary.innerHTML=`
-      <article class="ph-analysis-card">
+      <article class="ph-analysis-card" tabindex="0">
         <small>pH results</small>
         <strong>—</strong>
         <span>No usable pH results for ${esc(phAnalysisSiteLabel())}.</span>
@@ -4476,12 +4490,12 @@ function renderPHAnalysis(){
   const max=Math.max(...points.map(p=>p.value));
 
   summary.innerHTML=`
-    <article class="ph-analysis-card">
+    <article class="ph-analysis-card" tabindex="0">
       <small>Latest pH</small>
       <strong>${latest.value.toFixed(1)}</strong>
       <span>${esc(phAnalysisNature(latest.value))}</span>
     </article>
-    <article class="ph-analysis-card">
+    <article class="ph-analysis-card" tabindex="0">
       <small>Distance from neutral</small>
       <strong class="ph-distance">${esc(phAnalysisDistanceText(latest.value).split(" · ")[0])}</strong>
       <span>${esc(phAnalysisDistanceText(latest.value).split(" · ")[1] || "Neutral")}</span>
