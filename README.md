@@ -14,8 +14,7 @@ The GitHub repository contains or may contain:
 - `analysis.html` — sample-results analysis
 - `further-analysis.html` — site comparison, trends and wider project analysis
 - `assessment-builder.html` — visual canal assessment builder
-- `freshwater.csv` — FreshWater Watch sampling data
-- `additional-water-quality.csv` — additional water-quality results, including temperature, pH, dissolved oxygen, BOD and coliform where recorded; dissolved oxygen can also be presented as calculated oxygen saturation (%) when a paired water temperature is available
+- `freshwater.csv` — the single dataset for FreshWater Watch results and additional tests, including temperature, pH, dissolved oxygen, BOD, additional turbidity and coliform where recorded
 - `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
 - `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
 - `README.md` — project documentation
@@ -95,11 +94,19 @@ The map has been designed to recognise both original FreshWater Watch field name
 | Nitrate midpoint | `nitrate_mid` |
 | Phosphate midpoint | `phosphate_mid` |
 | Turbidity | `Water quality - Secchi Tube (Turbidity)` |
+| Dissolved oxygen | `Dissolved Oxygen (DO)` |
+| Biochemical Oxygen Demand | `Biochemical Oxygen Demand (BOD)` |
+| pH | `pH` |
+| Temperature | `Temperature` |
+| Additional-test turbidity | `Turbidity` |
+| Coliform bacteria | `Coliform Bacteria` |
 | Latitude | `y`, `Latitude`, `latitude` |
 | Longitude | `x`, `Longitude`, `longitude` |
 | Notes | `notes`, `Notes` |
 
-The turbidity reader also looks for column names containing the words **Secchi Tube** or **Turbidity**, making the import more tolerant of small changes in FreshWater Watch exports.
+The two turbidity columns are intentionally distinct. `Water quality - Secchi Tube (Turbidity)` supplies the standard FreshWater Watch Secchi Tube result. `Turbidity` supplies the separate additional-test result and is labelled **Turbidity (additional test)** in Further Analysis. The code does not use a generic `Turbidity` fallback for the Secchi Tube result.
+
+The Additional Water Tests panels read these columns directly from `freshwater.csv`; `additional-water-quality.csv` is no longer loaded or required.
 
 ---
 
@@ -119,6 +126,17 @@ To publish new sampling results:
 7. Refresh the live map or Webador page.
 
 The HTML normally does not need to be edited when new records are added.
+
+---
+
+## Update — 13 September 2026
+
+1. Consolidated FreshWater Watch and additional water-test results into the single `freshwater.csv` data source.
+2. Removed the runtime dependency on `additional-water-quality.csv`.
+3. Mapped dissolved oxygen, BOD, pH, temperature, additional turbidity and coliform explicitly to their new main-CSV headings.
+4. Kept `Water quality - Secchi Tube (Turbidity)` separate from the additional `Turbidity` column.
+5. Relabelled the standard result **Secchi Tube Turbidity** and the second result **Turbidity (additional test)** in the Overall Water Quality Snapshot.
+6. Retained compatibility with directly recorded BOD values and the older calculated-BOD format.
 
 ---
 
@@ -449,17 +467,6 @@ Current features include:
 - **Project / Site Trends**
   - All sites for the project-wide view or an individual sampling site
   - Nitrate, Phosphate and Turbidity
-
-- **pH Analysis**
-  - Uses pH results from `additional-water-quality.csv`
-  - All sites or an individual sampling site
-  - Fixed pH scale from 1 to 14 with a clear **pH 7 Neutral** reference line
-  - Values below 7 are shown on the acidic side; values above 7 are shown on the alkaline side
-  - Shows **Latest pH**, **Distance from neutral** and **Observed range** summary cards
-  - Distance from neutral is calculated as `pH - 7`, so negative values are acidic-side and positive values are alkaline-side
-  - All sites averages same-date pH results across the available sampling locations after same-site / same-date de-duplication
-  - Uses the shared normalised site identity and excludes blank / placeholder site names from the selector
-  - Summary cards include matching hover and keyboard-focus states
 
 - **Seasonal patterns**
 
@@ -898,25 +905,6 @@ These changes are intended to improve readability, interpretation and accessibil
 
 ---
 
-## Update — 27 August 2026 — pH Analysis added
-
-A new **pH Analysis** panel was added to the Canal Watch **Further Analysis** page on **27 August 2026**.
-
-1. Added a dedicated pH results graph using a fixed **pH 1–14** vertical scale.
-2. Added a prominent **pH 7 Neutral** reference line so results can be read immediately as acidic or alkaline relative to neutral.
-3. Added summary cards for **Latest pH**, **Distance from neutral** and **Observed range**.
-4. Added a distance-from-neutral calculation using `pH - 7`, with negative values on the acidic side and positive values on the alkaline side.
-5. Added **All sites** and individual-site selection, using the same project-wide site normalisation and de-duplication rules as the other Further Analysis panels.
-6. In the All sites view, same-date pH results are averaged across the available sampling locations after same-site / same-date de-duplication.
-7. Removed blank or placeholder site names such as **Unnamed**, **Unknown** and **N/A** from the pH site selector.
-8. Reduced the pH panel typography and standardised the site dropdown sizing so the panel matches the visual scale of the surrounding analysis tools.
-9. Added subtle hover and keyboard-focus states to the **Latest pH**, **Distance from neutral** and **Observed range** cards.
-10. Retained the existing single-open accordion behaviour and all previous analysis panels.
-
-The pH panel is intended to make the meaning of each result clearer than a raw number alone: **below 7 = acidic, 7 = neutral, above 7 = alkaline**.
-
----
-
 ## Update — 26 August 2026 — Further Analysis monitoring and trend tools
 
 The Canal Watch **Further Analysis** page was expanded and consolidated on **26 August 2026**, while retaining the existing analysis panels.
@@ -928,7 +916,7 @@ The Canal Watch **Further Analysis** page was expanded and consolidated on **26 
 5. Updated Sampling Frequency to use the same project-wide normalised site identity as the other analysis panels, preventing old prefix and punctuation variants from appearing as separate sites.
 6. Restored **Sample Trend Analysis**, including individual-site and All sites views for nitrate, phosphate and turbidity.
 7. Restored **Project / Site Trends** as a separate trend panel, with All sites and individual-site selection.
-8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels; **pH Analysis** was added subsequently on 27 August 2026.
+8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels.
 9. Kept the single-open accordion behaviour and the existing site synchronisation / de-duplication logic.
 10. Matched the Coliform Recurrence typography to the sizing used elsewhere in Further Analysis.
 

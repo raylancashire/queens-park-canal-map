@@ -823,8 +823,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .ph-analysis-intro{
   margin:0 0 14px;
   color:#4f6255;
-  font-size:13px;
-  line-height:1.5;
+  font-size:14px;
+  line-height:1.55;
 }
 .ph-analysis-controls{
   display:flex;
@@ -834,26 +834,24 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   margin:0 0 14px;
 }
 .ph-analysis-control{
-  min-width:210px;
-  max-width:320px;
+  min-width:220px;
 }
 .ph-analysis-control label{
   display:block;
   margin:0 0 6px;
   color:#43594a;
-  font-size:11px;
+  font-size:12px;
   font-weight:800;
 }
 .ph-analysis-control select{
   width:100%;
-  min-height:36px;
+  min-height:40px;
   border:1px solid var(--line);
-  border-radius:7px;
+  border-radius:8px;
   background:#fff;
   color:var(--ink);
-  padding:6px 9px;
+  padding:8px 10px;
   font:inherit;
-  font-size:12px;
 }
 .ph-analysis-summary{
   display:grid;
@@ -866,23 +864,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:9px;
   background:#f8faf8;
   padding:12px 14px;
-  transition:
-    transform .14s ease,
-    box-shadow .14s ease,
-    border-color .14s ease,
-    background-color .14s ease;
-}
-.ph-analysis-card:hover,
-.ph-analysis-card:focus-within{
-  transform:translateY(-1px);
-  border-color:#b8c9be;
-  background:#fbfdfb;
-  box-shadow:0 3px 10px rgba(24,50,31,.08);
 }
 .ph-analysis-card small{
   display:block;
   color:#637269;
-  font-size:10px;
+  font-size:11px;
   font-weight:800;
   text-transform:uppercase;
   letter-spacing:.25px;
@@ -891,14 +877,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   display:block;
   margin-top:5px;
   color:#17321f;
-  font-size:17px;
+  font-size:20px;
   line-height:1.2;
 }
 .ph-analysis-card span{
   display:block;
   margin-top:4px;
   color:#5f6f64;
-  font-size:11px;
+  font-size:12px;
   line-height:1.35;
 }
 .ph-analysis-chart{
@@ -940,21 +926,21 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 .ph-axis-text{
   fill:#5f6f64;
-  font-size:10px;
+  font-size:11px;
 }
 .ph-value-text{
   fill:#17321f;
-  font-size:10px;
+  font-size:11px;
   font-weight:800;
 }
 .ph-zone-label{
   fill:#43594a;
-  font-size:11px;
+  font-size:12px;
   font-weight:800;
 }
 .ph-neutral-label{
   fill:#17321f;
-  font-size:11px;
+  font-size:12px;
   font-weight:900;
 }
 .ph-analysis-note{
@@ -964,8 +950,8 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:8px;
   background:#f8faf8;
   color:#43594a;
-  font-size:12px;
-  line-height:1.5;
+  font-size:13px;
+  line-height:1.55;
 }
 .ph-distance{
   font-variant-numeric:tabular-nums;
@@ -1570,19 +1556,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   border-radius:9px;
   padding:12px;
   background:#fff;
-  transition:
-    transform .14s ease,
-    box-shadow .14s ease,
-    border-color .14s ease,
-    background-color .14s ease;
-}
-.coliform-recurrence-card:hover,
-.coliform-recurrence-card:focus{
-  transform:translateY(-1px);
-  border-color:#b8c9be;
-  background:#fbfdfb;
-  box-shadow:0 3px 10px rgba(24,50,31,.08);
-  outline:none;
 }
 .coliform-recurrence-card small{
   display:block;
@@ -2750,10 +2723,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
-const ADDITIONAL_CSV_SOURCES=[
-  "./additional-water-quality.csv",
-  "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/additional-water-quality.csv"
-];
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
@@ -2772,10 +2741,25 @@ function getTurbidity(r){return getField(
   r,
   "Water quality - Secchi Tube (Turbidity)",
   "Water quality - Secchi Tube (Turbidity):",
-  "optical_secchi_turbidity",
-  "Turbidity",
-  "turbidity"
+  "optical_secchi_turbidity"
 )}
+
+// The FreshWater Watch Secchi Tube result and the additional turbidity test
+// are deliberately kept separate. Both now come from freshwater.csv.
+function normaliseAdditionalRow(row){
+  return {
+    ...row,
+    "Location":getField(row,"Site Name","site_name","Location"),
+    "Date":sampleDateLabel(row),
+    "Time":getField(row,"Sample Time","sample_time","Time"),
+    "Temperature °C":getField(row,"Temperature","Temperature °C","Temperature C"),
+    "pH":getField(row,"pH","PH"),
+    "Dissolved Oxygen mg/L":getField(row,"Dissolved Oxygen (DO)","Dissolved Oxygen mg/L","Dissolved Oxygen PPM"),
+    "BOD mg/L":getField(row,"Biochemical Oxygen Demand (BOD)","BOD mg/L"),
+    "Additional Turbidity NTU":getField(row,"Turbidity"),
+    "Coliform":getField(row,"Coliform Bacteria","Coliform","Coliform (48 Hrs)")
+  };
+}
 function normaliseRange(raw){
  if(raw===undefined||raw===null)return"";const value=String(raw).trim();if(!value)return"";
  const months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
@@ -3368,19 +3352,9 @@ function renderAdditionalForFocusedSite(){
 }
 
 async function loadAdditionalData(){
-  try{
-    const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
-    const data=parseCSV(raw);
-    additionalWaterQualityData=data;
-    renderAdditionalForFocusedSite();
-
-    setTimeout(notifyParentOfHeight,80);
-  }catch(e){
-    ["temperatureChart","phChart","coliformChart","bodChart","doChart"].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el) el.innerHTML='<div class="no-results">Additional water-quality data could not be loaded.</div>';
-    });
-  }
+  additionalWaterQualityData=snapshotAdditionalData;
+  renderAdditionalForFocusedSite();
+  setTimeout(notifyParentOfHeight,80);
 }
 
 
@@ -4384,30 +4358,8 @@ function populatePHAnalysisSiteSelect(){
 
   const seen=new Map();
   combined.forEach(site=>{
-    const raw=String(site || "").trim();
-    const display=siteDisplayName(raw);
-    const key=normaliseSiteForMatch(raw);
-
-    /*
-     * Ignore genuinely blank or unnamed locations.
-     * Keep all valid named sites and preserve the
-     * existing normalisation/deduplication rules.
-     */
-    const placeholderSite =
-      /^(?:unnamed(?:\s+site)?|unknown(?:\s+site)?|n\/?a|none|null|not\s+known|not\s+recorded)$/i.test(display) ||
-      /^[\s\-–—_.]+$/.test(display);
-
-    if(
-      !raw ||
-      !display ||
-      placeholderSite
-    ){
-      return;
-    }
-
-    if(key && !seen.has(key)){
-      seen.set(key,display);
-    }
+    const key=normaliseSiteForMatch(site);
+    if(key && !seen.has(key)) seen.set(key,siteDisplayName(site));
   });
 
   const sites=[...seen.values()]
@@ -4485,7 +4437,7 @@ function renderPHAnalysis(){
 
   if(!points.length){
     summary.innerHTML=`
-      <article class="ph-analysis-card" tabindex="0">
+      <article class="ph-analysis-card">
         <small>pH results</small>
         <strong>—</strong>
         <span>No usable pH results for ${esc(phAnalysisSiteLabel())}.</span>
@@ -4504,12 +4456,12 @@ function renderPHAnalysis(){
   const max=Math.max(...points.map(p=>p.value));
 
   summary.innerHTML=`
-    <article class="ph-analysis-card" tabindex="0">
+    <article class="ph-analysis-card">
       <small>Latest pH</small>
       <strong>${latest.value.toFixed(1)}</strong>
       <span>${esc(phAnalysisNature(latest.value))}</span>
     </article>
-    <article class="ph-analysis-card" tabindex="0">
+    <article class="ph-analysis-card">
       <small>Distance from neutral</small>
       <strong class="ph-distance">${esc(phAnalysisDistanceText(latest.value).split(" · ")[0])}</strong>
       <span>${esc(phAnalysisDistanceText(latest.value).split(" · ")[1] || "Neutral")}</span>
@@ -5251,6 +5203,12 @@ function snapshotFirstNumber(row,names){
 }
 
 function snapshotBOD(row){
+  const recorded=snapshotFirstNumber(row,[
+    "BOD mg/L",
+    "Biochemical Oxygen Demand (BOD)"
+  ]);
+  if(Number.isFinite(recorded)) return recorded;
+
   const initial=snapshotFirstNumber(row,[
     "Dissolved Oxygen PPM",
     "Dissolved Oxygen ppm",
@@ -5388,12 +5346,6 @@ function setSnapshotPeriod(period){
 }
 
 async function loadSnapshotAdditionalData(){
-  try{
-    const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
-    snapshotAdditionalData=parseCSV(raw);
-  }catch(e){
-    snapshotAdditionalData=[];
-  }
   populateColiformRecurrenceSiteSelect();
   populatePHAnalysisSiteSelect();
   renderSnapshot();
@@ -5628,7 +5580,7 @@ function renderColiformRecurrence(){
     [currentStreakLabel,String(stats.currentPositiveStreak)],
     [longestStreakLabel,String(stats.longestPositiveStreak)],
     ["Latest result",latestLabel]
-  ].map(([label,value])=>`<div class="coliform-recurrence-card" tabindex="0"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join("");
+  ].map(([label,value])=>`<div class="coliform-recurrence-card"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join("");
 
   status.innerHTML=`<strong>${esc(interpretation.title)}</strong>${esc(interpretation.text)}`;
 
@@ -5676,6 +5628,7 @@ function renderSnapshot(){
   const nitrate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"nitrate")));
   const phosphate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"phosphate")));
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
+  const additionalTurbidity=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Additional Turbidity NTU"])));
 
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
   const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
@@ -5713,9 +5666,17 @@ function renderSnapshot(){
 
   if(Number.isFinite(turbidity)){
     cards.push(snapshotCard(
-      "turbidity","Turbidity",`${turbidity.toFixed(0)} NTU`,
+      "turbidity","Secchi Tube Turbidity",`${turbidity.toFixed(0)} NTU`,
       currentSnapshotPeriod==="latest" ? "Latest-survey average" : "Project average",
       snapshotFreshwaterAssessment("turbidity",turbidity)
+    ));
+  }
+
+  if(Number.isFinite(additionalTurbidity)){
+    cards.push(snapshotCard(
+      "turbidity","Turbidity (additional test)",`${additionalTurbidity.toFixed(0)} NTU`,
+      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average additional test result",
+      {label:"Recorded additional test",kind:"neutral"}
     ));
   }
 
@@ -6929,6 +6890,8 @@ async function load(){
 
     freshwaterDataAll=data;
     freshwaterDataForChanges=data;
+    snapshotAdditionalData=data.map(normaliseAdditionalRow);
+    additionalWaterQualityData=snapshotAdditionalData;
 
     /*
       This split file contains only the Further Analysis panels.
@@ -6950,10 +6913,7 @@ async function load(){
     renderSeasonalPattern();
     renderRelationship();
 
-    /*
-     * Additional water-quality results are loaded separately because
-     * they come from additional-water-quality.csv.
-     */
+    // Additional results are columns in the same freshwater.csv rows.
     loadSnapshotAdditionalData();
 
     setTimeout(notifyParentOfHeight,80);

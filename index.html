@@ -60,7 +60,7 @@ select {
 
 .bottom-stats {
   display:grid;
-  grid-template-columns:1fr 1fr 1fr 1.6fr;
+  grid-template-columns:1fr 1fr 1.6fr;
   gap:16px;
   margin:0 4px;
 }
@@ -496,13 +496,6 @@ select {
 }
 
 </style>
-
-<style>
-/* Keyless Light basemap: soften standard OpenStreetMap tiles. */
-.qpt-light-basemap {
-  filter: grayscale(100%) brightness(1.16) contrast(0.78) saturate(70%);
-}
-</style>
 </head>
 <body>
 
@@ -532,10 +525,6 @@ select {
       <strong id="sampleCount">0</strong>
       <span id="sampleCountLabel">Samples in dataset</span>
     </div>
-    <div class="bottom-stat" title="Sum of the Total number of participants recorded for the surveys currently in view">
-      <strong id="participantCount">0</strong>
-      <span id="participantCountLabel">Participant attendances</span>
-    </div>
     <div class="bottom-stat latest">
       <strong id="latestDate">—</strong>
       <span id="latestDateLabel">Latest sample</span>
@@ -561,87 +550,6 @@ const siteSyncChannel = ("BroadcastChannel" in window)
   ? new BroadcastChannel("qpt-canal-site-focus")
   : null;
 
-function normaliseSiteForSync(value) {
-  return String(value || "")
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-
-function canonicalSiteKey(value){
-  return String(value || "")
-    .trim()
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-function canonicalSiteDisplay(value){
-  return String(value || "")
-    .trim()
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .replace(/\s+/g, " ");
-}
-
-function uniqueSitesFromRows(rows, siteGetter){
-  const seen = new Map();
-
-  rows.forEach(row=>{
-    const raw = siteGetter(row);
-    if(!raw) return;
-
-    const key = canonicalSiteKey(raw);
-    if(!key) return;
-
-    if(!seen.has(key)){
-      seen.set(key, {
-        key,
-        full: String(raw).trim(),
-        display: canonicalSiteDisplay(raw)
-      });
-    }
-  });
-
-  return [...seen.values()].sort((a,b)=>a.display.localeCompare(b.display));
-}
-
-
-function dedupeSiteDropdown(select){
-  if(!select) return;
-
-  const options=[...select.options];
-  const seen=new Set();
-
-  options.forEach(option=>{
-    if(option.value==="all") return;
-
-    const key=canonicalSiteKey(option.value || option.textContent);
-    if(!key || seen.has(key)){
-      option.remove();
-      return;
-    }
-
-    seen.add(key);
-
-    /* Keep the existing value used by the synchronisation code, but make
-       the visible label consistent by removing the canal prefix. */
-    const countMatch=option.textContent.match(/\s+\(\d+\s+samples?\)\s*$/i);
-    const suffix=countMatch ? countMatch[0] : "";
-    option.textContent=canonicalSiteDisplay(option.value || option.textContent)+suffix;
-  });
-}
-
-function dedupeAllSiteDropdowns(){
-  document.querySelectorAll("select").forEach(select=>{
-    const siteOptions=[...select.options].filter(o=>o.value!=="all");
-    if(siteOptions.some(o=>canonicalSiteKey(o.value || o.textContent))){
-      dedupeSiteDropdown(select);
-    }
-  });
-}
-
 function publishSiteFocus(site) {
   const value = site || "all";
 
@@ -658,14 +566,12 @@ function publishSiteFocus(site) {
 }
 
 // Basemap choices
-// Light map: keyless OpenStreetMap tiles with a light visual treatment.
-// This avoids CARTO/Esri basemap API-key requirements while preserving a pale map style.
 const lightMap = L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
   {
-    maxZoom:19,
-    className:"qpt-light-basemap",
-    attribution:"&copy; OpenStreetMap contributors"
+    maxZoom:20,
+    subdomains:"abcd",
+    attribution:"&copy; OpenStreetMap contributors &copy; CARTO"
   }
 );
 
@@ -814,15 +720,10 @@ function getField(r, ...names) {
 }
 
 function getSite(r) {
-  const raw = getField(r,
+  return getField(r,
     "Site Name", "site_name", "Site", "site",
     "Sampling Site", "sampling_site"
   ) || "Sampling site";
-
-  return String(raw)
-    .trim()
-    .replace(/^Grand Union Canal\s*-\s*/i, "")
-    .replace(/\s+/g, " ");
 }
 
 function getDate(r) {
@@ -875,22 +776,6 @@ function getNotes(r) {
   return getField(r, "notes", "Notes", "note", "Note");
 }
 
-function getParticipantCount(r) {
-  const raw = getField(r,
-    "Total number of participants",
-    "Total Number of Participants",
-    "total number of participants",
-    "Participants",
-    "participants"
-  );
-  const value = parseFloat(String(raw || "").replace(/,/g, ""));
-  return Number.isFinite(value) && value >= 0 ? value : 0;
-}
-
-function totalParticipantsForRows(rows) {
-  return rows.reduce((sum, row) => sum + getParticipantCount(row), 0);
-}
-
 function getTurbidity(r) {
   // First try the known FreshWater Watch headings.
   const direct = getField(r,
@@ -898,10 +783,7 @@ function getTurbidity(r) {
     "Water quality - Secchi Tube (Turbidity):",
     "Water Turbidity",
     "Water Turbidity (cm)",
-    "water_turbidity",
     "optical_secchi_turbidity",
-    "Turbidity",
-    "Turbidity (cm)",
     "Secchi Turbidity",
     "Optical Secchi Turbidity"
   );
@@ -914,7 +796,7 @@ function getTurbidity(r) {
 
     if (
       normalised.includes("secchi tube") ||
-      normalised.includes("turbidity")
+      normalised.includes("optical secchi")
     ) {
       const value = r[key];
       if (value !== undefined && value !== null && String(value).trim() !== "") {
@@ -1338,24 +1220,6 @@ async function fetchCSV() {
   throw lastError || new Error("Could not load freshwater.csv");
 }
 
-
-function uniqueMapSampleRows(rows){
-  const seen=new Set();
-  return rows.filter(row=>{
-    const site=getSite(row);
-    const date=getField(row,"Sample Date","Date","sample_date");
-    const time=getField(row,"Sample Time","Time","sample_time");
-    const id=getField(row,"GlobalID","ObjectID","Sample ID","SampleID");
-    const key=id
-      ? `id:${id}`
-      : `sample:${canonicalSiteKey(site)}|${String(date).trim()}|${String(time).trim()}`;
-
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 async function loadData() {
   try {
     const text = await fetchCSV();
@@ -1366,11 +1230,9 @@ async function loadData() {
     }
 
     const groups = {};
-    const groupSiteNames = {};
     let validRows = 0;
-    const uniqueData = uniqueMapSampleRows(data);
 
-    for (const r of uniqueData) {
+    for (const r of data) {
       const lat = getLat(r);
       const lon = getLon(r);
 
@@ -1381,12 +1243,9 @@ async function loadData() {
       validRows++;
 
       const site = getSite(r);
-      const key = canonicalSiteKey(site);
+      const key = site;
 
-      if (!groups[key]) {
-        groups[key] = [];
-        groupSiteNames[key] = String(site).trim();
-      }
+      if (!groups[key]) groups[key] = [];
       groups[key].push(r);
     }
 
@@ -1413,10 +1272,7 @@ async function loadData() {
       });
     });
 
-    const siteKeys = Object.keys(groups).sort((a,b)=>
-      canonicalSiteDisplay(groupSiteNames[a]).localeCompare(canonicalSiteDisplay(groupSiteNames[b]))
-    );
-    const siteNames = siteKeys.map(key=>groupSiteNames[key]);
+    const siteNames = Object.keys(groups).sort();
 
     const sel = document.getElementById("siteFilter");
 
@@ -1424,8 +1280,6 @@ async function loadData() {
     const siteCountLabelEl = document.getElementById("siteCountLabel");
     const sampleCountEl = document.getElementById("sampleCount");
     const sampleCountLabelEl = document.getElementById("sampleCountLabel");
-    const participantCountEl = document.getElementById("participantCount");
-    const participantCountLabelEl = document.getElementById("participantCountLabel");
     const latestDateEl = document.getElementById("latestDate");
     const latestDateLabelEl = document.getElementById("latestDateLabel");
 
@@ -1445,66 +1299,50 @@ async function loadData() {
       return datedRows.length ? datedRows[datedRows.length - 1].row : null;
     }
 
-    function updateSummary(selectedSite, publish=true) {
-      const selected = selectedSite || "all";
-      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
+    function updateSummary(selectedSite) {
+      publishSiteFocus(selectedSite || "all");
 
-      if (publish) {
-        publishSiteFocus(selected);
-      }
-
-      if (selectedKey !== "all" && groups[selectedKey]) {
-        const rows = groups[selectedKey];
+      if (selectedSite && selectedSite !== "all" && groups[selectedSite]) {
+        const rows = groups[selectedSite];
         const latest = latestRowForRows(rows);
-        const displayName = canonicalSiteDisplay(groupSiteNames[selectedKey] || selected);
 
-        siteCountEl.textContent = displayName;
+        siteCountEl.textContent = selectedSite.replace(/^Grand Union Canal\s*-\s*/i, "");
         siteCountEl.classList.add("site-name");
         siteCountLabelEl.textContent = "Sampling site";
 
         sampleCountEl.textContent = rows.length;
-        sampleCountLabelEl.textContent = "Samples in view";
-
-        participantCountEl.textContent = totalParticipantsForRows(rows);
-        participantCountLabelEl.textContent = "Participant attendances at site";
+        sampleCountLabelEl.textContent = rows.length === 1 ? "Sample at site" : "Samples at site";
 
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample at site";
       } else {
-        const latest = latestRowForRows(uniqueData);
+        const latest = latestRowForRows(data);
 
-        siteCountEl.textContent = siteKeys.length;
+        siteCountEl.textContent = siteNames.length;
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
 
         sampleCountEl.textContent = validRows;
-        sampleCountLabelEl.textContent = "Samples in view";
-
-        const allVisibleRows = Object.values(groups).flat();
-        participantCountEl.textContent = totalParticipantsForRows(allVisibleRows);
-        participantCountLabelEl.textContent = "Participant attendances";
+        sampleCountLabelEl.textContent = "Samples in dataset";
 
         latestDateEl.textContent = latest ? sampleDateTime(latest) : "—";
         latestDateLabelEl.textContent = "Latest sample";
       }
     }
 
-    siteKeys.forEach(siteKey => {
-      const fullSite = groupSiteNames[siteKey];
-      const displaySite = canonicalSiteDisplay(fullSite);
+    siteNames.forEach(site => {
       const opt = document.createElement("option");
-      const sampleCount = groups[siteKey].length;
-      opt.value = fullSite;
-      opt.textContent = `${displaySite} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
+      const sampleCount = groups[site].length;
+      opt.value = site;
+      opt.textContent = `${site} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
       sel.appendChild(opt);
     });
 
     const markers = [];
     const bounds = [];
 
-    for (const siteKey of siteKeys) {
-      const site = groupSiteNames[siteKey];
-      const rows = groups[siteKey];
+    for (const site of siteNames) {
+      const rows = groups[site];
       const r = rows[0];
 
       const lat = getLat(r);
@@ -1515,32 +1353,12 @@ async function loadData() {
         title: site
       }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
-      marker.site = canonicalSiteKey(site);
+      marker.site = site;
       marker.on("click", (e) => {
         if (e && e.originalEvent) {
           L.DomEvent.stopPropagation(e.originalEvent);
         }
-
-        const siteKey = canonicalSiteKey(site);
-        const currentKey = sel.value === "all"
-          ? "all"
-          : canonicalSiteKey(sel.value);
-
-        if (currentKey === siteKey) {
-          map.closePopup();
-          resetMapSummaryToAll();
-
-          if (defaultResultBounds && defaultResultBounds.isValid()) {
-            map.fitBounds(defaultResultBounds, {padding:[25,25]});
-          }
-          return;
-        }
-
-        const matchingOption = [...sel.options].find(
-          opt => opt.value !== "all" && canonicalSiteKey(opt.value) === siteKey
-        );
-
-        sel.value = matchingOption ? matchingOption.value : site;
+        sel.value = site;
         updateSummary(site);
       });
       marker.addTo(map);
@@ -1556,10 +1374,9 @@ async function loadData() {
 
     sel.addEventListener("change", () => {
       const selected = sel.value;
-      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
 
       markers.forEach(marker => {
-        if (selected === "all" || marker.site === selectedKey) {
+        if (selected === "all" || marker.site === selected) {
           marker.addTo(map);
         } else {
           map.removeLayer(marker);
@@ -1567,7 +1384,7 @@ async function loadData() {
       });
 
       if (selected !== "all") {
-        const marker = markers.find(m => m.site === selectedKey);
+        const marker = markers.find(m => m.site === selected);
         if (marker) {
           map.setView(marker.getLatLng(), 16);
           marker.openPopup();
@@ -1579,76 +1396,10 @@ async function loadData() {
       updateSummary(selected);
     });
 
-    function resolveSyncedSite(value) {
-      if (!value || value === "all") return "all";
-      const target = canonicalSiteKey(value);
-      const match = siteNames.find(site => canonicalSiteKey(site) === target);
-      return match || "all";
-    }
-
-    function applySyncedSite(value) {
-      const selected = resolveSyncedSite(value);
-      const selectedKey = selected === "all" ? "all" : canonicalSiteKey(selected);
-
-      /* Keep the map dropdown aligned with the external selection. */
-      if (selected === "all") {
-        sel.value = "all";
-      } else {
-        const option = [...sel.options].find(
-          opt => opt.value !== "all" && canonicalSiteKey(opt.value) === selectedKey
-        );
-        sel.value = option ? option.value : "all";
-      }
-
-      markers.forEach(marker => {
-        if (selectedKey === "all" || marker.site === selectedKey) {
-          if (!map.hasLayer(marker)) marker.addTo(map);
-        } else if (map.hasLayer(marker)) {
-          map.removeLayer(marker);
-        }
-      });
-
-      if (selectedKey !== "all") {
-        const marker = markers.find(m => m.site === selectedKey);
-        if (marker) {
-          map.setView(marker.getLatLng(), 16);
-          marker.openPopup();
-        }
-      } else {
-        map.closePopup();
-        if (defaultResultBounds && defaultResultBounds.isValid()) {
-          map.fitBounds(defaultResultBounds, {padding:[25,25]});
-        }
-      }
-
-      /* External synchronisation must update the cards without broadcasting
-         the same selection back again. */
-      updateSummary(selected, false);
-    }
-
-    if (siteSyncChannel) {
-      siteSyncChannel.addEventListener("message", event => {
-        if (event.data && event.data.type === "site-focus") {
-          applySyncedSite(event.data.site);
-        }
-      });
-    }
-
-    window.addEventListener("storage", event => {
-      if (event.key === SITE_SYNC_KEY && event.newValue) {
-        applySyncedSite(event.newValue);
-      }
-    });
-
-    try {
-      const storedSite = localStorage.getItem(SITE_SYNC_KEY);
-      if (storedSite) applySyncedSite(storedSite);
-    } catch (e) {}
-
     resetMapSummaryToAll = function() {
       sel.value = "all";
       markers.forEach(marker => marker.addTo(map));
-      updateSummary("all", true);
+      updateSummary("all");
     };
 
     map.on("click", () => {
@@ -1663,14 +1414,7 @@ async function loadData() {
     document.getElementById("recordCount").textContent =
       `${validRows} records loaded across ${siteNames.length} sites`;
 
-    let hadStoredSelection = false;
-    try {
-      hadStoredSelection = !!localStorage.getItem(SITE_SYNC_KEY);
-    } catch (e) {}
-
-    if (!hadStoredSelection) {
-      updateSummary("all", false);
-    }
+    updateSummary("all");
 
   } catch (err) {
     console.error(err);
@@ -1739,23 +1483,6 @@ map.on("popupclose", ()=>{
   if(assessmentLegendEl){
     assessmentLegendEl.classList.remove("assessment-shifted");
   }
-
-  /*
-   * If the visitor closes/deselects the active sampling-point popup,
-   * return the shared site filter to All sites. Use a zero-delay check
-   * so opening a different marker (which closes the previous popup first)
-   * does not briefly reset the selection.
-   */
-  setTimeout(()=>{
-    const openPopup=map.getContainer().querySelector(".leaflet-popup");
-    if(!openPopup && sel.value !== "all"){
-      resetMapSummaryToAll();
-
-      if (defaultResultBounds && defaultResultBounds.isValid()) {
-        map.fitBounds(defaultResultBounds, {padding:[25,25]});
-      }
-    }
-  },20);
 });
 
 map.on("moveend zoomend resize", ()=>{
@@ -1765,11 +1492,6 @@ map.on("moveend zoomend resize", ()=>{
 });
 
 loadData();
-
-document.addEventListener("DOMContentLoaded",()=>{
-  setTimeout(dedupeAllSiteDropdowns,0);
-  setTimeout(dedupeAllSiteDropdowns,250);
-});
 </script>
 </body>
 </html>
