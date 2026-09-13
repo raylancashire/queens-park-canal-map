@@ -898,10 +898,7 @@ function getTurbidity(r) {
     "Water quality - Secchi Tube (Turbidity):",
     "Water Turbidity",
     "Water Turbidity (cm)",
-    "water_turbidity",
     "optical_secchi_turbidity",
-    "Turbidity",
-    "Turbidity (cm)",
     "Secchi Turbidity",
     "Optical Secchi Turbidity"
   );
@@ -914,7 +911,7 @@ function getTurbidity(r) {
 
     if (
       normalised.includes("secchi tube") ||
-      normalised.includes("turbidity")
+      normalised.includes("optical secchi")
     ) {
       const value = r[key];
       if (value !== undefined && value !== null && String(value).trim() !== "") {
