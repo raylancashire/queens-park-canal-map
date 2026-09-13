@@ -723,7 +723,12 @@ function getSite(r) {
   return getField(r,
     "Site Name", "site_name", "Site", "site",
     "Sampling Site", "sampling_site"
-  ) || "Sampling site";
+  )
+    .replace(/[’‘]/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/^Grand Union Canal\s*-\s*/i, "")
+    .trim()
+    .replace(/\s+/g, " ") || "Sampling site";
 }
 
 function getDate(r) {

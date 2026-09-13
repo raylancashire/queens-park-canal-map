@@ -137,6 +137,7 @@ The HTML normally does not need to be edited when new records are added.
 4. Kept `Water quality - Secchi Tube (Turbidity)` separate from the additional `Turbidity` column.
 5. Relabelled the standard result **Secchi Tube Turbidity** and the second result **Turbidity (additional test)** in the Overall Water Quality Snapshot.
 6. Retained compatibility with directly recorded BOD values and the older calculated-BOD format.
+7. Normalised map site names by removing the optional `Grand Union Canal -` prefix, preventing surveys at Meanwhile Gardens and Ladbroke Grove Bridge from being divided between duplicate markers.
 
 ---
 
