@@ -762,6 +762,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <button id="doTab" type="button" role="tab" aria-selected="false" aria-controls="doPanel">
       Dissolved Oxygen
     </button>
+    <button id="additionalTurbidityTab" type="button" role="tab" aria-selected="false" aria-controls="additionalTurbidityPanel">
+      Additional Turbidity
+    </button>
   </div>
 </div>
 
@@ -812,6 +815,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <h2>Dissolved Oxygen</h2>
     <p class="sub">Recorded dissolved oxygen results over time. Result colours follow the supplied 0, 4 and 8 ppm test-kit colour card; percent saturation is calculated from the supplied temperature/oxygen table.</p>
     <div id="doChart"></div>
+  </article>
+
+  <article id="additionalTurbidityPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="additionalTurbidityTab" hidden>
+    <h2>Turbidity (additional test)</h2>
+    <p class="sub">Recorded additional turbidity results over time. These are kept separate from the FreshWater Watch Secchi Tube results.</p>
+    <div id="additionalTurbidityChart"></div>
   </article>
 </section>
     </div>
@@ -890,10 +899,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
-const ADDITIONAL_CSV_SOURCES=[
-  "./additional-water-quality.csv",
-  "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/additional-water-quality.csv"
-];
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
@@ -912,9 +917,7 @@ function getTurbidity(r){return getField(
   r,
   "Water quality - Secchi Tube (Turbidity)",
   "Water quality - Secchi Tube (Turbidity):",
-  "optical_secchi_turbidity",
-  "Turbidity",
-  "turbidity"
+  "optical_secchi_turbidity"
 )}
 function normaliseRange(raw){
  if(raw===undefined||raw===null)return"";const value=String(raw).trim();if(!value)return"";
@@ -1447,15 +1450,23 @@ function renderAdditionalForFocusedSite(){
   renderAdditionalSeries("coliformChart",data,"Coliform","");
   renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
   renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
+  renderAdditionalSeries("additionalTurbidityChart",data,"Additional Turbidity NTU","NTU");
 }
 
 function normaliseAdditionalRow(row){
   const copy={...row};
 
+  copy["Location"]=getField(row,"Site Name","site_name","Location","Site","Sampling Site");
+  copy["Date"]=sampleDateLabel(row);
+  copy["Time"]=getField(row,"Sample Time","sample_time","Time");
+  copy["Temperature °C"]=getField(row,"Temperature","Temperature °C","Temperature C");
+  copy["Additional Turbidity NTU"]=getField(row,"Turbidity");
+
   // Coliform: support both the older and current column headings.
   if(!String(copy["Coliform"]??"").trim()){
     copy["Coliform"]=getField(
       row,
+      "Coliform Bacteria",
       "Coliform (48 Hrs)",
       "Coliform (48 hrs)",
       "Coliform"
@@ -1466,6 +1477,7 @@ function normaliseAdditionalRow(row){
   if(!String(copy["Dissolved Oxygen mg/L"]??"").trim()){
     copy["Dissolved Oxygen mg/L"]=getField(
       row,
+      "Dissolved Oxygen (DO)",
       "Dissolved Oxygen PPM",
       "Dissolved Oxygen ppm",
       "Dissolved Oxygen mg/L"
@@ -1477,6 +1489,7 @@ function normaliseAdditionalRow(row){
   if(!String(copy["BOD mg/L"]??"").trim()){
     const directBOD=getField(
       row,
+      "Biochemical Oxygen Demand (BOD)",
       "BOD mg/L",
       "BOD ppm",
       "BOD"
@@ -1511,24 +1524,8 @@ function normaliseAdditionalRow(row){
 }
 
 async function loadAdditionalData(){
-  try{
-    const raw=await fetchFromSources(ADDITIONAL_CSV_SOURCES);
-    const data=parseCSV(raw).map(normaliseAdditionalRow);
-    additionalWaterQualityData=data;
-    renderAdditionalForFocusedSite();
-
-    setTimeout(notifyParentOfHeight,80);
-  }catch(e){
-    console.error("Additional water-quality data error:",e);
-
-    ["temperatureChart","phChart","coliformChart","bodChart","doChart"].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el){
-        el.innerHTML=
-          '<div class="no-results">Additional water-quality data could not be loaded.</div>';
-      }
-    });
-  }
+  renderAdditionalForFocusedSite();
+  setTimeout(notifyParentOfHeight,80);
 }
 
 async function fetchCSV(){let last;for(const url of CSV_SOURCES){try{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return await r.text()}catch(e){last=e}}throw last||new Error("Could not load freshwater.csv")}
@@ -2346,6 +2343,7 @@ async function load(){try{
 
  freshwaterDataAll=data;
  freshwaterDataForChanges=data;
+ additionalWaterQualityData=data.map(normaliseAdditionalRow);
 
  currentFocusedSite="all";
 
@@ -2404,7 +2402,8 @@ function setChartTab(which){
     ph:"phTab",
     coliform:"coliformTab",
     bod:"bodTab",
-    dissolvedOxygen:"doTab"
+    dissolvedOxygen:"doTab",
+    additionalTurbidity:"additionalTurbidityTab"
   };
 
   const panels={
@@ -2415,7 +2414,8 @@ function setChartTab(which){
     ph:"phPanel",
     coliform:"coliformPanel",
     bod:"bodPanel",
-    dissolvedOxygen:"doPanel"
+    dissolvedOxygen:"doPanel",
+    additionalTurbidity:"additionalTurbidityPanel"
   };
 
   Object.keys(tabs).forEach(key=>{
@@ -2461,6 +2461,7 @@ document.getElementById("phTab").addEventListener("click",()=>setChartTab("ph"))
 document.getElementById("coliformTab").addEventListener("click",()=>setChartTab("coliform"));
 document.getElementById("bodTab").addEventListener("click",()=>setChartTab("bod"));
 document.getElementById("doTab").addEventListener("click",()=>setChartTab("dissolvedOxygen"));
+document.getElementById("additionalTurbidityTab").addEventListener("click",()=>setChartTab("additionalTurbidity"));
 
 
 
@@ -2575,7 +2576,6 @@ accordionPanels.forEach((panel,index)=>{
 });
 
 load();
-loadAdditionalData();
 
 </script>
 </body>
