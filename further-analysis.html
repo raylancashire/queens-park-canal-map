@@ -6079,8 +6079,28 @@ function changeFreshwaterPair(){
   };
 }
 
+function changeFreshwaterMetricPair(metric){
+  const rows=changeRowsForCurrentSite(freshwaterDataForChanges,false)
+    .filter(row=>Number.isFinite(comparisonMetricValue(row,metric)));
+  const groups=changeDistinctDateGroups(rows,sampleDateValue);
+  return {
+    latest:groups[0]||null,
+    previous:groups[1]||null
+  };
+}
+
 function changeAdditionalPair(){
   const rows=changeRowsForCurrentSite(snapshotAdditionalData,true);
+  const groups=changeDistinctDateGroups(rows,snapshotAdditionalDateValue);
+  return {
+    latest:groups[0]||null,
+    previous:groups[1]||null
+  };
+}
+
+function changeAdditionalMetricPair(getter){
+  const rows=changeRowsForCurrentSite(snapshotAdditionalData,true)
+    .filter(row=>Number.isFinite(getter(row)));
   const groups=changeDistinctDateGroups(rows,snapshotAdditionalDateValue);
   return {
     latest:groups[0]||null,
@@ -6100,7 +6120,7 @@ function changeIndicatorInfo(key){
   const info={
     nitrate:{label:"Nitrate",unit:"mg/L",decimals:2,lowerBetter:true},
     phosphate:{label:"Phosphate",unit:"mg/L",decimals:3,lowerBetter:true},
-    turbidity:{label:"Turbidity",unit:"NTU",decimals:0,lowerBetter:true},
+    turbidity:{label:"Secchi Tube Turbidity",unit:"NTU",decimals:0,lowerBetter:true},
     temperature:{label:"Temperature",unit:"°C",decimals:1,neutralDirection:true},
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
@@ -6301,26 +6321,33 @@ function renderChangeSummary(){
   if(!fwGrid || !addGrid || !dates || !overall) return;
   if(!freshwaterDataForChanges.length) return;
 
-  const fw=changeFreshwaterPair();
-  const add=changeAdditionalPair();
+  const fwNitrate=changeFreshwaterMetricPair("nitrate");
+  const fwPhosphate=changeFreshwaterMetricPair("phosphate");
+  const fwTurbidity=changeFreshwaterMetricPair("turbidity");
 
   const fwItems=[
     ["nitrate",
-      fw.latest ? changeAverageFromRows(fw.latest.rows,r=>comparisonMetricValue(r,"nitrate")) : null,
-      fw.previous ? changeAverageFromRows(fw.previous.rows,r=>comparisonMetricValue(r,"nitrate")) : null],
+      fwNitrate.latest ? changeAverageFromRows(fwNitrate.latest.rows,r=>comparisonMetricValue(r,"nitrate")) : null,
+      fwNitrate.previous ? changeAverageFromRows(fwNitrate.previous.rows,r=>comparisonMetricValue(r,"nitrate")) : null,
+      fwNitrate.latest?.timestamp||0,
+      fwNitrate.previous?.timestamp||0],
     ["phosphate",
-      fw.latest ? changeAverageFromRows(fw.latest.rows,r=>comparisonMetricValue(r,"phosphate")) : null,
-      fw.previous ? changeAverageFromRows(fw.previous.rows,r=>comparisonMetricValue(r,"phosphate")) : null],
+      fwPhosphate.latest ? changeAverageFromRows(fwPhosphate.latest.rows,r=>comparisonMetricValue(r,"phosphate")) : null,
+      fwPhosphate.previous ? changeAverageFromRows(fwPhosphate.previous.rows,r=>comparisonMetricValue(r,"phosphate")) : null,
+      fwPhosphate.latest?.timestamp||0,
+      fwPhosphate.previous?.timestamp||0],
     ["turbidity",
-      fw.latest ? changeAverageFromRows(fw.latest.rows,r=>comparisonMetricValue(r,"turbidity")) : null,
-      fw.previous ? changeAverageFromRows(fw.previous.rows,r=>comparisonMetricValue(r,"turbidity")) : null]
+      fwTurbidity.latest ? changeAverageFromRows(fwTurbidity.latest.rows,r=>comparisonMetricValue(r,"turbidity")) : null,
+      fwTurbidity.previous ? changeAverageFromRows(fwTurbidity.previous.rows,r=>comparisonMetricValue(r,"turbidity")) : null,
+      fwTurbidity.latest?.timestamp||0,
+      fwTurbidity.previous?.timestamp||0]
   ];
 
   fwGrid.innerHTML=fwItems.some(item=>Number.isFinite(item[1]) || Number.isFinite(item[2]))
     ? fwItems.map(item=>changeCard(
         item[0],item[1],item[2],
-        fw.latest?.timestamp||0,
-        fw.previous?.timestamp||0,
+        item[3],
+        item[4],
         currentFocusedSite==="all" ? "survey-date average across sampled sites" : ""
       )).join("")
     : '<div class="change-summary-empty">No FreshWater Watch comparison is available for this location yet.</div>';
@@ -6331,45 +6358,50 @@ function renderChangeSummary(){
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
 
+  const addTemperature=changeAdditionalMetricPair(tempGetter);
+  const addPH=changeAdditionalMetricPair(phGetter);
+  const addDO=changeAdditionalMetricPair(doGetter);
+  const addBOD=changeAdditionalMetricPair(bodGetter);
+  const addColiform=changeAdditionalMetricPair(coliformGetter);
+
   const addItems=[
     ["temperature",
-      add.latest ? changeAverageFromRows(add.latest.rows,tempGetter) : null,
-      add.previous ? changeAverageFromRows(add.previous.rows,tempGetter) : null],
+      addTemperature.latest ? changeAverageFromRows(addTemperature.latest.rows,tempGetter) : null,
+      addTemperature.previous ? changeAverageFromRows(addTemperature.previous.rows,tempGetter) : null,
+      addTemperature.latest?.timestamp||0,
+      addTemperature.previous?.timestamp||0],
     ["ph",
-      add.latest ? changeAverageFromRows(add.latest.rows,phGetter) : null,
-      add.previous ? changeAverageFromRows(add.previous.rows,phGetter) : null],
+      addPH.latest ? changeAverageFromRows(addPH.latest.rows,phGetter) : null,
+      addPH.previous ? changeAverageFromRows(addPH.previous.rows,phGetter) : null,
+      addPH.latest?.timestamp||0,
+      addPH.previous?.timestamp||0],
     ["do",
-      add.latest ? changeAverageFromRows(add.latest.rows,doGetter) : null,
-      add.previous ? changeAverageFromRows(add.previous.rows,doGetter) : null],
+      addDO.latest ? changeAverageFromRows(addDO.latest.rows,doGetter) : null,
+      addDO.previous ? changeAverageFromRows(addDO.previous.rows,doGetter) : null,
+      addDO.latest?.timestamp||0,
+      addDO.previous?.timestamp||0],
     ["bod",
-      add.latest ? changeAverageFromRows(add.latest.rows,bodGetter) : null,
-      add.previous ? changeAverageFromRows(add.previous.rows,bodGetter) : null],
+      addBOD.latest ? changeAverageFromRows(addBOD.latest.rows,bodGetter) : null,
+      addBOD.previous ? changeAverageFromRows(addBOD.previous.rows,bodGetter) : null,
+      addBOD.latest?.timestamp||0,
+      addBOD.previous?.timestamp||0],
     ["coliform",
-      add.latest ? changeAverageFromRows(add.latest.rows,coliformGetter) : null,
-      add.previous ? changeAverageFromRows(add.previous.rows,coliformGetter) : null]
+      addColiform.latest ? changeAverageFromRows(addColiform.latest.rows,coliformGetter) : null,
+      addColiform.previous ? changeAverageFromRows(addColiform.previous.rows,coliformGetter) : null,
+      addColiform.latest?.timestamp||0,
+      addColiform.previous?.timestamp||0]
   ];
 
   addGrid.innerHTML=addItems.some(item=>Number.isFinite(item[1]) || Number.isFinite(item[2]))
     ? addItems.map(item=>changeCard(
         item[0],item[1],item[2],
-        add.latest?.timestamp||0,
-        add.previous?.timestamp||0,
+        item[3],
+        item[4],
         item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
       )).join("")
     : '<div class="change-summary-empty">A second additional water-quality survey is needed before change can be calculated.</div>';
 
-  const dateParts=[];
-  if(fw.latest){
-    dateParts.push(
-      `FreshWater Watch: ${fw.previous ? changeFormatDate(fw.previous.timestamp)+" → " : ""}${changeFormatDate(fw.latest.timestamp)}`
-    );
-  }
-  if(add.latest){
-    dateParts.push(
-      `Additional testing: ${add.previous ? changeFormatDate(add.previous.timestamp)+" → " : ""}${changeFormatDate(add.latest.timestamp)}`
-    );
-  }
-  dates.textContent=dateParts.join(" · ");
+  dates.textContent="Each indicator compares its two most recent recorded results; the applicable dates are shown on each card.";
 
   const allItems=[...fwItems,...addItems];
   const outcomes=allItems
