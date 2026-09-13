@@ -697,6 +697,16 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   padding-bottom:18px;
 }
 
+.weather-card{margin-top:16px}
+.weather-table-wrap{overflow-x:auto}
+.weather-table{width:100%;border-collapse:collapse;font-size:13px}
+.weather-table th,.weather-table td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.weather-table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.weather-table tr:last-child td{border-bottom:0}
+.weather-reading{font-weight:750;white-space:nowrap}
+.weather-muted{color:var(--muted)}
+.weather-empty{padding:18px 4px;color:var(--muted);font-size:13px;text-align:center}
+
 </style>
 </head>
 <body>
@@ -815,6 +825,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   </article>
 
 </section>
+
+<section class="chart-card weather-card" aria-labelledby="weatherAtSurveyTitle">
+  <h2 id="weatherAtSurveyTitle">Weather at survey time</h2>
+  <p class="sub">Closest archived Met Office observation within 90 minutes of each survey. Older surveys completed before weather archiving began will remain unavailable.</p>
+  <div id="weatherAtSurvey" class="weather-empty">Loading archived weather observations…</div>
+</section>
     </div>
   </section>
 
@@ -891,6 +907,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
+const SUPABASE_URL="https://jjepxsrvqcwprjwcxekj.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_zhLETs1BxtRGVUVpG_o2UA_jdjmraIS";
+let weatherMonitoringSites=[];
+let weatherObservations=[];
+let weatherLoadError="";
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
@@ -1706,6 +1727,7 @@ function renderSampleAnalysisForFocusedSite(){
   renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate");
   renderTurbidityChart(turbidityOccurrences(tVals),tVals.length);
   updateScopeText(currentFocusedSite,data);
+  renderWeatherAtSurvey();
 
   if(additionalWaterQualityData.length){
     renderAdditionalForFocusedSite();
@@ -2339,13 +2361,155 @@ async function load(){try{
 
  initialiseSiteChanges();
  renderSampleAnalysisForFocusedSite();
+ await loadWeatherData();
+ renderWeatherAtSurvey();
 
  setTimeout(notifyParentOfHeight,80);
  }catch(e){
    const el=document.getElementById("error");
    el.textContent="Unable to load the water-quality CSV: "+e.message;
    el.style.display="block";
- }}
+}}
+
+function weatherSiteKey(value){
+  let key=siteKeyForFocus(value);
+  const aliases={
+    "half penny steps group":"half penny steps"
+  };
+  return aliases[key] || key;
+}
+
+function surveyDateTimeValue(row){
+  const rawDate=String(getField(row,"Sample Date","sample_date")||"").trim();
+  const rawTime=String(getField(row,"Sample Time","sample_time","Time")||"").trim();
+  const dateMatch=rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(!dateMatch) return sampleDateValue(row);
+
+  const timeMatch=rawTime.match(/^(\d{1,2}):(\d{2})/);
+  const month=Number(dateMatch[1]);
+  const day=Number(dateMatch[2]);
+  const year=Number(dateMatch[3]);
+  const hour=timeMatch?Number(timeMatch[1]):12;
+  const minute=timeMatch?Number(timeMatch[2]):0;
+
+  // Interpret the recorded survey time in Europe/London, including BST.
+  const nominalUtc=Date.UTC(year,month-1,day,hour,minute);
+  const zoneName=new Intl.DateTimeFormat("en-GB",{
+    timeZone:"Europe/London",
+    timeZoneName:"shortOffset"
+  }).formatToParts(new Date(nominalUtc)).find(part=>part.type==="timeZoneName")?.value||"GMT";
+  const offsetMatch=zoneName.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+  const offsetMinutes=offsetMatch
+    ? (offsetMatch[1]==="+"?1:-1)*(Number(offsetMatch[2])*60+Number(offsetMatch[3]||0))
+    : 0;
+  return nominalUtc-offsetMinutes*60000;
+}
+
+function weatherCodeLabel(code){
+  return Number.isFinite(code)?`Met Office code ${code}`:"—";
+}
+
+async function supabaseWeatherFetch(path){
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
+    headers:{apikey:SUPABASE_PUBLISHABLE_KEY,accept:"application/json"},
+    cache:"no-store"
+  });
+  if(!response.ok) throw new Error(`Supabase ${response.status}`);
+  return await response.json();
+}
+
+async function loadWeatherData(){
+  try{
+    const [sites,observations]=await Promise.all([
+      supabaseWeatherFetch("weather_monitoring_sites?select=id,site_name&active=eq.true"),
+      supabaseWeatherFetch("weather_observations?select=monitoring_site_id,station_geohash,observed_at,temperature_c,humidity_percent,weather_code,wind_direction,wind_speed,wind_gust&order=observed_at.desc&limit=1000")
+    ]);
+    weatherMonitoringSites=Array.isArray(sites)?sites:[];
+    weatherObservations=Array.isArray(observations)?observations:[];
+    weatherLoadError="";
+  }catch(error){
+    weatherLoadError=error instanceof Error?error.message:String(error);
+  }
+}
+
+function closestWeatherForSurvey(row){
+  const site=weatherMonitoringSites.find(item=>
+    weatherSiteKey(item.site_name)===weatherSiteKey(siteName(row))
+  );
+  if(!site) return null;
+
+  const surveyTime=surveyDateTimeValue(row);
+  if(!surveyTime) return null;
+  let best=null;
+  let bestDifference=Infinity;
+
+  weatherObservations.forEach(observation=>{
+    if(String(observation.monitoring_site_id)!==String(site.id)) return;
+    const observedTime=new Date(observation.observed_at).getTime();
+    const difference=Math.abs(observedTime-surveyTime);
+    if(Number.isFinite(observedTime) && difference<bestDifference){
+      best=observation;
+      bestDifference=difference;
+    }
+  });
+
+  return best && bestDifference<=90*60*1000 ? best : null;
+}
+
+function weatherNumber(value,decimals=0){
+  const number=Number(value);
+  return Number.isFinite(number)?number.toFixed(decimals):"—";
+}
+
+function renderWeatherAtSurvey(){
+  const container=document.getElementById("weatherAtSurvey");
+  if(!container) return;
+  if(weatherLoadError){
+    container.className="weather-empty";
+    container.textContent=`Unable to load archived weather: ${weatherLoadError}`;
+    return;
+  }
+  if(!weatherMonitoringSites.length){
+    container.className="weather-empty";
+    container.textContent="Loading archived weather observations…";
+    return;
+  }
+
+  const surveys=filterFreshwaterForSite(freshwaterDataAll,currentFocusedSite)
+    .slice().sort((a,b)=>surveyDateTimeValue(b)-surveyDateTimeValue(a));
+  if(!surveys.length){
+    container.className="weather-empty";
+    container.textContent="No surveys are available in this view.";
+    return;
+  }
+
+  container.className="weather-table-wrap";
+  container.innerHTML=`<table class="weather-table">
+    <thead><tr><th>Survey</th><th>Conditions</th><th>Air temperature</th><th>Humidity</th><th>Wind</th><th>Observation</th></tr></thead>
+    <tbody>${surveys.map(row=>{
+      const observation=closestWeatherForSurvey(row);
+      const surveyLabel=`${sampleDateLabel(row)}${getField(row,"Sample Time","sample_time")?` · ${getField(row,"Sample Time","sample_time")}`:""}`;
+      if(!observation){
+        return `<tr><td><span class="weather-reading">${esc(siteName(row))}</span><br><span class="weather-muted">${esc(surveyLabel)}</span></td><td colspan="5" class="weather-muted">No archived observation for this survey.</td></tr>`;
+      }
+      const wind=[
+        observation.wind_direction,
+        Number.isFinite(Number(observation.wind_speed))?`speed ${weatherNumber(observation.wind_speed,1)}`:"",
+        Number.isFinite(Number(observation.wind_gust))?`gust ${weatherNumber(observation.wind_gust,1)}`:""
+      ].filter(Boolean).join(" · ")||"—";
+      const observedLabel=new Date(observation.observed_at).toLocaleString("en-GB",{timeZone:"Europe/London",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+      return `<tr>
+        <td><span class="weather-reading">${esc(siteName(row))}</span><br><span class="weather-muted">${esc(surveyLabel)}</span></td>
+        <td>${esc(weatherCodeLabel(Number(observation.weather_code)))}</td>
+        <td>${esc(weatherNumber(observation.temperature_c,1))}°C</td>
+        <td>${esc(weatherNumber(observation.humidity_percent,0))}%</td>
+        <td>${esc(wind)}</td>
+        <td><span class="weather-muted">${esc(observedLabel)}<br>${esc(observation.station_geohash)}</span></td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table>`;
+  setTimeout(notifyParentOfHeight,50);
+}
 
 
 
