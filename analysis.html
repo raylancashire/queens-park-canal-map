@@ -828,7 +828,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
 <section class="chart-card weather-card" aria-labelledby="weatherAtSurveyTitle">
   <h2 id="weatherAtSurveyTitle">Weather at survey time</h2>
-  <p class="sub">Closest archived Met Office observation within 90 minutes of each survey. Older surveys completed before weather archiving began will remain unavailable.</p>
+  <p id="weatherAtSurveyIntro" class="sub">For All sites, the latest survey at each location is shown. Select one site to see its complete survey history. Weather is the closest archived Met Office observation within 90 minutes.</p>
   <div id="weatherAtSurvey" class="weather-empty">Loading archived weather observations…</div>
 </section>
     </div>
@@ -2475,8 +2475,22 @@ function renderWeatherAtSurvey(){
     return;
   }
 
-  const surveys=filterFreshwaterForSite(freshwaterDataAll,currentFocusedSite)
+  let surveys=filterFreshwaterForSite(freshwaterDataAll,currentFocusedSite)
     .slice().sort((a,b)=>surveyDateTimeValue(b)-surveyDateTimeValue(a));
+
+  const intro=document.getElementById("weatherAtSurveyIntro");
+  if(currentFocusedSite==="all"){
+    const seenSites=new Set();
+    surveys=surveys.filter(row=>{
+      const key=weatherSiteKey(siteName(row));
+      if(seenSites.has(key)) return false;
+      seenSites.add(key);
+      return true;
+    });
+    if(intro) intro.textContent="Latest survey at each sampling site, matched to the closest archived Met Office observation within 90 minutes. Select one site to see its complete survey history.";
+  }else if(intro){
+    intro.textContent="Complete survey history for this site, matched to the closest archived Met Office observation within 90 minutes.";
+  }
   if(!surveys.length){
     container.className="weather-empty";
     container.textContent="No surveys are available in this view.";
