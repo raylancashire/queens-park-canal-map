@@ -762,9 +762,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <button id="doTab" type="button" role="tab" aria-selected="false" aria-controls="doPanel">
       Dissolved Oxygen
     </button>
-    <button id="additionalTurbidityTab" type="button" role="tab" aria-selected="false" aria-controls="additionalTurbidityPanel">
-      Additional Turbidity
-    </button>
   </div>
 </div>
 
@@ -817,11 +814,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     <div id="doChart"></div>
   </article>
 
-  <article id="additionalTurbidityPanel" class="chart-card chart-panel additional-chart" role="tabpanel" aria-labelledby="additionalTurbidityTab" hidden>
-    <h2>Turbidity (additional test)</h2>
-    <p class="sub">Recorded additional turbidity results over time. These are kept separate from the FreshWater Watch Secchi Tube results.</p>
-    <div id="additionalTurbidityChart"></div>
-  </article>
 </section>
     </div>
   </section>
@@ -1450,7 +1442,6 @@ function renderAdditionalForFocusedSite(){
   renderAdditionalSeries("coliformChart",data,"Coliform","");
   renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
   renderAdditionalSeries("doChart",data,"Dissolved Oxygen mg/L","mg/L");
-  renderAdditionalSeries("additionalTurbidityChart",data,"Additional Turbidity NTU","NTU");
 }
 
 function normaliseAdditionalRow(row){
@@ -1460,7 +1451,6 @@ function normaliseAdditionalRow(row){
   copy["Date"]=sampleDateLabel(row);
   copy["Time"]=getField(row,"Sample Time","sample_time","Time");
   copy["Temperature °C"]=getField(row,"Temperature","Temperature °C","Temperature C");
-  copy["Additional Turbidity NTU"]=getField(row,"Turbidity");
 
   // Coliform: support both the older and current column headings.
   if(!String(copy["Coliform"]??"").trim()){
@@ -2402,8 +2392,7 @@ function setChartTab(which){
     ph:"phTab",
     coliform:"coliformTab",
     bod:"bodTab",
-    dissolvedOxygen:"doTab",
-    additionalTurbidity:"additionalTurbidityTab"
+    dissolvedOxygen:"doTab"
   };
 
   const panels={
@@ -2414,8 +2403,7 @@ function setChartTab(which){
     ph:"phPanel",
     coliform:"coliformPanel",
     bod:"bodPanel",
-    dissolvedOxygen:"doPanel",
-    additionalTurbidity:"additionalTurbidityPanel"
+    dissolvedOxygen:"doPanel"
   };
 
   Object.keys(tabs).forEach(key=>{
@@ -2461,7 +2449,6 @@ document.getElementById("phTab").addEventListener("click",()=>setChartTab("ph"))
 document.getElementById("coliformTab").addEventListener("click",()=>setChartTab("coliform"));
 document.getElementById("bodTab").addEventListener("click",()=>setChartTab("bod"));
 document.getElementById("doTab").addEventListener("click",()=>setChartTab("dissolvedOxygen"));
-document.getElementById("additionalTurbidityTab").addEventListener("click",()=>setChartTab("additionalTurbidity"));
 
 
 
