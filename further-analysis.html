@@ -5628,8 +5628,6 @@ function renderSnapshot(){
   const nitrate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"nitrate")));
   const phosphate=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"phosphate")));
   const turbidity=snapshotAverage(fwRows.map(r=>comparisonMetricValue(r,"turbidity")));
-  const additionalTurbidity=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Additional Turbidity NTU"])));
-
   const temperature=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"])));
   const ph=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,["pH","PH"])));
   const dissolvedOxygen=snapshotAverage(addRows.map(r=>snapshotFirstNumber(r,[
@@ -5669,14 +5667,6 @@ function renderSnapshot(){
       "turbidity","Secchi Tube Turbidity",`${turbidity.toFixed(0)} NTU`,
       currentSnapshotPeriod==="latest" ? "Latest-survey average" : "Project average",
       snapshotFreshwaterAssessment("turbidity",turbidity)
-    ));
-  }
-
-  if(Number.isFinite(additionalTurbidity)){
-    cards.push(snapshotCard(
-      "turbidity","Turbidity (additional test)",`${additionalTurbidity.toFixed(0)} NTU`,
-      currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average additional test result",
-      {label:"Recorded additional test",kind:"neutral"}
     ));
   }
 
