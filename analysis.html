@@ -2669,7 +2669,7 @@ function incidentSeverityStyle(value){
   if(v.includes("low")) return "background:#dcefe1;color:#17321f";
   return "background:#eef2ef;color:#17321f";
 }
-function renderPollutionIncidents(){
+async function renderPollutionIncidents(){
   const register=document.getElementById("incidentRegister");
   const filter=document.getElementById("incidentTypeFilter");
   if(!register||!filter) return;
@@ -2685,10 +2685,13 @@ function renderPollutionIncidents(){
   document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
   const admin=!!incidentCurrentUser;
-  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Photo</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
+  const photoUrls=await Promise.all(rows.map(r=>incidentPhotoDisplayUrl(incidentField(r,"Photo URL","photo_url"))));
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Photo</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map((r,index)=>{
     const severity=incidentField(r,"Severity","severity")||"Not rated";
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
-    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${incidentField(r,"Photo URL","photo_url")?`<a href="${esc(incidentField(r,"Photo URL","photo_url"))}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(incidentField(r,"Photo URL","photo_url"))}" alt="Incident photograph"></a>`:"—"}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
+    const photoUrl=photoUrls[index];
+    const photoCell=photoUrl?`<a href="${esc(photoUrl)}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(photoUrl)}" alt="Incident photograph"></a>`:"—";
+    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
@@ -2870,18 +2873,65 @@ async function resizeIncidentPhoto(file){
   const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Could not resize image.")),"image/jpeg",0.80));
   return {blob,width,height};
 }
+const INCIDENT_PHOTO_BUCKET="incident-photos";
+
+function incidentPhotoPath(value){
+  const raw=String(value||"").trim();
+  if(!raw) return "";
+
+  // New records store only the Storage object path.
+  if(!/^https?:\/\//i.test(raw)) return raw.replace(/^\/+/, "");
+
+  // Backwards compatibility with photos already saved as Supabase URLs.
+  const markers=[
+    `/storage/v1/object/public/${INCIDENT_PHOTO_BUCKET}/`,
+    `/storage/v1/object/sign/${INCIDENT_PHOTO_BUCKET}/`,
+    `/storage/v1/object/authenticated/${INCIDENT_PHOTO_BUCKET}/`
+  ];
+  for(const marker of markers){
+    const i=raw.indexOf(marker);
+    if(i>=0){
+      const tail=raw.slice(i+marker.length).split("?")[0];
+      try{return decodeURIComponent(tail)}catch(e){return tail}
+    }
+  }
+  return "";
+}
+
+async function incidentPhotoDisplayUrl(value){
+  const raw=String(value||"").trim();
+  if(!raw) return "";
+
+  const path=incidentPhotoPath(raw);
+  if(!path){
+    // Non-Supabase external image URL: retain it as supplied.
+    return /^https?:\/\//i.test(raw) ? raw : "";
+  }
+
+  // The bucket is private. Generate a temporary read URL instead of a public URL.
+  const {data,error}=await canalSupabase.storage
+    .from(INCIDENT_PHOTO_BUCKET)
+    .createSignedUrl(path,60*60);
+  if(error){
+    console.warn("Could not create incident photo signed URL",error);
+    return "";
+  }
+  return data?.signedUrl||"";
+}
+
 async function uploadIncidentPhoto(file){
   const resized=await resizeIncidentPhoto(file);
   const path=`${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.jpg`;
-  const {error}=await canalSupabase.storage.from("incident-photos").upload(path,resized.blob,{contentType:"image/jpeg",upsert:false});
+  const {error}=await canalSupabase.storage
+    .from(INCIDENT_PHOTO_BUCKET)
+    .upload(path,resized.blob,{contentType:"image/jpeg",upsert:false});
   if(error) throw error;
-  const {data}=canalSupabase.storage.from("incident-photos").getPublicUrl(path);
-  return {url:data.publicUrl,path,size:resized.blob.size,width:resized.width,height:resized.height};
+
+  // Store the stable object path. A signed display URL is created when the record is rendered.
+  return {url:path,path,size:resized.blob.size,width:resized.width,height:resized.height};
 }
-function storagePathFromIncidentPhotoUrl(url){
-  const marker="/storage/v1/object/public/incident-photos/";
-  const i=String(url||"").indexOf(marker);
-  return i>=0 ? decodeURIComponent(String(url).slice(i+marker.length)) : "";
+function storagePathFromIncidentPhotoUrl(value){
+  return incidentPhotoPath(value);
 }
 async function deleteIncidentPhotoFromStorage(url){
   const path=storagePathFromIncidentPhotoUrl(url);
@@ -2945,7 +2995,12 @@ function setIncidentFormMode(row=null){
   incidentPhotoFile=null; incidentRemoveExistingPhoto=false;
   incidentExistingPhotoUrl=row.photo_url??row["Photo URL"]??"";
   document.getElementById("incidentPhoto").value="";
-  setIncidentPhotoPreview(incidentExistingPhotoUrl,incidentExistingPhotoUrl?"Current incident photo":"");
+  setIncidentPhotoPreview("", "");
+  if(incidentExistingPhotoUrl){
+    incidentPhotoDisplayUrl(incidentExistingPhotoUrl).then(url=>{
+      if(url) setIncidentPhotoPreview(url,"Current incident photo");
+    });
+  }
   mode.textContent="Edit incident"; save.textContent="Save changes";
   cancelEntry.hidden=true; cancel.hidden=false; del.hidden=false;
   document.getElementById("addIncidentPanel").hidden=false;
