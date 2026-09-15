@@ -2726,7 +2726,8 @@ async function incidentAdministratorSignIn(){
       body:JSON.stringify({
         email:email.trim(),
         create_user:false,
-        options:{emailRedirectTo:redirectTo}
+        gotrue_meta_security:{},
+        redirect_to:redirectTo
       })
     });
     window.alert("A secure sign-in link has been sent to that authorised email address. Open the link in this browser to continue.");
