@@ -715,6 +715,42 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid rgba(0,0,0,.1)}
 .incident-table td{vertical-align:top}.incident-description{min-width:220px;line-height:1.4}
 @media(max-width:760px){.incident-summary{grid-template-columns:1fr}}
+
+/* Pollution incident administration */
+.incident-admin{margin-top:16px}
+.incident-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.incident-admin button,.incident-form button,.incident-import button{
+  appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:8px;padding:9px 13px;font-size:13px;font-weight:750;cursor:pointer
+}
+.incident-admin button:hover,.incident-admin button:focus-visible,
+.incident-form button:hover,.incident-form button:focus-visible,
+.incident-import button:hover,.incident-import button:focus-visible{
+  background:#eef7ef;border-color:#7fa38a
+}
+.incident-admin button.primary,.incident-form button.primary,.incident-import button.primary{
+  background:var(--ink);color:#fff;border-color:var(--ink)
+}
+.incident-admin-panel{border:1px solid var(--line);border-radius:10px;padding:14px;background:#f8faf8;margin-top:10px}
+.incident-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.incident-form-grid .wide{grid-column:1/-1}
+.incident-form label{display:block;font-size:12px;font-weight:750;margin-bottom:5px}
+.incident-form input,.incident-form select,.incident-form textarea{
+  width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit
+}
+.incident-form textarea{min-height:82px;resize:vertical}
+.incident-form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.incident-message{margin-top:10px;padding:9px 11px;border-radius:8px;font-size:12px;display:none}
+.incident-message.ok{display:block;background:#e8f5eb;color:#174c27}
+.incident-message.error{display:block;background:#fff1f1;color:#8b1e1e}
+.incident-import-summary{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.incident-import-summary span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}
+.incident-preview{max-height:340px;overflow:auto;margin-top:10px}
+.incident-preview .invalid-row{background:#fff1f1}
+.incident-preview .duplicate-row{background:#fff8e5}
+.incident-preview small{color:var(--muted)}
+@media(max-width:700px){.incident-form-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -931,6 +967,62 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <select id="incidentTypeFilter"><option value="all">All incidents and events</option></select>
       </div>
       <div id="incidentRegister" class="table-wrap"><div class="change-empty">Loading pollution incident register…</div></div>
+      <section class="chart-card incident-admin" aria-labelledby="incidentAdminTitle">
+        <h2 id="incidentAdminTitle">Incident administration</h2>
+        <p class="sub">Add one incident manually or batch-import the standard Canal Watch incident CSV. Records are validated before they are sent to Supabase.</p>
+
+        <div class="incident-admin-actions">
+          <button id="showAddIncident" type="button">Add incident</button>
+          <button id="showImportIncidents" type="button">Import CSV</button>
+        </div>
+
+        <div id="addIncidentPanel" class="incident-admin-panel" hidden>
+          <form id="incidentForm" class="incident-form">
+            <div class="incident-form-grid">
+              <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="date" required></div>
+              <div><label for="incidentLocationInput">Location *</label><input id="incidentLocationInput" name="location" required></div>
+              <div><label for="incidentLatitude">Latitude</label><input id="incidentLatitude" name="latitude" type="number" step="any"></div>
+              <div><label for="incidentLongitude">Longitude</label><input id="incidentLongitude" name="longitude" type="number" step="any"></div>
+              <div><label for="incidentClassificationInput">Classification *</label>
+                <select id="incidentClassificationInput" name="classification" required>
+                  <option>Pollution incident</option><option>Suspected pollution</option><option>Environmental event</option>
+                </select>
+              </div>
+              <div><label for="incidentPollutionType">Pollution / event type *</label>
+                <select id="incidentPollutionType" name="pollution_type" required>
+                  <option value="">Choose…</option><option>Algae / duckweed</option><option>Oil / fuel</option><option>Sewage / wastewater</option><option>Litter / waste</option><option>Chemical</option><option>Dead fish / wildlife</option><option>Discolouration / unknown</option><option>Other</option>
+                </select>
+              </div>
+              <div><label for="incidentSeverity">Severity *</label>
+                <select id="incidentSeverity" name="severity" required><option>Low</option><option selected>Moderate</option><option>High</option><option>Severe</option></select>
+              </div>
+              <div><label for="incidentStatusInput">Status *</label>
+                <select id="incidentStatusInput" name="status" required><option>Observed</option><option>Reported</option><option>Investigating</option><option>Resolved</option><option>Closed</option></select>
+              </div>
+              <div class="wide"><label for="incidentDescription">Description *</label><textarea id="incidentDescription" name="description" required></textarea></div>
+              <div><label for="incidentSource">Source</label><input id="incidentSource" name="source" value="Canal Watch"></div>
+              <div><label for="incidentReportedTo">Reported to</label><input id="incidentReportedTo" name="reported_to"></div>
+              <div><label for="incidentReference">Reference</label><input id="incidentReference" name="reference"></div>
+              <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="date"></div>
+              <div class="wide"><label for="incidentNotes">Notes</label><textarea id="incidentNotes" name="notes"></textarea></div>
+            </div>
+            <div class="incident-form-actions"><button class="primary" type="submit">Save incident</button><button id="clearIncidentForm" type="button">Clear</button></div>
+            <div id="incidentFormMessage" class="incident-message" role="status"></div>
+          </form>
+        </div>
+
+        <div id="importIncidentsPanel" class="incident-admin-panel incident-import" hidden>
+          <label for="incidentCsvFile"><strong>Choose water-pollution-incidents.csv</strong></label>
+          <input id="incidentCsvFile" type="file" accept=".csv,text/csv">
+          <div id="incidentImportSummary" class="incident-import-summary"></div>
+          <div id="incidentImportPreview" class="incident-preview"></div>
+          <div class="incident-form-actions">
+            <button id="importValidIncidents" class="primary" type="button" disabled>Import valid incidents</button>
+            <button id="clearIncidentImport" type="button">Clear import</button>
+          </div>
+          <div id="incidentImportMessage" class="incident-message" role="status"></div>
+        </div>
+      </section>
       <p id="incidentNote" class="change-note"></p>
     </div>
   </section>
@@ -2420,17 +2512,220 @@ function renderPollutionIncidents(){
     return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span></td><td>${esc(incidentStatus(r))}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td></tr>`;
   }).join("")}</tbody></table>`;
 }
+
+const INCIDENT_TABLE="water_pollution_incidents";
+let incidentImportRows=[];
+
+function isoToUKDate(value){
+  const m=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(value||"");
+}
+function ukToISODate(value){
+  const s=String(value||"").trim();
+  if(!s) return null;
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m) return s;
+  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(!m) return null;
+  return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+}
+function supabaseIncidentToDisplay(row){
+  return {
+    Date:isoToUKDate(row.incident_date),
+    Location:row.location||"",
+    Latitude:row.latitude??"",
+    Longitude:row.longitude??"",
+    Classification:row.classification||"",
+    "Pollution type":row.pollution_type||"",
+    Severity:row.severity||"",
+    Description:row.description||"",
+    Source:row.source||"",
+    "Reported to":row.reported_to||"",
+    Reference:row.reference||"",
+    Status:row.status||"",
+    "Resolved date":isoToUKDate(row.resolved_date),
+    Notes:row.notes||"",
+    id:row.id
+  };
+}
+async function supabaseIncidentRequest(path,options={}){
+  const headers={
+    apikey:SUPABASE_PUBLISHABLE_KEY,
+    Authorization:`Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    "Content-Type":"application/json",
+    Accept:"application/json",
+    ...(options.headers||{})
+  };
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers,cache:"no-store"});
+  if(!response.ok){
+    let detail="";
+    try{detail=(await response.json())?.message||""}catch(e){}
+    throw new Error(detail||`Supabase ${response.status}`);
+  }
+  if(response.status===204) return [];
+  const body=await response.text();
+  return body ? JSON.parse(body) : [];
+}
+async function fetchIncidentsFromSupabase(){
+  return await supabaseIncidentRequest(`${INCIDENT_TABLE}?select=*&order=incident_date.desc,created_at.desc`);
+}
+function incidentPayloadFromObject(obj){
+  const n=v=>String(v??"").trim();
+  const numberOrNull=v=>n(v)===""?null:Number(v);
+  return {
+    incident_date:ukToISODate(obj.incident_date??obj.Date),
+    location:n(obj.location??obj.Location),
+    latitude:numberOrNull(obj.latitude??obj.Latitude),
+    longitude:numberOrNull(obj.longitude??obj.Longitude),
+    classification:n(obj.classification??obj.Classification),
+    pollution_type:n(obj.pollution_type??obj["Pollution type"]),
+    severity:n(obj.severity??obj.Severity),
+    description:n(obj.description??obj.Description),
+    source:n(obj.source??obj.Source)||null,
+    reported_to:n(obj.reported_to??obj["Reported to"])||null,
+    reference:n(obj.reference??obj.Reference)||null,
+    status:n(obj.status??obj.Status)||"Observed",
+    resolved_date:ukToISODate(obj.resolved_date??obj["Resolved date"]),
+    notes:n(obj.notes??obj.Notes)||null
+  };
+}
+function validateIncidentPayload(p){
+  const errors=[];
+  if(!p.incident_date) errors.push("valid date");
+  if(!p.location) errors.push("location");
+  if(!p.classification) errors.push("classification");
+  if(!p.pollution_type) errors.push("type");
+  if(!p.severity) errors.push("severity");
+  if(!p.description) errors.push("description");
+  if(!p.status) errors.push("status");
+  if(p.latitude!==null && !Number.isFinite(p.latitude)) errors.push("latitude");
+  if(p.longitude!==null && !Number.isFinite(p.longitude)) errors.push("longitude");
+  return errors;
+}
+function incidentDuplicateKey(p){
+  return [p.incident_date,String(p.location||"").trim().toLowerCase(),String(p.pollution_type||"").trim().toLowerCase(),String(p.description||"").trim().toLowerCase()].join("|");
+}
+function existingIncidentKeys(){
+  return new Set(pollutionIncidents.map(r=>incidentDuplicateKey(incidentPayloadFromObject(r))));
+}
+function showIncidentMessage(id,text,kind){
+  const el=document.getElementById(id); if(!el)return;
+  el.textContent=text; el.className=`incident-message ${kind||""}`;
+}
+async function insertIncidentPayloads(payloads){
+  return await supabaseIncidentRequest(INCIDENT_TABLE,{
+    method:"POST",
+    headers:{Prefer:"return=representation"},
+    body:JSON.stringify(payloads)
+  });
+}
+function setupIncidentAdmin(){
+  const addPanel=document.getElementById("addIncidentPanel");
+  const importPanel=document.getElementById("importIncidentsPanel");
+  document.getElementById("showAddIncident")?.addEventListener("click",()=>{
+    addPanel.hidden=!addPanel.hidden; importPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
+  });
+  document.getElementById("showImportIncidents")?.addEventListener("click",()=>{
+    importPanel.hidden=!importPanel.hidden; addPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
+  });
+  document.getElementById("clearIncidentForm")?.addEventListener("click",()=>{
+    document.getElementById("incidentForm").reset();
+    document.getElementById("incidentSource").value="Canal Watch";
+    showIncidentMessage("incidentFormMessage","","");
+  });
+  document.getElementById("incidentForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const raw=Object.fromEntries(new FormData(form).entries());
+    const payload=incidentPayloadFromObject(raw);
+    const errors=validateIncidentPayload(payload);
+    if(errors.length){showIncidentMessage("incidentFormMessage",`Please check: ${errors.join(", ")}.`,"error");return;}
+    if(existingIncidentKeys().has(incidentDuplicateKey(payload))){
+      showIncidentMessage("incidentFormMessage","This looks like an existing incident. It was not added.","error"); return;
+    }
+    try{
+      await insertIncidentPayloads([payload]);
+      showIncidentMessage("incidentFormMessage","Incident saved to Supabase.","ok");
+      form.reset(); document.getElementById("incidentSource").value="Canal Watch";
+      await loadPollutionIncidents();
+    }catch(error){
+      showIncidentMessage("incidentFormMessage",`Could not save incident: ${error.message}. Check that the table and RLS policies have been created.`,"error");
+    }
+  });
+  document.getElementById("incidentCsvFile")?.addEventListener("change",async event=>{
+    const file=event.target.files?.[0]; if(!file)return;
+    const parsed=parseCSV(await file.text());
+    const existing=existingIncidentKeys(), seen=new Set();
+    incidentImportRows=parsed.map((row,index)=>{
+      const payload=incidentPayloadFromObject(row);
+      const errors=validateIncidentPayload(payload);
+      const key=incidentDuplicateKey(payload);
+      const duplicate=existing.has(key)||seen.has(key);
+      seen.add(key);
+      return {index:index+2,row,payload,errors,duplicate};
+    });
+    renderIncidentImportPreview();
+  });
+  document.getElementById("clearIncidentImport")?.addEventListener("click",()=>{
+    incidentImportRows=[]; document.getElementById("incidentCsvFile").value="";
+    renderIncidentImportPreview(); showIncidentMessage("incidentImportMessage","","");
+  });
+  document.getElementById("importValidIncidents")?.addEventListener("click",async()=>{
+    const valid=incidentImportRows.filter(x=>!x.errors.length&&!x.duplicate).map(x=>x.payload);
+    if(!valid.length)return;
+    try{
+      await insertIncidentPayloads(valid);
+      showIncidentMessage("incidentImportMessage",`${valid.length} incident${valid.length===1?"":"s"} imported successfully.`,"ok");
+      incidentImportRows=[]; document.getElementById("incidentCsvFile").value="";
+      renderIncidentImportPreview(); await loadPollutionIncidents();
+    }catch(error){
+      showIncidentMessage("incidentImportMessage",`Import failed: ${error.message}. No further rows were sent.`,"error");
+    }
+  });
+}
+function renderIncidentImportPreview(){
+  const summary=document.getElementById("incidentImportSummary");
+  const preview=document.getElementById("incidentImportPreview");
+  const button=document.getElementById("importValidIncidents");
+  if(!summary||!preview||!button)return;
+  if(!incidentImportRows.length){summary.innerHTML="";preview.innerHTML="";button.disabled=true;return;}
+  const invalid=incidentImportRows.filter(x=>x.errors.length).length;
+  const duplicates=incidentImportRows.filter(x=>x.duplicate).length;
+  const valid=incidentImportRows.filter(x=>!x.errors.length&&!x.duplicate).length;
+  summary.innerHTML=`<span>${incidentImportRows.length} rows</span><span>${valid} valid</span><span>${duplicates} possible duplicates</span><span>${invalid} need attention</span>`;
+  button.disabled=valid===0;
+  preview.innerHTML=`<table><thead><tr><th>CSV row</th><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Result</th></tr></thead><tbody>${
+    incidentImportRows.map(x=>{
+      const cls=x.errors.length?"invalid-row":x.duplicate?"duplicate-row":"";
+      const result=x.errors.length?`Needs: ${x.errors.join(", ")}`:x.duplicate?"Possible duplicate":"Ready";
+      return `<tr class="${cls}"><td>${x.index}</td><td>${esc(x.row.Date||x.row.incident_date||"—")}</td><td>${esc(x.payload.location||"—")}</td><td>${esc(x.payload.classification||"—")}</td><td>${esc(x.payload.pollution_type||"—")}</td><td>${esc(result)}</td></tr>`;
+    }).join("")
+  }</tbody></table>`;
+}
+
 async function loadPollutionIncidents(){
+  let source="supabase";
   try{
-    pollutionIncidents=parseCSV(await fetchFromSources(INCIDENT_SOURCES));
+    const rows=await fetchIncidentsFromSupabase();
+    pollutionIncidents=Array.isArray(rows)?rows.map(supabaseIncidentToDisplay):[];
     incidentLoadError="";
   }catch(error){
-    pollutionIncidents=[];
-    incidentLoadError=error instanceof Error?error.message:String(error);
+    source="csv";
+    try{
+      pollutionIncidents=parseCSV(await fetchFromSources(INCIDENT_SOURCES));
+      incidentLoadError="";
+    }catch(csvError){
+      pollutionIncidents=[];
+      incidentLoadError=csvError instanceof Error?csvError.message:String(csvError);
+    }
   }
   renderPollutionIncidents();
   const note=document.getElementById("incidentNote");
-  if(note) note.textContent=incidentLoadError ? "The incident CSV has not been found yet. Add water-pollution-incidents.csv beside this page (or to the GitHub repository) and it will load automatically." : "Environmental events such as algae or duckweed can be recorded without automatically classifying them as confirmed pollution.";
+  if(note){
+    if(incidentLoadError) note.textContent="No Supabase incident table or fallback CSV could be loaded yet.";
+    else if(source==="supabase") note.textContent="Live incident register loaded from Supabase. Environmental events such as algae or duckweed can be recorded without automatically classifying them as confirmed pollution.";
+    else note.textContent="Using the CSV fallback. Create the Supabase incident table to enable Add incident and batch import.";
+  }
 }
 
 async function load(){try{
@@ -2835,6 +3130,7 @@ accordionPanels.forEach((panel,index)=>{
   });
 });
 
+setupIncidentAdmin();
 load();
 
 </script>
