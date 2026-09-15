@@ -529,6 +529,11 @@ select {
   font-size:19px;font-weight:900;
 }
 .pollution-incident-popup h3{margin:0 0 5px;color:#8b1e1e}
+.pollution-incident-popup .incident-photo{
+  display:block;width:100%;max-width:340px;height:170px;
+  object-fit:cover;border-radius:7px;margin:7px 0 9px;
+  border:1px solid #dfe7e1;
+}
 .pollution-incident-popup .incident-date{font-size:12px;color:#5f6f64;margin-bottom:8px}
 .pollution-incident-popup table{border-collapse:collapse;width:100%;font-size:13px}
 .pollution-incident-popup td{padding:5px 4px;border-bottom:1px solid #e5e9e6;vertical-align:top}
@@ -1515,10 +1520,56 @@ function formatIncidentDate(value){
   return m ? `${m[3]}/${m[2]}/${m[1]}` : String(value);
 }
 
-function incidentPopup(r){
+const INCIDENT_PHOTO_BUCKET="incident-photos";
+
+function incidentPhotoStoragePath(value){
+  const raw=String(value||"").trim();
+  if(!raw) return "";
+  if(!/^https?:\/\//i.test(raw)) return raw.replace(/^\/+/, "");
+  const markers=[
+    `/storage/v1/object/public/${INCIDENT_PHOTO_BUCKET}/`,
+    `/storage/v1/object/sign/${INCIDENT_PHOTO_BUCKET}/`,
+    `/storage/v1/object/authenticated/${INCIDENT_PHOTO_BUCKET}/`
+  ];
+  for(const marker of markers){
+    const i=raw.indexOf(marker);
+    if(i>=0){
+      const tail=raw.slice(i+marker.length).split("?")[0];
+      try{return decodeURIComponent(tail)}catch(e){return tail}
+    }
+  }
+  return "";
+}
+
+async function incidentPhotoSignedUrl(value){
+  const raw=String(value||"").trim();
+  if(!raw) return "";
+  const path=incidentPhotoStoragePath(raw);
+  if(!path) return /^https?:\/\//i.test(raw) ? raw : "";
+
+  const response=await fetch(
+    `${SUPABASE_URL}/storage/v1/object/sign/${INCIDENT_PHOTO_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method:"POST",
+      headers:{
+        apikey:SUPABASE_PUBLISHABLE_KEY,
+        Authorization:`Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({expiresIn:3600})
+    }
+  );
+  if(!response.ok) return "";
+  const data=await response.json();
+  const signed=data.signedURL||data.signedUrl||"";
+  return signed ? (signed.startsWith("http") ? signed : `${SUPABASE_URL}/storage/v1${signed}`) : "";
+}
+
+function incidentPopup(r,photoUrl=""){
   const row=(label,value)=>value?`<tr><td>${esc(label)}</td><td>${esc(value)}</td></tr>`:"";
   return `<div class="pollution-incident-popup">
     <h3>${esc(r.location||"Water pollution incident")}</h3>
+    ${photoUrl?`<img class="incident-photo" src="${esc(photoUrl)}" alt="Photograph of pollution incident at ${esc(r.location||"recorded location")}" loading="lazy">`:""}
     <div class="incident-date">Incident / report date: ${esc(formatIncidentDate(r.incident_date))}</div>
     <table>
       ${row("Type",r.pollution_type)}
@@ -1544,7 +1595,7 @@ async function loadPollutionIncidentMarkers(forceRefresh=false){
   }
   const status=document.getElementById("pollutionIncidentStatus");
   if(status) status.textContent="Loading incidents…";
-  const fields="id,incident_date,location,latitude,longitude,classification,pollution_type,severity,official_category,status,suspected_source,extent,description,response_action,wildlife_impact,wildlife_impact_details,organisations_involved,reported_to,reference,resolved_date,notes";
+  const fields="id,incident_date,location,latitude,longitude,classification,pollution_type,severity,official_category,status,suspected_source,extent,description,response_action,wildlife_impact,wildlife_impact_details,organisations_involved,reported_to,reference,resolved_date,notes,photo_url";
   const response=await fetch(
     `${SUPABASE_URL}/rest/v1/water_pollution_incidents?select=${fields}&latitude=not.is.null&longitude=not.is.null&order=incident_date.desc`,
     {headers:{apikey:SUPABASE_PUBLISHABLE_KEY,accept:"application/json"},cache:"no-store"}
@@ -1552,18 +1603,23 @@ async function loadPollutionIncidentMarkers(forceRefresh=false){
   if(!response.ok) throw new Error(`Pollution incident data ${response.status}`);
   const incidents=await response.json();
   let plotted=0;
-  incidents.forEach(r=>{
+  for(const r of incidents){
     const lat=Number(r.latitude), lon=Number(r.longitude);
-    if(!Number.isFinite(lat)||!Number.isFinite(lon)) return;
+    if(!Number.isFinite(lat)||!Number.isFinite(lon)) continue;
+    let photoUrl="";
+    if(r.photo_url){
+      try{ photoUrl=await incidentPhotoSignedUrl(r.photo_url); }
+      catch(error){ console.warn("Incident photo could not be loaded",error); }
+    }
     L.marker([lat,lon],{
       icon:pollutionIncidentIcon(),
       title:`Pollution incident: ${r.location||formatIncidentDate(r.incident_date)}`
-    }).bindPopup(incidentPopup(r),{
-      maxWidth:390,maxHeight:330,autoPan:true,
+    }).bindPopup(incidentPopup(r,photoUrl),{
+      maxWidth:390,maxHeight:430,autoPan:true,
       autoPanPaddingTopLeft:[20,150],autoPanPaddingBottomRight:[20,20]
     }).addTo(pollutionIncidentLayer);
     plotted++;
-  });
+  }
   pollutionIncidentsLoaded=true;
   if(status) status.textContent=`${plotted} ${plotted===1?"incident":"incidents"} on map`;
 }
