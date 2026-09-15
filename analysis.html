@@ -1090,7 +1090,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         </div>
 
         <div id="importIncidentsPanel" class="incident-admin-panel incident-import" hidden>
-          <label for="incidentCsvFile"><strong>Choose water-pollution-incidents.csv</strong></label>
+          <div style="margin-bottom:14px">
+            <strong>Batch import incidents</strong>
+            <p style="margin:5px 0 9px">Download the template, add one incident per row, then choose the completed CSV file below.</p>
+            <button id="downloadIncidentCsvTemplate" type="button">Download CSV template</button>
+          </div>
+          <label for="incidentCsvFile"><strong>Choose completed incidents CSV</strong></label>
           <input id="incidentCsvFile" type="file" accept=".csv,text/csv">
           <div id="incidentImportSummary" class="incident-import-summary"></div>
           <div id="incidentImportPreview" class="incident-preview"></div>
@@ -2921,8 +2926,52 @@ async function incidentAdministratorSignOut(){
   await refreshIncidentAuthUI();
 }
 
+function downloadIncidentCsvTemplate(){
+  const headers=[
+    "Date","Location","Latitude","Longitude","Classification","Pollution type","Severity",
+    "Official category","Suspected source","Extent","Description","Response / action",
+    "Wildlife impact","Wildlife impact details","Organisations involved","Source",
+    "Reported to","Reference","Status","Resolved date","Notes"
+  ];
+  const guidance=[
+    "DD/MM/YYYY",
+    "Required",
+    "Optional decimal latitude",
+    "Optional decimal longitude",
+    "Pollution incident",
+    "e.g. Oil / cooking oil pollution",
+    "Low / Moderate / High / Severe",
+    "e.g. Environment Agency Category 3",
+    "Use suspected/believed if not confirmed",
+    "e.g. Approximately six miles",
+    "Required description",
+    "Clean-up / monitoring / containment action",
+    "No / Yes – minor / Yes – significant",
+    "Optional wildlife details",
+    "e.g. Canal & River Trust / Environment Agency",
+    "Information source",
+    "Organisation reported to",
+    "Optional reference",
+    "Open / Monitoring / Resolved / Closed",
+    "DD/MM/YYYY if resolved",
+    "Optional notes"
+  ];
+  const csvCell=value=>`"${String(value??"").replace(/"/g,'""')}"`;
+  const csv="\uFEFF"+[headers,guidance].map(row=>row.map(csvCell).join(",")).join("\r\n")+"\r\n";
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="water-pollution-incidents-template.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
+  document.getElementById("downloadIncidentCsvTemplate")?.addEventListener("click",downloadIncidentCsvTemplate);
   document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
   document.getElementById("incidentResetPassword")?.addEventListener("click",incidentRequestPasswordReset);
   document.getElementById("incidentSignOut")?.addEventListener("click",incidentAdministratorSignOut);
