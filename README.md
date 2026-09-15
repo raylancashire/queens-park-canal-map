@@ -8,15 +8,12 @@ The map is designed to be hosted using **GitHub Pages** and embedded into a **We
 
 ## Project files
 
-The GitHub repository contains or may contain:
+The GitHub repository contains:
 
-- `index.html` — the interactive Leaflet water-quality map
-- `analysis.html` — sample-results analysis
-- `further-analysis.html` — site comparison, trends and wider project analysis
-- `assessment-builder.html` — visual canal assessment builder
-- `freshwater.csv` — the single dataset for FreshWater Watch results and additional tests, including temperature, pH, dissolved oxygen, BOD, additional turbidity and coliform where recorded
-- `updates.csv` — dated Canal Watch website and project updates used by the floating Updates widget
-- `updates-widget.html` — GitHub-hosted compact Updates widget loaded into the Webador floating panel
+- `index.html` — the interactive Leaflet map
+- `analysis.html` — sample analysis, participation analysis and water-pollution incident register
+- `freshwater.csv` — the water-quality sampling data
+- `water-pollution-incidents.csv` — optional/fallback incident-register data
 - `README.md` — project documentation
 
 Repository:
@@ -94,19 +91,11 @@ The map has been designed to recognise both original FreshWater Watch field name
 | Nitrate midpoint | `nitrate_mid` |
 | Phosphate midpoint | `phosphate_mid` |
 | Turbidity | `Water quality - Secchi Tube (Turbidity)` |
-| Dissolved oxygen | `Dissolved Oxygen (DO)` |
-| Biochemical Oxygen Demand | `Biochemical Oxygen Demand (BOD)` |
-| pH | `pH` |
-| Temperature | `Temperature` |
-| Additional-test turbidity | `Turbidity` |
-| Coliform bacteria | `Coliform Bacteria` |
 | Latitude | `y`, `Latitude`, `latitude` |
 | Longitude | `x`, `Longitude`, `longitude` |
 | Notes | `notes`, `Notes` |
 
-The two turbidity columns are intentionally distinct. `Water quality - Secchi Tube (Turbidity)` supplies the standard FreshWater Watch Secchi Tube result. `Turbidity` supplies the separate additional-test result and is labelled **Turbidity (additional test)** in Further Analysis. The code does not use a generic `Turbidity` fallback for the Secchi Tube result.
-
-The Additional Water Tests panels read these columns directly from `freshwater.csv`; `additional-water-quality.csv` is no longer loaded or required.
+The turbidity reader also looks for column names containing the words **Secchi Tube** or **Turbidity**, making the import more tolerant of small changes in FreshWater Watch exports.
 
 ---
 
@@ -126,18 +115,6 @@ To publish new sampling results:
 7. Refresh the live map or Webador page.
 
 The HTML normally does not need to be edited when new records are added.
-
----
-
-## Update — 13 September 2026
-
-1. Consolidated FreshWater Watch and additional water-test results into the single `freshwater.csv` data source.
-2. Removed the runtime dependency on `additional-water-quality.csv`.
-3. Mapped dissolved oxygen, BOD, pH, temperature, additional turbidity and coliform explicitly to their new main-CSV headings.
-4. Kept `Water quality - Secchi Tube (Turbidity)` separate from the additional `Turbidity` column.
-5. Relabelled the standard result **Secchi Tube Turbidity** and the second result **Turbidity (additional test)** in the Overall Water Quality Snapshot.
-6. Retained compatibility with directly recorded BOD values and the older calculated-BOD format.
-7. Normalised map site names by removing the optional `Grand Union Canal -` prefix, preventing surveys at Meanwhile Gardens and Ladbroke Grove Bridge from being divided between duplicate markers.
 
 ---
 
@@ -251,21 +228,11 @@ Turbidity is displayed separately as a clarity result. Where appropriate, a desc
 
 Visitors can switch between:
 
-- **Light** — clean map designed to keep sampling markers prominent
+- **Light** — clean map designed to make sampling markers stand out
 - **Street** — OpenStreetMap
 - **Satellite** — aerial imagery
 
 The Light map is used as the default view.
-
----
-
-## Grand Union Canal map-overlay trial
-
-A dedicated highlighted **Grand Union Canal** route and label was tested on the Light basemap to make the waterway easier to identify.
-
-The overlay successfully followed the canal corridor, but it also covered too much of the underlying canal and map detail. The live map was therefore **reverted to the previous Light-map presentation without the dedicated canal overlay**.
-
-The trial is retained here as a development note in case a subtler canal treatment — such as a label-only approach — is considered later.
 
 ---
 
@@ -352,14 +319,109 @@ The map is intended to provide an accessible public view of sampling results ove
 
 ## Maintenance
 
-### Site-name matching rule
-
-For map and analysis filtering, sampling sites should be identified by a **normalised site name rather than GPS coordinates**. The optional `Grand Union Canal -` prefix is ignored when matching locations, while the shorter site name is used for display. This prevents small GPS differences or prefixed/unprefixed names from creating duplicate sampling locations.
-
-
 For routine updates, only `freshwater.csv` should normally need replacing.
 
 If the FreshWater Watch export format changes substantially, the field-name mappings in `index.html` may need to be updated.
+
+
+---
+
+## Update — 15 September 2026
+
+A new **Water pollution incidents** register has been added to `analysis.html` so pollution incidents, suspected pollution and environmental events can be recorded separately from routine FreshWater Watch sample results.
+
+### Water pollution incident register
+
+Current features include:
+
+- A dedicated collapsible **Water pollution incidents** section.
+- Summary cards showing:
+  - incidents in view
+  - locations affected
+  - open / unresolved incidents
+- Filtering by incident classification.
+- A public incident table showing:
+  - date
+  - location
+  - classification
+  - pollution / event type
+  - severity and official category
+  - status
+  - extent
+  - wildlife impact
+  - description
+- Wider presentation of the **Type** field to improve readability.
+- Support for optional latitude and longitude fields in incident records.
+- A separate Supabase table, `water_pollution_incidents`, for the live incident register.
+- A CSV fallback using `water-pollution-incidents.csv` where the Supabase incident table is not available.
+
+### Incident administration
+
+Incident editing is restricted to an authenticated administrator account. Public visitors can view the incident register but cannot change it.
+
+When signed in, the administrator can:
+
+- **Add incident** manually.
+- **Edit** an existing incident.
+- **Delete** an incident.
+- **Import CSV** for batch entry.
+- **Set / change password** and sign out.
+- Cancel a new entry or edit without saving.
+- Automatically close the incident form after saving, cancelling or deleting.
+
+The expanded incident form supports:
+
+- Date
+- Location
+- Latitude
+- Longitude
+- Classification
+- Pollution / event type
+- Severity
+- Official category / classification
+- Suspected source
+- Extent
+- Description
+- Response / action taken
+- Wildlife impact
+- Wildlife impact details
+- Organisations involved
+- Source
+- Reported to
+- Reference
+- Status
+- Resolved date
+- Notes
+
+The wording allows uncertain information to be recorded appropriately, for example by describing a source as **suspected** or **believed** rather than confirmed.
+
+### Batch CSV import
+
+The signed-in **Import CSV** panel now includes a **Download CSV template** button.
+
+The template is generated directly by `analysis.html`, helping to keep the batch-import format aligned with the current incident form. It includes the current incident fields plus a guidance row showing expected formats and examples.
+
+The batch-import workflow is:
+
+1. Sign in as an authorised administrator.
+2. Select **Import CSV**.
+3. Select **Download CSV template**.
+4. Add one incident per row.
+5. Choose the completed CSV.
+6. Review the validation / preview results.
+7. Import the valid incident records into Supabase.
+
+Records are checked before import, including required fields and duplicate handling.
+
+### Initial historic incident
+
+The register has been tested with the **29 February 2024 Grand Union Canal cooking-oil pollution incident**, recorded as a pollution incident affecting the canal from Alperton towards Little Venice / Paddington Basin. The incident record demonstrates the use of the expanded fields for official category, suspected source, extent, response, wildlife impact and organisations involved.
+
+### Authentication improvements
+
+The incident administration interface now uses the existing Supabase authenticated account rather than relying on a separate magic-link workflow for each incident-management session. This provides a clearer signed-in state and avoids the redirect and email-rate-limit problems encountered during initial testing.
+
+These additions keep routine citizen-science sampling results and exceptional pollution events distinct while allowing both to be analysed within the wider Canal Watch project.
 
 ---
 
@@ -369,610 +431,3 @@ If the FreshWater Watch export format changes substantially, the field-name mapp
 
 Greener Canalside / FreshWater Watch project  
 Grand Union Canal
-
----
-
-## Analysis pages
-
-The project now includes two GitHub-hosted analysis pages that can be embedded into Webador using iframes.
-
-### `analysis.html`
-
-Used for the main sample-results analysis, including:
-
-- Nitrate results
-- Phosphate results
-- Turbidity results
-- Temperature
-- pH
-- Coliform
-- **Biochemical Oxygen Demand (BOD)**
-- **Dissolved Oxygen (DO)**
-- Results over time by site, including an **All sites** comparison view with separate site lines and legend
-- Responsive chart layout
-- Automatic iframe-height messaging to Webador
-
-Scientific notation is standardised as **pH**.
-
-### `further-analysis.html`
-
-Used for wider interpretation of the monitoring dataset.
-
-Current features include:
-
-- **Overall Water Quality Snapshot**
-  - All sites or individual site
-  - Latest survey or project average
-  - Nitrate
-  - Phosphate
-  - Turbidity
-  - Temperature
-  - pH with Acidic / Neutral / Alkaline description
-  - Dissolved Oxygen (DO)
-  - Biochemical Oxygen Demand (BOD)
-  - Coliform displayed as `> 20 coliforms/100ml` where the test is above its upper limit
-  - Results to Watch
-  - Key Takeaway
-
-- **Change Since Previous Survey**
-  - Previous and current values
-  - Indicator-aware improvement / stability / deterioration logic
-  - Separate handling for temperature, pH and dissolved oxygen
-  - FreshWater Watch and additional-test dates shown separately when necessary
-  - Interactive Overall Change wording: hovering over **improved**, **stable** or **deteriorated** highlights the corresponding result cards
-
-- **Coliform Recurrence Analysis**
-  - Uses the Earth Force LaMotte coliform screening results
-  - Shows usable tests, positive results, recurrence rate, current positive streak, longest positive streak and latest result
-  - Deduplicates same-site / same-date source rows
-  - Keeps streak calculations within individual sites in the All sites view
-  - Uses cautious screening language and does not present the result as a statutory microbiological classification
-
-- **Monitoring Gaps / Overdue Sampling**
-  - Shows monitored sites, overdue sites, sites due soon and the longest current sampling gap
-  - Uses each site's observed median sampling interval, with a project-wide fallback where history is limited
-  - Shows last sample date, days since sampling, typical interval, largest historical gap and sampling visits
-  - Uses the shared normalised site identity so prefix, apostrophe, dash, spacing and case variants are grouped together
-  - Hovering or keyboard-focusing the summary cards highlights the associated site row or rows
-
-- **Sampling Frequency Over Time**
-  - Monthly sampling-frequency heatmap by site
-  - Actual sample dates and intervals between consecutive samples
-  - Monitoring coverage and time-since-last-sampled summaries
-  - Uses the same normalised site identity as the other Further Analysis panels
-
-- **Site comparison**
-  - Nitrate
-  - Phosphate
-  - Turbidity
-
-- **Site consistency**
-  - Nitrate
-  - Phosphate
-  - Turbidity
-  - Sample count
-  - Consistency category
-  - Typical level
-  - Result range
-  - Most consistent site
-  - Most variable site
-  - Hover / keyboard explanations for Typical Level
-  - Consistency is calculated using the coefficient of variation: standard deviation ÷ mean
-
-- **Sample Trend Analysis**
-  - All sites or individual site
-  - Nitrate, Phosphate and Turbidity
-  - Improving / Stable / Deteriorating / Insufficient data classification
-  - Linear fitted trend with supporting evidence and results-over-time chart
-
-- **Project / Site Trends**
-  - All sites for the project-wide view or an individual sampling site
-  - Nitrate, Phosphate and Turbidity
-
-- **Seasonal patterns**
-
-- **Relationship between indicators**
-  - Nitrate vs Phosphate
-  - Phosphate vs Turbidity
-  - Nitrate vs Turbidity
-  - Separate indicator colours shown in the chart and legend
-  - Correlation summary based on paired samples
-
-### Analysis accordion behaviour
-
-The Further Analysis page uses a single-open accordion pattern.
-
-Only one analysis section is open at a time. The **Overall Water Quality Snapshot** opens by default.
-
-Key Takeaway boxes are placed at the **end of the relevant analysis**, so visitors see the evidence before the concluding interpretation.
-
----
-
-## Results to Watch
-
-The Overall Water Quality Snapshot includes a **Results to Watch** section after the main result cards.
-
-It:
-
-- Shows only measurements that meet a reason to warrant closer attention
-- Shows the indicator name, result and short explanation
-- Displays a clear message when no results currently require particular attention
-- Highlights the corresponding main result card when the watch item is hovered over or keyboard-focused
-- Keeps the permanent coloured strip at the top of each result card to identify the measurement
-
-The top strips identify indicators and are separate from improvement / deterioration highlighting.
-
----
-
-## Indicator colours in analysis
-
-The analysis pages use consistent indicator colours to help distinguish measurements.
-
-The colour is supplementary: indicator names and result text remain visible so meaning is not communicated by colour alone.
-
-The relationship charts also use separate colours for:
-
-- Nitrate
-- Phosphate
-- Turbidity
-
-On relationship scatter plots, the paired indicators are represented using the point fill and outline, with an in-chart legend.
-
----
-
-## Assessment Builder
-
-The **Canal Visual Assessment Builder** is hosted as:
-
-`assessment-builder.html`
-
-Hosting the builder on GitHub Pages and embedding it into Webador avoids Webador restrictions that prevented the builder's JavaScript-generated rows from appearing correctly when the complete script was placed directly inside a Webador HTML element.
-
-The builder includes:
-
-- Site
-- Date
-- Time
-- Eight visual-assessment indicators
-- Five assessment levels
-- Automatic overall score
-- Overall assessment description
-- Generated blog HTML
-- Accessible text, colour and status symbols
-
-The builder is intended as an administrative tool rather than a public navigation item.
-
-A CSV-export idea has been considered but is currently on hold.
-
----
-
-## Canal Watch blog filters
-
-The Webador Canal Watch blog uses an automatic assessment and date filter.
-
-Assessment filters include:
-
-- All
-- Excellent
-- Good
-- Fair
-- Poor
-- Very Poor
-- Critical
-
-Date filtering includes:
-
-- All dates
-- A sliding window of three month buttons
-- Automatic selection of the **current month** on first load
-- `<` and `>` month navigation
-
-The visible month buttons are displayed **newest to oldest**, with the current month first. For example, in August 2026 the initial button order is:
-
-`Aug 2026 | Jul 2026 | Jun 2026`
-
-The current month is selected automatically when the page first loads. If there are no blog entries for the current month yet, the filter falls back to the latest available month so the page does not open with an empty result set.
-
-Because the buttons now run newest to oldest, the arrow behaviour is matched to that order:
-
-- `<` moves towards **newer** months
-- `>` moves towards **older** months
-
-The arrow disabled states and accessibility labels follow the same direction logic.
-
-The filter avoids rebuilding the date controls on every click, which prevents the pause and repeated-click failures seen in earlier versions.
-
-### Blog filter styling
-
-The filter container uses a pale grey-green background:
-
-`#f2f6f3`
-
-Individual controls remain white.
-
-Unselected assessment, month and enabled navigation buttons receive a pale-green hover / keyboard-focus highlight. Selected buttons do not receive the extra hover treatment.
-
----
-
-## Webador embedded analysis accordions
-
-The Webador page uses separate accordion buttons for the GitHub-hosted analysis pages.
-
-The two main embeds are:
-
-- Sample Analysis — `analysis.html`
-- Site comparison and relationships / Further Analysis — `further-analysis.html`
-
-Opening one Webador accordion closes the other.
-
-The iframe height is updated from the GitHub page using `postMessage`, allowing the Webador page to resize as internal accordions are opened and closed.
-
-For consistency with the Canal Watch blog filters, closed Webador accordion buttons can use the same pale-green hover / keyboard-focus treatment. Open accordion buttons remain unchanged.
-
----
-
-## Results over time by site — All sites comparison
-
-The **Results over time by site** panel in `analysis.html` supports both individual-site and whole-project comparison views.
-
-The **All sites** option has been corrected so it now renders the monitoring data instead of asking the visitor to select an individual sampling site.
-
-When **All sites** is selected:
-
-- Nitrate, phosphate and turbidity are displayed as separate results-over-time charts
-- Each sampling location is shown as its own coloured line
-- A sampling-site legend identifies the lines
-- Survey dates share a common horizontal time axis to make changes between sites easier to compare
-- Individual data points retain the recorded result for the relevant survey date
-- Selecting an individual sampling site continues to show the existing single-site results-over-time view
-
-Nitrate and phosphate continue to use the midpoint of the recorded FreshWater Watch result range for plotting. Turbidity continues to use the recorded NTU test value.
-
-This makes **All sites** a genuine comparison view while retaining the individual-site option for closer examination of one monitoring location.
-
----
-
-## Sampling frequency over time
-
-A compact **Sampling frequency over time** panel has been added to `further-analysis.html`.
-
-The panel is designed to show the continuity and coverage of the monitoring programme rather than water-quality status.
-
-Current features include:
-
-- One row for each sampling location
-- Calendar months shown across the timeline
-- The number of sampling visits recorded for each site and month
-- Progressively stronger cell shading as monthly visit frequency increases, while retaining the numeric count for accessibility
-- Hover / keyboard-focus details showing the actual sampling date or dates for each cell
-- A **Monitoring coverage** summary showing the number of sites, sampling visits and the date range represented
-- A rolling **latest 12 months** view once the dataset contains more than 12 months of records
-- A **Days since last sample** summary for each site
-- The most recent sample date displayed on its own line beneath the days-since value
-- Days since last sample calculated dynamically from each site's latest recorded sample date to the current date
-- Sample dates displayed directly beneath the compact monthly frequency cells
-- The number of calendar days between consecutive samples displayed as a compact number centred between the relevant sampling cells
-- Wider spacing between month columns so the between-sample interval remains visually distinct from either sample
-- Standard pale-green hover/focus highlighting on the compact sampling-frequency cells
-- Linked highlighting: hovering or focusing a frequency cell also highlights the corresponding **Time since last sampled** site card
-- A **Time since last sampled** heading above the latest-sample site cards
-- Sampling-site names and the **Sampling site** column heading centred within the site column for clearer alignment with the frequency cells
-
-Sampling visits are deduplicated by site and calendar date so duplicate source rows do not inflate the frequency count.
-
-Sampling-site names are grouped using the shared normalised site identity, so optional `Grand Union Canal -` prefixes, apostrophe variants, dash variants, repeated whitespace and case differences do not create duplicate monitoring locations.
-
-The panel explicitly states that the heatmap represents **sampling frequency, not water-quality status**.
-
----
-
-## Canal Watch Updates widget
-
-A compact **Canal Watch Updates** widget has been added to provide visitors with recent project and website changes without taking up permanent page space.
-
-### Data and hosting
-
-The widget uses:
-
-- `updates.csv` — stores the update date, title, summary, optional link and update type
-- `updates-widget.html` — reads the CSV and displays the latest update plus expandable recent-update history
-- GitHub Pages — hosts the widget and CSV
-- Webador **Body – end** custom HTML — provides the floating frontmost container
-
-The data flow is:
-
-`updates.csv` → `updates-widget.html` → GitHub Pages → Webador floating panel
-
-New entries can normally be published by adding a row to `updates.csv` and committing the updated CSV to GitHub.
-
-### Floating Webador behaviour
-
-The floating container:
-
-- Appears only on the Canal Watch page at `/what-we-do/canal-watch`
-- Uses `position: fixed` so it does not reserve space in the normal Webador page layout
-- Is kept above the Canal Watch page content using a high stacking order
-- Starts in a compact minimised state
-- Expands and minimises using a keyboard-accessible `+` / `-` control
-- Uses plain ASCII `+` and `-` characters to avoid character-encoding problems in Webador
-- Displays the **NEW** badge inline with **Canal Watch Updates**
-- Uses a **220px closed/minimised width**
-- Retains a wider expanded panel for reading the latest update and update history
-- Adapts to a bottom-width layout on smaller screens
-
-### Update history
-
-The GitHub-hosted widget displays the latest update first. Visitors can use **View recent updates** to reveal earlier entries and **Hide recent updates** to close the history again.
-
-The widget and its Webador parent communicate using `postMessage` so the iframe height can be recalculated as the recent-update history opens and closes.
-
-The Updates widget should be installed through Webador's site-level **Body – end** custom HTML rather than as a normal page Embed Code element. This avoids Webador reserving a large blank content block for the floating widget.
-
----
-
-## Accessibility and interaction
-
-Accessibility improvements now include:
-
-- Text labels alongside colours
-- Distinct assessment symbols
-- Keyboard-accessible hover/focus effects
-- Hover highlighting of result cards and table rows
-- A consistent pale-green hover/focus treatment across Sample Analysis, Overall Water Quality Snapshot, Change Since Previous Survey and Site Consistency controls/results
-- Selected controls remain visually distinct
-- Unselected controls highlight on mouse hover and keyboard focus
-- pH is written using correct scientific capitalisation
-- Full names are used for specialist abbreviations where helpful:
-  - **Dissolved Oxygen (DO)**
-  - **Biochemical Oxygen Demand (BOD)**
-- Acidic / Neutral / Alkaline wording accompanies pH results
-- Key Takeaway summaries follow the detailed evidence
-- Results to Watch provides a concise interpretation after the main results
-- Colour is used as a supporting cue rather than the sole means of conveying meaning
-- Responsive layouts support smaller screens
-
----
-
-
-### Canal Visual Assessment improvements
-
-The Canal Visual Assessment Builder has also been refined for easier reading and clearer blog output:
-
-- Added subtle **alternate-row shading** to the visual assessment table to make Indicator, Observation and Assessment rows easier to follow.
-- Retained a slightly stronger row highlight on hover.
-- Added a conditional wildlife context note when **Wildlife activity** is set to **`N/A – none observed`**.
-- The note appears inside the **Overall Visual Assessment** panel beneath the main assessment explanation:
-  - *Not seeing wildlife during a short visit doesn't necessarily indicate poor ecological conditions.*
-- The same wildlife note is automatically included in the **generated blog HTML**, so it can appear in the published Webador visual assessment without being added manually.
-- The wildlife note is omitted automatically when wildlife activity is recorded.
-- Presentation of the wildlife note is controlled through the shared CSS class `.qp-wildlife-note`, while the Assessment Builder JavaScript controls whether the note is included.
-
----
-
-## Update — 18 August 2026
-
-The following Canal Watch visual-condition and blog-filter changes were developed or refined on **18 August 2026**:
-
-1. Reviewed the latest Queen's Park canalside visual survey photographs, including views from Ladbroke Grove Bridge, Queen's Park canalside and Ha'Penny Steps.
-2. Confirmed **Good** as the overall visual-condition assessment for the survey, based on generally calm water, very little visible litter and no obvious signs of oil, foam, surface scum or significant algal growth.
-3. Refined the wording used in Canal Watch updates to distinguish **good visual condition** from a formal water-quality classification.
-4. Updated the Canal Watch blog date filter so the **current month is selected automatically on first load**.
-5. Added a fallback to the latest available month when there are no blog entries for the current month.
-6. Changed the three visible month buttons to display **newest to oldest**, placing the current month first.
-7. Updated the month-navigation direction so `<` moves towards newer months and `>` moves towards older months.
-8. Updated arrow disabled states and accessibility labels to reflect the revised month order.
-9. Retained the existing assessment filtering, three-month window, hover/focus styling and responsive behaviour.
-
-These changes make the most recent visual-condition updates easier to reach while keeping earlier months available through simple, predictable navigation.
-
----
-
-## Update — 23 August 2026
-
-Further refinements were made to **Sample Analysis** and **Further Analysis**:
-
-1. Increased the height of the **Additional water-quality testing** result area so Temperature, pH, Coliform, BOD and Dissolved Oxygen results have more room to display without unnecessary internal scrolling.
-2. Corrected **Results over time by site — All sites** by restoring the date value used to plot combined site histories and aligning its site matching with the shared canonical site-name logic.
-3. Updated **Dissolved Oxygen (DO)** in the **Overall Water Quality Snapshot** to show calculated **oxygen saturation (%)**, while retaining the measured DO concentration and water temperature for context.
-4. Updated **Dissolved Oxygen (DO)** in **Change Since Previous Survey** to compare saturation percentages and, where possible, show the change in percentage points.
-5. Corrected the display label **PH** to the scientifically conventional **pH** in the Overall Water Quality Snapshot and Change Since Previous Survey.
-6. Restored **Results to Watch** and the **Key takeaway** summaries in Further Analysis, including the Site Comparison and Site Consistency takeaway boxes.
-7. Restored the interactive link between **Results to Watch** and the Overall Water Quality Snapshot so hovering or keyboard-focusing a watched result also highlights its corresponding water-quality result card.
-8. Refined the **Overall Water Quality Snapshot** period buttons so the selected **Latest survey** or **Project average** button remains visually selected and does not receive the pale-green hover treatment; only the unselected button responds to hover/focus.
-9. Corrected **Change Since Previous Survey** unavailable-result logic so a missing current result is labelled **Current survey unavailable**, while a missing earlier result is labelled **Previous survey unavailable**.
-10. Continued the standard pale-green hover/focus treatment across interactive analysis elements while preserving clear selected states.
-
-These changes improve the clarity of the additional testing results, strengthen the all-sites time-series view, and make the Further Analysis summaries and comparison states easier to interpret.
-
----
-
-## Update — 21 August 2026
-
-The following Canal Watch map, Sample Analysis and Further Analysis changes were developed or refined on **21 August 2026**:
-
-1. Standardised sampling-site identity around the **site name rather than GPS coordinates**, so repeat surveys at the same named location are treated as one sampling site even when recorded coordinates vary slightly.
-2. Normalised site-name matching so entries with and without the **`Grand Union Canal -`** prefix resolve to the same location.
-3. Refined site dropdown generation to remove duplicate site entries while retaining consistent site names across the map and analysis pages.
-4. Improved cross-page site synchronisation between the **map**, **Sample Analysis**, **Overall Water Quality Snapshot**, **Change Since Previous Survey** and other site-aware analysis controls.
-5. Corrected the map summary cards so **Sampling site**, **Samples in view** and **Latest sample at site** reflect the currently selected location.
-6. Updated **Samples in view** in Sample Analysis so an individual site shows the number of FreshWater Watch samples recorded for that named area.
-7. Restored the **All sites** view in **Results over time by site**, including the multi-site nitrate, phosphate and turbidity comparison charts.
-8. Refined map-pin selection behaviour so site focus can return to **All sites** when a selected point is deselected, the popup is closed, or the map is reset.
-9. Restored the Sample Analysis site-focus logic after the site-name processing changes, using one canonical site-matching rule across the relevant filters.
-10. Restored the **Additional water-quality testing** data-loading and rendering path in `analysis.html`.
-11. Restored display of **Temperature, pH, Coliform, Biochemical Oxygen Demand (BOD)** and **Dissolved Oxygen (DO)** results where data is available.
-12. Added compatibility for alternative additional-test column headings, including dissolved-oxygen and coliform variants.
-13. Retained BOD support using a directly recorded BOD value where available, with calculation from initial and five-day dissolved oxygen where the required readings are present.
-14. Restored the missing shared data-fetch helper used by `additional-water-quality.csv`.
-15. Set **Sample Analysis** to open initially on **All sites**, while still allowing later site selections from the map or analysis controls to focus the data.
-16. Standardised the **pale-green hover/focus treatment** across Sample Analysis result cards and analysis controls.
-17. Extended the same pale-green hover/focus treatment to the **Overall Water Quality Snapshot** result panels and controls.
-18. Extended pale-green hover/focus highlighting to **Change Since Previous Survey** result panels.
-19. Extended pale-green hover/focus highlighting to **Site Consistency** controls and result rows/lines.
-20. Clarified the Site Consistency count label from **Samples** to **Results used**, because the figure represents usable results for the selected indicator rather than every survey row.
-21. Continued to preserve keyboard-focus styling and written labels so hover colour remains a supplementary interaction cue rather than the only indication of state.
-
-These changes consolidate the site-name and site-selection logic after several rounds of refinement, while keeping the map, Sample Analysis and Further Analysis visually and behaviourally consistent.
-
----
-
-## Update — 20 August 2026
-
-The following Canal Watch refinements were made or confirmed on **20 August 2026**:
-
-1. Corrected **Results over time by site → All sites** so nitrate, phosphate and turbidity can be compared across monitoring locations.
-2. Added separate site lines and a site legend to the All sites results-over-time charts.
-3. Added an **Overall site comparison** summary to `further-analysis.html`, where it now sits with **Site comparison and relationships**.
-4. The Overall site comparison highlights **Strongest overall results** and **Results to watch**, and includes the number of samples for each location.
-5. Removed the Overall site comparison summary from `analysis.html` so **Results over time by site** remains focused on chronological trends.
-6. Tested a highlighted and labelled **Grand Union Canal** route on the Light map.
-7. Reverted the dedicated canal overlay after testing because it obscured too much of the underlying canal and map detail.
-8. Retained the previous clean Light-map presentation as the preferred current map view.
-9. Added a compact **Sampling frequency over time** heatmap to `further-analysis.html`.
-10. Added monthly sampling-visit counts for each monitoring site, including hover/focus access to the recorded survey dates.
-11. Added a **Monitoring coverage** summary showing site count, sampling visits and the monitoring date range.
-12. Added an automatic rolling **latest 12 months** view for longer datasets.
-13. Added **Days since last sample** for each monitoring site.
-14. Changed the days-since calculation to use the number of calendar days from each site's latest sample date to the current date.
-15. Added sample dates directly beneath the monthly sampling-frequency cells.
-16. Added compact **days between samples** values positioned between consecutive sampling cells.
-17. Refined month-column spacing so the between-sample values can be centred clearly between cells.
-18. Added standard pale-green hover/focus highlighting to the compact frequency cells and linked this to the corresponding **Time since last sampled** card.
-19. Added the **Time since last sampled** heading and placed each site's last-sampled date on its own line.
-20. Centred the sampling-site names and **Sampling site** heading within the site column to improve alignment with the timeline cells.
-
-These refinements keep the analysis functions grouped more logically while avoiding unnecessary visual clutter on the main Canal Watch map.
-
----
-
-## Update — 17 August 2026
-
-The following Canal Watch interface and documentation changes were developed or refined on **17 August 2026**:
-
-1. Added a CSV-driven **Canal Watch Updates** widget.
-2. Added `updates.csv` as the simple source for dated update entries.
-3. Added `updates-widget.html` to display the latest update and expandable recent-update history.
-4. Converted the Updates widget to a floating Webador panel.
-5. Moved the floating implementation to Webador **Body – end** so it does not reserve normal page-layout space.
-6. Restricted the floating widget to the Canal Watch page only: `/what-we-do/canal-watch`.
-7. Raised the floating widget above other Canal Watch page content.
-8. Added expand / minimise behaviour and recent-update disclosure controls.
-9. Refined iframe-height messaging for opening and closing the recent-update history.
-10. Changed the floating control icons to plain `+` and `-` characters for reliable Webador display.
-11. Kept the **NEW** badge inline with the **Canal Watch Updates** title.
-12. Set the closed/minimised widget width to **220px**.
-13. Updated `updates.csv` with the latest Canal Watch interface changes.
-14. Enhanced the **Light** Canal Watch map with a dedicated highlighted **Grand Union Canal** route.
-15. Added a darker canal outline and **Grand Union Canal** label to make the waterway easier to identify.
-16. Limited the enhanced canal overlay to the **Light** basemap so the existing Street and Satellite views remain unchanged.
-17. Corrected the **All sites** option in **Results over time by site**, which previously did not render the charts.
-18. Added an all-sites comparison view for nitrate, phosphate and turbidity.
-19. Added separate coloured lines and a sampling-site legend so monitoring locations can be compared on the same chart.
-20. Kept the existing individual-site results-over-time view unchanged.
-
-These changes keep recent project information visible and easy to reach while allowing the widget to remain compact when it is not being used.
-
----
-
-## Update — 14 August 2026
-
-The following changes were developed or refined on **14 August 2026**:
-
-1. Added and expanded the **Overall Water Quality Snapshot**.
-2. Put the Snapshot into its own accordion.
-3. Added additional-test indicators to the Snapshot.
-4. Standardised **pH** notation and added Acidic / Neutral / Alkaline descriptions.
-5. Changed Dissolved Oxygen to **Dissolved Oxygen (DO)**.
-6. Changed BOD to **Biochemical Oxygen Demand (BOD)**.
-7. Standardised high coliform display as **`> 20 coliforms/100ml`**.
-8. Added **Change Since Previous Survey** using both FreshWater Watch and additional water-quality results.
-9. Added indicator-aware change interpretation rather than treating every increase or decrease the same way.
-10. Added **Site Consistency**, including Typical Level explanations and consistency calculations.
-11. Added separate indicator colours to the relationship comparison charts and legend.
-12. Added hover highlighting to result cards and analysis controls.
-13. Added interactive **Improved / Stable / Deteriorated** highlighting in the Overall Change summary while preserving the permanent indicator-colour strips.
-14. Added **Key Takeaway** summaries and moved them to the end of each relevant analysis section.
-15. Added additional spacing around Key Takeaway and Results to Watch sections.
-16. Added **Results to Watch** after the main Snapshot result cards.
-17. Added a pale grey-green background to the Webador Canal Watch blog-filter panel.
-18. Added hover / keyboard-focus highlighting to unselected blog-filter controls.
-19. Defined matching hover behaviour for closed Webador analysis accordion buttons.
-20. Continued the GitHub Pages → iframe → Webador approach for JavaScript-heavy tools and analysis pages.
-21. Added alternate-row highlighting to the **Canal Visual Assessment** table for easier scanning.
-22. Added a conditional wildlife context note when **Wildlife activity = N/A – none observed**.
-23. Added the same conditional wildlife note to the **generated blog HTML**, allowing it to appear automatically in the published Overall Visual Assessment.
-
-These changes are intended to improve readability, interpretation and accessibility without making the public-facing analysis unnecessarily complicated.
-
----
-
-## Update — 26 August 2026 — Further Analysis monitoring and trend tools
-
-The Canal Watch **Further Analysis** page was expanded and consolidated on **26 August 2026**, while retaining the existing analysis panels.
-
-1. Added **Coliform Recurrence Analysis** to distinguish isolated and recurring positive LaMotte coliform screening results.
-2. Added **Monitoring Gaps / Overdue Sampling**, using each site's actual sampling history to identify Current, Due soon and Overdue monitoring locations.
-3. Added interactive Monitoring Gaps summary cards so hovering or keyboard-focusing **Sites monitored**, **Overdue**, **Due soon** or **Longest current gap** highlights the associated table row or rows.
-4. Restored **Sampling Frequency Over Time** as a separate historical monitoring-coverage view rather than replacing Monitoring Gaps.
-5. Updated Sampling Frequency to use the same project-wide normalised site identity as the other analysis panels, preventing old prefix and punctuation variants from appearing as separate sites.
-6. Restored **Sample Trend Analysis**, including individual-site and All sites views for nitrate, phosphate and turbidity.
-7. Restored **Project / Site Trends** as a separate trend panel, with All sites and individual-site selection.
-8. Retained **Site Comparison**, **Site Consistency**, **Seasonal Patterns** and **Relationships** alongside the new and restored panels.
-9. Kept the single-open accordion behaviour and the existing site synchronisation / de-duplication logic.
-10. Matched the Coliform Recurrence typography to the sizing used elsewhere in Further Analysis.
-
-These changes separate three different monitoring questions clearly: **what needs sampling now** (Monitoring Gaps), **how regularly the programme has sampled over time** (Sampling Frequency), and **how measured results are changing** (Sample Trend Analysis and Project / Site Trends).
-
----
-
-## Update — 25 August 2026 — LaMotte coliform assessment
-
-The Canal Watch coliform interpretation has been aligned with the **Earth Force LaMotte** screening test and integrated with the visual assessment workflow.
-
-1. Treat the LaMotte coliform result as a **screening threshold test** rather than a precise colony count above the threshold.
-2. Use **negative** results as no elevated coliform detected by the screening test.
-3. Use an uncertain or inconsistent result as **Fair — follow-up recommended**.
-4. Use a single positive result of **>20 coliforms/100 mL** as **Poor — elevated coliform**.
-5. Use repeated positive results of **>20 coliforms/100 mL** at the same monitoring site as **Very Poor — persistent elevated coliform**.
-6. Keep the underlying **visual assessment score and visual-condition wording visible**, so a microbiological screening result is not presented as though it came from photographic observation.
-7. In the Assessment Builder, a single positive coliform result caps the combined **Overall Canal Watch Assessment** at **Poor**; repeated positive results set the combined assessment to **Very Poor**.
-8. An uncertain/inconclusive result caps the combined assessment at **Fair**. Negative screening results do not upgrade or downgrade the visual assessment.
-9. The generated blog HTML includes the LaMotte screening result, interpretation and a note that it is **not an official bathing-water classification**.
-10. Sample Analysis and Overall Water Quality Snapshot now describe a high result consistently as **`> 20 coliforms/100 mL`** and classify it as **Poor — elevated coliform**; repeated positives at an individual site are identified as **Very Poor — persistent elevated coliform** in the Snapshot.
-11. The recommended response to an elevated result is **repeat testing and investigation of potential contamination sources**, rather than direct chemical treatment of the canal.
-
-This preserves the distinction between good visual appearance and microbiological screening: canal water can look clean while still returning an elevated coliform result.
-
-
-
-## Update — 25 August 2026 — site-name de-duplication restored
-
-Following the coliform assessment update, the site-list generation was corrected so all site selectors continue to use the project-wide normalised site identity rule.
-
-- Site names with and without the `Grand Union Canal -` prefix are treated as the same monitoring location.
-- Differences in repeated whitespace, typographic apostrophes and dash characters are normalised before comparison.
-- Duplicate entries are removed from site dropdowns in Sample Analysis and Further Analysis.
-- Site-focused filters use the same normalised identity, so all records for a named site remain grouped together even when the source text varies slightly.
-- The LaMotte coliform assessment and overall-rating cap logic remain unchanged.
-
-
-### Coliform Snapshot persistence fix — 25 August 2026
-
-The **Overall Water Quality Snapshot** now treats LaMotte coliform results as threshold screening outcomes rather than averaging them numerically.
-
-- `0` / negative screening remains **Good**.
-- A single positive `>20 coliforms/100 mL` result is **Poor — elevated coliform**.
-- Two or more positive `>20 coliforms/100 mL` results at the same site are **Very Poor — persistent elevated coliform**.
-- Repeated-positive status is calculated from the full history for the selected site, even when the Snapshot is displaying the latest survey.
-- The project-average view no longer dilutes positive coliform screens by averaging positive and negative numerical values.
-- In the All sites view, repeated-positive status is only triggered when at least one individual site has two or more positive screening results.
-
-This reflects the LaMotte test's threshold-screening purpose and avoids reporting persistent positive results as Fair.
-
-### Site Comparison and Site Consistency duplicate-site correction — 25 August 2026
-
-- Updated **Site Comparison** and **Site Consistency** to group FreshWater Watch records using the shared normalised site-name key.
-- Prefix variants such as `Grand Union Canal - Burket Close` and `Burket Close` are now treated as one monitoring site in these sections.
-- Apostrophe, dash and whitespace variations are normalised before grouping.
-- One clean display name is retained for each grouped site.
-- This brings Site Comparison and Site Consistency into line with the site dropdowns, Snapshot and other site-aware analysis controls.
