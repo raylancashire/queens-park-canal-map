@@ -751,6 +751,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-preview small{color:var(--muted)}
 @media(max-width:700px){.incident-form-grid{grid-template-columns:1fr}}
 
+
+.incident-auth-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#f8faf8}
+.incident-auth-status{font-size:12px;color:var(--muted)}
+.incident-auth-status strong{color:var(--ink)}
+.incident-admin-locked{padding:12px;border:1px dashed #b8c4bc;border-radius:9px;color:var(--muted);font-size:13px;background:#fff}
+
 </style>
 </head>
 <body>
@@ -971,7 +977,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <h2 id="incidentAdminTitle">Incident administration</h2>
         <p class="sub">Add one incident manually or batch-import the standard Canal Watch incident CSV. Records are validated before they are sent to Supabase.</p>
 
-        <div class="incident-admin-actions">
+        <div class="incident-auth-bar">
+          <div id="incidentAuthStatus" class="incident-auth-status">Checking administrator sign-in…</div>
+          <div class="incident-admin-actions" style="margin:0">
+            <button id="incidentSignIn" type="button">Administrator sign in</button>
+            <button id="incidentSignOut" type="button" hidden>Sign out</button>
+          </div>
+        </div>
+
+        <div id="incidentAdminLocked" class="incident-admin-locked">
+          Sign in with your authorised Supabase account to add or import incidents. Public visitors can view the incident register but cannot change it.
+        </div>
+
+        <div id="incidentAdminActions" class="incident-admin-actions" hidden>
           <button id="showAddIncident" type="button">Add incident</button>
           <button id="showImportIncidents" type="button">Import CSV</button>
         </div>
@@ -2548,10 +2566,14 @@ function supabaseIncidentToDisplay(row){
     id:row.id
   };
 }
+let incidentAccessToken="";
+let incidentCurrentUser=null;
+
 async function supabaseIncidentRequest(path,options={}){
+  const bearer=incidentAccessToken || SUPABASE_PUBLISHABLE_KEY;
   const headers={
     apikey:SUPABASE_PUBLISHABLE_KEY,
-    Authorization:`Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+    Authorization:`Bearer ${bearer}`,
     "Content-Type":"application/json",
     Accept:"application/json",
     ...(options.headers||{})
@@ -2619,8 +2641,130 @@ async function insertIncidentPayloads(payloads){
     body:JSON.stringify(payloads)
   });
 }
+
+function authStorageKey(){
+  try{
+    const host=new URL(SUPABASE_URL).hostname;
+    const projectRef=host.split(".")[0];
+    return `sb-${projectRef}-auth-token`;
+  }catch(e){return "";}
+}
+function readStoredSupabaseSession(){
+  const key=authStorageKey();
+  if(!key) return null;
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw) return null;
+    const parsed=JSON.parse(raw);
+    if(parsed?.access_token) return parsed;
+    if(parsed?.currentSession?.access_token) return parsed.currentSession;
+  }catch(e){}
+  return null;
+}
+function storeSupabaseSession(session){
+  const key=authStorageKey();
+  if(!key || !session) return;
+  try{localStorage.setItem(key,JSON.stringify(session));}catch(e){}
+}
+function clearStoredSupabaseSession(){
+  const key=authStorageKey();
+  if(key){try{localStorage.removeItem(key);}catch(e){}}
+}
+async function supabaseAuthRequest(path,options={}){
+  const headers={
+    apikey:SUPABASE_PUBLISHABLE_KEY,
+    "Content-Type":"application/json",
+    ...(options.headers||{})
+  };
+  if(incidentAccessToken) headers.Authorization=`Bearer ${incidentAccessToken}`;
+  const response=await fetch(`${SUPABASE_URL}/auth/v1/${path}`,{...options,headers});
+  const body=await response.text();
+  let data={}; try{data=body?JSON.parse(body):{}}catch(e){}
+  if(!response.ok) throw new Error(data?.msg||data?.message||data?.error_description||`Authentication ${response.status}`);
+  return data;
+}
+async function refreshIncidentAuthUI(){
+  const status=document.getElementById("incidentAuthStatus");
+  const signIn=document.getElementById("incidentSignIn");
+  const signOut=document.getElementById("incidentSignOut");
+  const actions=document.getElementById("incidentAdminActions");
+  const locked=document.getElementById("incidentAdminLocked");
+
+  let session=readStoredSupabaseSession();
+  if(session?.access_token){
+    incidentAccessToken=session.access_token;
+    try{
+      incidentCurrentUser=await supabaseAuthRequest("user");
+    }catch(error){
+      incidentAccessToken="";
+      incidentCurrentUser=null;
+      clearStoredSupabaseSession();
+    }
+  }
+
+  const signedIn=!!incidentCurrentUser;
+  if(status) status.innerHTML=signedIn
+    ? `Signed in as <strong>${esc(incidentCurrentUser.email||"administrator")}</strong>`
+    : `Not signed in`;
+  if(signIn) signIn.hidden=signedIn;
+  if(signOut) signOut.hidden=!signedIn;
+  if(actions) actions.hidden=!signedIn;
+  if(locked) locked.hidden=signedIn;
+  if(!signedIn){
+    document.getElementById("addIncidentPanel").hidden=true;
+    document.getElementById("importIncidentsPanel").hidden=true;
+  }
+  setTimeout(notifyParentOfHeight,40);
+}
+async function incidentAdministratorSignIn(){
+  const email=window.prompt("Administrator email address:");
+  if(!email) return;
+  try{
+    const redirectTo=window.location.href.split("#")[0];
+    await supabaseAuthRequest("otp",{
+      method:"POST",
+      body:JSON.stringify({
+        email:email.trim(),
+        create_user:false,
+        options:{emailRedirectTo:redirectTo}
+      })
+    });
+    window.alert("A secure sign-in link has been sent to that authorised email address. Open the link in this browser to continue.");
+  }catch(error){
+    window.alert(`Sign-in could not be started: ${error.message}`);
+  }
+}
+async function consumeIncidentAuthCallback(){
+  const hash=new URLSearchParams(window.location.hash.replace(/^#/,""));
+  const access=hash.get("access_token");
+  const refresh=hash.get("refresh_token");
+  if(access){
+    incidentAccessToken=access;
+    const session={
+      access_token:access,
+      refresh_token:refresh||"",
+      token_type:hash.get("token_type")||"bearer",
+      expires_in:Number(hash.get("expires_in")||3600),
+      expires_at:Math.floor(Date.now()/1000)+Number(hash.get("expires_in")||3600)
+    };
+    storeSupabaseSession(session);
+    history.replaceState(null,"",window.location.pathname+window.location.search);
+  }
+}
+async function incidentAdministratorSignOut(){
+  try{
+    if(incidentAccessToken) await supabaseAuthRequest("logout",{method:"POST"});
+  }catch(e){}
+  incidentAccessToken="";
+  incidentCurrentUser=null;
+  clearStoredSupabaseSession();
+  await refreshIncidentAuthUI();
+}
+
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
+  document.getElementById("incidentSignIn")?.addEventListener("click",incidentAdministratorSignIn);
+  document.getElementById("incidentSignOut")?.addEventListener("click",incidentAdministratorSignOut);
   const importPanel=document.getElementById("importIncidentsPanel");
   document.getElementById("showAddIncident")?.addEventListener("click",()=>{
     addPanel.hidden=!addPanel.hidden; importPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
@@ -3131,6 +3275,7 @@ accordionPanels.forEach((panel,index)=>{
 });
 
 setupIncidentAdmin();
+consumeIncidentAuthCallback().then(refreshIncidentAuthUI);
 load();
 
 </script>
