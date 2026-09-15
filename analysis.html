@@ -757,6 +757,11 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-auth-status strong{color:var(--ink)}
 .incident-admin-locked{padding:12px;border:1px dashed #b8c4bc;border-radius:9px;color:var(--muted);font-size:13px;background:#fff}
 
+
+.incident-login-form{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:8px;align-items:end;width:100%}
+.incident-login-form label{display:block;font-size:11px;font-weight:750;margin-bottom:4px}
+.incident-login-form input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit}
+@media(max-width:760px){.incident-login-form{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -978,16 +983,18 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <p class="sub">Add one incident manually or batch-import the standard Canal Watch incident CSV. Records are validated before they are sent to Supabase.</p>
 
         <div class="incident-auth-bar">
-          <div id="incidentAuthStatus" class="incident-auth-status">Checking administrator sign-in…</div>
-          <div class="incident-admin-actions" style="margin:0">
-            <button id="incidentSignIn" type="button">Administrator sign in</button>
-            <button id="incidentSignOut" type="button" hidden>Sign out</button>
+          <form id="incidentLoginForm" class="incident-login-form">
+            <div><label for="incidentAdminEmail">Administrator email</label><input id="incidentAdminEmail" type="email" autocomplete="username" required></div>
+            <div><label for="incidentAdminPassword">Password</label><input id="incidentAdminPassword" type="password" autocomplete="current-password" required></div>
+            <button class="primary" type="submit">Sign in</button>
+          </form>
+          <div id="incidentSignedInBar" style="display:none;width:100%;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div id="incidentAuthStatus" class="incident-auth-status"></div>
+            <button id="incidentSignOut" type="button">Sign out</button>
           </div>
         </div>
-
-        <div id="incidentAdminLocked" class="incident-admin-locked">
-          Sign in with your authorised Supabase account to add or import incidents. Public visitors can view the incident register but cannot change it.
-        </div>
+        <div id="incidentLoginMessage" class="incident-message" role="status"></div>
+        <div id="incidentAdminLocked" class="incident-admin-locked">Sign in with the authorised administrator account to add or import incidents. Public visitors can view the incident register but cannot change it.</div>
 
         <div id="incidentAdminActions" class="incident-admin-actions" hidden>
           <button id="showAddIncident" type="button">Add incident</button>
@@ -1046,6 +1053,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   </section>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
 const INCIDENT_SOURCES=["./water-pollution-incidents.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/water-pollution-incidents.csv"];
@@ -1053,6 +1061,18 @@ let pollutionIncidents=[];
 let incidentLoadError="";
 const SUPABASE_URL="https://jjepxsrvqcwprjwcxekj.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_zhLETs1BxtRGVUVpG_o2UA_jdjmraIS";
+
+const canalSupabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true
+    }
+  }
+);
 let weatherMonitoringSites=[];
 let weatherObservations=[];
 let weatherLoadError="";
@@ -2684,30 +2704,18 @@ async function supabaseAuthRequest(path,options={}){
   return data;
 }
 async function refreshIncidentAuthUI(){
+  const loginForm=document.getElementById("incidentLoginForm");
+  const signedInBar=document.getElementById("incidentSignedInBar");
   const status=document.getElementById("incidentAuthStatus");
-  const signIn=document.getElementById("incidentSignIn");
-  const signOut=document.getElementById("incidentSignOut");
   const actions=document.getElementById("incidentAdminActions");
   const locked=document.getElementById("incidentAdminLocked");
-
-  let session=readStoredSupabaseSession();
-  if(session?.access_token){
-    incidentAccessToken=session.access_token;
-    try{
-      incidentCurrentUser=await supabaseAuthRequest("user");
-    }catch(error){
-      incidentAccessToken="";
-      incidentCurrentUser=null;
-      clearStoredSupabaseSession();
-    }
-  }
-
+  const {data:{session}}=await canalSupabase.auth.getSession();
+  incidentAccessToken=session?.access_token||"";
+  incidentCurrentUser=session?.user||null;
   const signedIn=!!incidentCurrentUser;
-  if(status) status.innerHTML=signedIn
-    ? `Signed in as <strong>${esc(incidentCurrentUser.email||"administrator")}</strong>`
-    : `Not signed in`;
-  if(signIn) signIn.hidden=signedIn;
-  if(signOut) signOut.hidden=!signedIn;
+  if(loginForm) loginForm.style.display=signedIn?"none":"grid";
+  if(signedInBar) signedInBar.style.display=signedIn?"flex":"none";
+  if(status) status.innerHTML=signedIn ? `Signed in as <strong>${esc(incidentCurrentUser.email||"administrator")}</strong>` : "";
   if(actions) actions.hidden=!signedIn;
   if(locked) locked.hidden=signedIn;
   if(!signedIn){
@@ -2716,23 +2724,24 @@ async function refreshIncidentAuthUI(){
   }
   setTimeout(notifyParentOfHeight,40);
 }
-async function incidentAdministratorSignIn(){
-  const email=window.prompt("Administrator email address:");
-  if(!email) return;
+async function incidentAdministratorSignIn(event){
+  if(event) event.preventDefault();
+  const email=document.getElementById("incidentAdminEmail")?.value.trim();
+  const password=document.getElementById("incidentAdminPassword")?.value||"";
+  if(!email || !password){
+    showIncidentMessage("incidentLoginMessage","Enter the administrator email and password.","error");
+    return;
+  }
   try{
-    const redirectTo=window.location.href.split("#")[0];
-    await supabaseAuthRequest("otp",{
-      method:"POST",
-      body:JSON.stringify({
-        email:email.trim(),
-        create_user:false,
-        gotrue_meta_security:{},
-        redirect_to:redirectTo
-      })
-    });
-    window.alert("A secure sign-in link has been sent to that authorised email address. Open the link in this browser to continue.");
+    const {data,error}=await canalSupabase.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    incidentAccessToken=data.session?.access_token||"";
+    incidentCurrentUser=data.user||null;
+    document.getElementById("incidentAdminPassword").value="";
+    showIncidentMessage("incidentLoginMessage","","");
+    await refreshIncidentAuthUI();
   }catch(error){
-    window.alert(`Sign-in could not be started: ${error.message}`);
+    showIncidentMessage("incidentLoginMessage",`Sign in failed: ${error.message}`,"error");
   }
 }
 async function consumeIncidentAuthCallback(){
@@ -2753,18 +2762,15 @@ async function consumeIncidentAuthCallback(){
   }
 }
 async function incidentAdministratorSignOut(){
-  try{
-    if(incidentAccessToken) await supabaseAuthRequest("logout",{method:"POST"});
-  }catch(e){}
+  await canalSupabase.auth.signOut();
   incidentAccessToken="";
   incidentCurrentUser=null;
-  clearStoredSupabaseSession();
   await refreshIncidentAuthUI();
 }
 
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
-  document.getElementById("incidentSignIn")?.addEventListener("click",incidentAdministratorSignIn);
+  document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
   document.getElementById("incidentSignOut")?.addEventListener("click",incidentAdministratorSignOut);
   const importPanel=document.getElementById("importIncidentsPanel");
   document.getElementById("showAddIncident")?.addEventListener("click",()=>{
@@ -3276,7 +3282,12 @@ accordionPanels.forEach((panel,index)=>{
 });
 
 setupIncidentAdmin();
-consumeIncidentAuthCallback().then(refreshIncidentAuthUI);
+canalSupabase.auth.onAuthStateChange((_event,session)=>{
+  incidentAccessToken=session?.access_token||"";
+  incidentCurrentUser=session?.user||null;
+  refreshIncidentAuthUI();
+});
+refreshIncidentAuthUI();
 load();
 
 </script>
