@@ -1052,10 +1052,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
               <div><label for="incidentSeverity">Severity *</label>
                 <select id="incidentSeverity" name="severity" required><option>Low</option><option selected>Moderate</option><option>High</option><option>Severe</option></select>
               </div>
+              <div><label for="incidentCategory">Official category / classification</label><input id="incidentCategory" name="official_category" placeholder="e.g. Environment Agency Category 3"></div>
+              <div><label for="incidentSuspectedSource">Suspected source</label><input id="incidentSuspectedSource" name="suspected_source" placeholder="Use suspected/believed where not confirmed"></div>
+              <div><label for="incidentExtent">Extent</label><input id="incidentExtent" name="extent" placeholder="e.g. Approximately six miles"></div>
               <div><label for="incidentStatusInput">Status *</label>
                 <select id="incidentStatusInput" name="status" required><option>Observed</option><option>Reported</option><option>Investigating</option><option>Resolved</option><option>Closed</option></select>
               </div>
               <div class="wide"><label for="incidentDescription">Description *</label><textarea id="incidentDescription" name="description" required></textarea></div>
+              <div class="wide"><label for="incidentResponse">Response / action taken</label><textarea id="incidentResponse" name="response_action"></textarea></div>
+              <div><label for="incidentWildlifeImpact">Wildlife impact</label>
+                <select id="incidentWildlifeImpact" name="wildlife_impact"><option value="">Unknown / not recorded</option><option>No</option><option>Yes – minor</option><option>Yes – significant</option></select>
+              </div>
+              <div><label for="incidentOrganisations">Organisation(s) involved</label><input id="incidentOrganisations" name="organisations_involved" placeholder="e.g. Canal & River Trust / Environment Agency"></div>
+              <div class="wide"><label for="incidentWildlifeDetails">Wildlife impact details</label><textarea id="incidentWildlifeDetails" name="wildlife_impact_details"></textarea></div>
               <div><label for="incidentSource">Source</label><input id="incidentSource" name="source" value="Canal Watch"></div>
               <div><label for="incidentReportedTo">Reported to</label><input id="incidentReportedTo" name="reported_to"></div>
               <div><label for="incidentReference">Reference</label><input id="incidentReference" name="reference"></div>
@@ -2582,10 +2591,10 @@ function renderPollutionIncidents(){
   document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
   const admin=!!incidentCurrentUser;
-  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity</th><th>Status</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
     const severity=incidentField(r,"Severity","severity")||"Not rated";
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
-    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span></td><td>${esc(incidentStatus(r))}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
+    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
@@ -2614,7 +2623,14 @@ function supabaseIncidentToDisplay(row){
     Classification:row.classification||"",
     "Pollution type":row.pollution_type||"",
     Severity:row.severity||"",
+    "Official category":row.official_category||"",
+    "Suspected source":row.suspected_source||"",
+    Extent:row.extent||"",
     Description:row.description||"",
+    "Response / action":row.response_action||"",
+    "Wildlife impact":row.wildlife_impact||"",
+    "Wildlife impact details":row.wildlife_impact_details||"",
+    "Organisations involved":row.organisations_involved||"",
     Source:row.source||"",
     "Reported to":row.reported_to||"",
     Reference:row.reference||"",
@@ -2660,7 +2676,14 @@ function incidentPayloadFromObject(obj){
     classification:n(obj.classification??obj.Classification),
     pollution_type:n(obj.pollution_type??obj["Pollution type"]),
     severity:n(obj.severity??obj.Severity),
+    official_category:n(obj.official_category??obj["Official category"])||null,
+    suspected_source:n(obj.suspected_source??obj["Suspected source"])||null,
+    extent:n(obj.extent??obj.Extent)||null,
     description:n(obj.description??obj.Description),
+    response_action:n(obj.response_action??obj["Response / action"])||null,
+    wildlife_impact:n(obj.wildlife_impact??obj["Wildlife impact"])||null,
+    wildlife_impact_details:n(obj.wildlife_impact_details??obj["Wildlife impact details"])||null,
+    organisations_involved:n(obj.organisations_involved??obj["Organisations involved"])||null,
     source:n(obj.source??obj.Source)||null,
     reported_to:n(obj.reported_to??obj["Reported to"])||null,
     reference:n(obj.reference??obj.Reference)||null,
@@ -2734,8 +2757,15 @@ function setIncidentFormMode(row=null){
   set("classification",row.classification??row.Classification);
   set("pollution_type",row.pollution_type??row["Pollution type"]);
   set("severity",row.severity??row.Severity);
+  set("official_category",row.official_category??row["Official category"]);
+  set("suspected_source",row.suspected_source??row["Suspected source"]);
+  set("extent",row.extent??row.Extent);
   set("status",row.status??row.Status);
   set("description",row.description??row.Description);
+  set("response_action",row.response_action??row["Response / action"]);
+  set("wildlife_impact",row.wildlife_impact??row["Wildlife impact"]);
+  set("wildlife_impact_details",row.wildlife_impact_details??row["Wildlife impact details"]);
+  set("organisations_involved",row.organisations_involved??row["Organisations involved"]);
   set("source",row.source??row.Source);
   set("reported_to",row.reported_to??row["Reported to"]);
   set("reference",row.reference??row.Reference);
