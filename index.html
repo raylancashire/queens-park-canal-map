@@ -519,6 +519,21 @@ select {
   visibility:hidden;
 }
 
+
+.pollution-incident-marker{background:transparent!important;border:0!important}
+.pollution-incident-pin{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:#c00000;color:#fff;border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.38);
+  font-size:19px;font-weight:900;
+}
+.pollution-incident-popup h3{margin:0 0 5px;color:#8b1e1e}
+.pollution-incident-popup .incident-date{font-size:12px;color:#5f6f64;margin-bottom:8px}
+.pollution-incident-popup table{border-collapse:collapse;width:100%;font-size:13px}
+.pollution-incident-popup td{padding:5px 4px;border-bottom:1px solid #e5e9e6;vertical-align:top}
+.pollution-incident-popup td:first-child{font-weight:700;width:38%}
+.pollution-incident-popup .incident-description{margin-top:9px;line-height:1.4}
 </style>
 
 <style>
@@ -544,6 +559,11 @@ select {
     <span>Show nearby weather stations</span>
   </label>
   <span id="weatherStationStatus" style="font-size:12px;color:#5f6f64;"></span>
+  <label class="weather-station-switch" title="Show recorded water pollution incidents that have GPS coordinates">
+    <input id="pollutionIncidentToggle" type="checkbox" checked>
+    <span>Show pollution incidents</span>
+  </label>
+  <span id="pollutionIncidentStatus" style="font-size:12px;color:#5f6f64;"></span>
 </section>
 
 
@@ -584,6 +604,8 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zhLETs1BxtRGVUVpG_o2UA_jdjmraIS
 const map = L.map("map").setView([51.5250, -0.2085], 14);
 const weatherStationLayer = L.layerGroup();
 let weatherStationsLoaded = false;
+const pollutionIncidentLayer = L.layerGroup().addTo(map);
+let pollutionIncidentsLoaded = false;
 
 // Stores the default view containing all loaded sampling-result markers.
 let defaultResultBounds = null;
@@ -1475,6 +1497,99 @@ document.getElementById("weatherStationToggle").addEventListener("change",async 
     status.textContent="Unable to load stations";
     console.error(error);
   }
+});
+
+
+
+function pollutionIncidentIcon(){
+  return L.divIcon({
+    className:"pollution-incident-marker",
+    html:'<span class="pollution-incident-pin" aria-hidden="true">!</span>',
+    iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]
+  });
+}
+
+function formatIncidentDate(value){
+  if(!value) return "—";
+  const m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(value);
+}
+
+function incidentPopup(r){
+  const row=(label,value)=>value?`<tr><td>${esc(label)}</td><td>${esc(value)}</td></tr>`:"";
+  return `<div class="pollution-incident-popup">
+    <h3>${esc(r.location||"Water pollution incident")}</h3>
+    <div class="incident-date">Incident / report date: ${esc(formatIncidentDate(r.incident_date))}</div>
+    <table>
+      ${row("Type",r.pollution_type)}
+      ${row("Severity",r.severity)}
+      ${row("Official category",r.official_category)}
+      ${row("Status",r.status)}
+      ${row("Extent",r.extent)}
+      ${row("Suspected source",r.suspected_source)}
+      ${row("Wildlife impact",r.wildlife_impact)}
+      ${row("Organisations",r.organisations_involved)}
+      ${row("Reported to",r.reported_to)}
+    </table>
+    ${r.description?`<div class="incident-description"><strong>Description</strong><br>${esc(r.description)}</div>`:""}
+    ${r.response_action?`<div class="incident-description"><strong>Response / action</strong><br>${esc(r.response_action)}</div>`:""}
+  </div>`;
+}
+
+async function loadPollutionIncidentMarkers(){
+  if(pollutionIncidentsLoaded) return;
+  const status=document.getElementById("pollutionIncidentStatus");
+  if(status) status.textContent="Loading incidents…";
+  const fields="id,incident_date,location,latitude,longitude,classification,pollution_type,severity,official_category,status,suspected_source,extent,description,response_action,wildlife_impact,wildlife_impact_details,organisations_involved,reported_to,reference,resolved_date,notes";
+  const response=await fetch(
+    `${SUPABASE_URL}/rest/v1/water_pollution_incidents?select=${fields}&latitude=not.is.null&longitude=not.is.null&order=incident_date.desc`,
+    {headers:{apikey:SUPABASE_PUBLISHABLE_KEY,accept:"application/json"},cache:"no-store"}
+  );
+  if(!response.ok) throw new Error(`Pollution incident data ${response.status}`);
+  const incidents=await response.json();
+  let plotted=0;
+  incidents.forEach(r=>{
+    const lat=Number(r.latitude), lon=Number(r.longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon)) return;
+    L.marker([lat,lon],{
+      icon:pollutionIncidentIcon(),
+      title:`Pollution incident: ${r.location||formatIncidentDate(r.incident_date)}`
+    }).bindPopup(incidentPopup(r),{
+      maxWidth:390,maxHeight:330,autoPan:true,
+      autoPanPaddingTopLeft:[20,150],autoPanPaddingBottomRight:[20,20]
+    }).addTo(pollutionIncidentLayer);
+    plotted++;
+  });
+  pollutionIncidentsLoaded=true;
+  if(status) status.textContent=`${plotted} ${plotted===1?"incident":"incidents"} on map`;
+}
+
+document.getElementById("pollutionIncidentToggle")?.addEventListener("change",async event=>{
+  const toggle=event.currentTarget;
+  const status=document.getElementById("pollutionIncidentStatus");
+  if(!toggle.checked){
+    map.removeLayer(pollutionIncidentLayer);
+    if(status) status.textContent="";
+    return;
+  }
+  try{
+    await loadPollutionIncidentMarkers();
+    if(toggle.checked) pollutionIncidentLayer.addTo(map);
+  }catch(error){
+    toggle.checked=false;
+    map.removeLayer(pollutionIncidentLayer);
+    if(status) status.textContent="Unable to load incidents";
+    console.error(error);
+  }
+});
+
+loadPollutionIncidentMarkers().catch(error=>{
+  const toggle=document.getElementById("pollutionIncidentToggle");
+  const status=document.getElementById("pollutionIncidentStatus");
+  if(toggle) toggle.checked=false;
+  map.removeLayer(pollutionIncidentLayer);
+  if(status) status.textContent="Unable to load incidents";
+  console.error(error);
 });
 
 
