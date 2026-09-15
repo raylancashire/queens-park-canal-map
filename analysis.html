@@ -988,6 +988,9 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
             <div><label for="incidentAdminPassword">Password</label><input id="incidentAdminPassword" type="password" autocomplete="current-password" required></div>
             <button class="primary" type="submit">Sign in</button>
           </form>
+          <div id="incidentRecoveryRow" style="width:100%;margin-top:8px">
+            <button id="incidentResetPassword" type="button">Forgot / set administrator password</button>
+          </div>
           <div id="incidentSignedInBar" style="display:none;width:100%;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
             <div id="incidentAuthStatus" class="incident-auth-status"></div>
             <div class="incident-admin-actions" style="margin:0">
@@ -2737,9 +2740,14 @@ async function refreshIncidentAuthUI(){
   incidentCurrentUser=session?.user||null;
   const signedIn=!!incidentCurrentUser;
   if(loginForm) loginForm.style.display=signedIn?"none":"grid";
+  const recoveryRow=document.getElementById("incidentRecoveryRow");
+  if(recoveryRow) recoveryRow.style.display=signedIn?"none":"block";
   if(signedInBar) signedInBar.style.display=signedIn?"flex":"none";
   if(status) status.innerHTML=signedIn ? `Signed in as <strong>${esc(incidentCurrentUser.email||"administrator")}</strong>` : "";
-  if(actions) actions.hidden=!signedIn;
+  if(actions){
+    actions.hidden=!signedIn;
+    actions.style.display=signedIn?"flex":"none";
+  }
   if(locked) locked.hidden=signedIn;
   if(!signedIn){
     document.getElementById("addIncidentPanel").hidden=true;
@@ -2786,6 +2794,22 @@ async function consumeIncidentAuthCallback(){
     history.replaceState(null,"",window.location.pathname+window.location.search);
   }
 }
+async function incidentRequestPasswordReset(){
+  const email=document.getElementById("incidentAdminEmail")?.value.trim();
+  if(!email){
+    showIncidentMessage("incidentLoginMessage","Enter the administrator email address first, then choose Forgot / set administrator password.","error");
+    return;
+  }
+  try{
+    const redirectTo="https://raylancashire.github.io/queens-park-canal-map/analysis.html";
+    const {error}=await canalSupabase.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error) throw error;
+    showIncidentMessage("incidentLoginMessage","Password recovery email sent. Use the newest email and follow its link to return to this analysis page.","ok");
+  }catch(error){
+    showIncidentMessage("incidentLoginMessage",`Password recovery could not be started: ${error.message}`,"error");
+  }
+}
+
 async function incidentAdministratorSignOut(){
   await canalSupabase.auth.signOut();
   incidentAccessToken="";
@@ -2796,6 +2820,7 @@ async function incidentAdministratorSignOut(){
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
   document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
+  document.getElementById("incidentResetPassword")?.addEventListener("click",incidentRequestPasswordReset);
   document.getElementById("incidentSignOut")?.addEventListener("click",incidentAdministratorSignOut);
   const passwordPanel=document.getElementById("incidentPasswordPanel");
   document.getElementById("incidentChangePassword")?.addEventListener("click",()=>{
