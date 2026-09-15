@@ -990,7 +990,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
           </form>
           <div id="incidentSignedInBar" style="display:none;width:100%;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
             <div id="incidentAuthStatus" class="incident-auth-status"></div>
-            <button id="incidentSignOut" type="button">Sign out</button>
+            <div class="incident-admin-actions" style="margin:0">
+              <button id="incidentChangePassword" type="button">Set / change password</button>
+              <button id="incidentSignOut" type="button">Sign out</button>
+            </div>
           </div>
         </div>
         <div id="incidentLoginMessage" class="incident-message" role="status"></div>
@@ -999,6 +1002,26 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <div id="incidentAdminActions" class="incident-admin-actions" hidden>
           <button id="showAddIncident" type="button">Add incident</button>
           <button id="showImportIncidents" type="button">Import CSV</button>
+        </div>
+
+        <div id="incidentPasswordPanel" class="incident-admin-panel" hidden>
+          <form id="incidentPasswordForm" class="incident-form">
+            <div class="incident-form-grid">
+              <div>
+                <label for="incidentNewPassword">New password</label>
+                <input id="incidentNewPassword" type="password" autocomplete="new-password" minlength="8" required>
+              </div>
+              <div>
+                <label for="incidentConfirmPassword">Confirm new password</label>
+                <input id="incidentConfirmPassword" type="password" autocomplete="new-password" minlength="8" required>
+              </div>
+            </div>
+            <div class="incident-form-actions">
+              <button class="primary" type="submit">Save new password</button>
+              <button id="cancelIncidentPassword" type="button">Cancel</button>
+            </div>
+            <div id="incidentPasswordMessage" class="incident-message" role="status"></div>
+          </form>
         </div>
 
         <div id="addIncidentPanel" class="incident-admin-panel" hidden>
@@ -2721,6 +2744,8 @@ async function refreshIncidentAuthUI(){
   if(!signedIn){
     document.getElementById("addIncidentPanel").hidden=true;
     document.getElementById("importIncidentsPanel").hidden=true;
+    const pp=document.getElementById("incidentPasswordPanel");
+    if(pp) pp.hidden=true;
   }
   setTimeout(notifyParentOfHeight,40);
 }
@@ -2772,6 +2797,40 @@ function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
   document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
   document.getElementById("incidentSignOut")?.addEventListener("click",incidentAdministratorSignOut);
+  const passwordPanel=document.getElementById("incidentPasswordPanel");
+  document.getElementById("incidentChangePassword")?.addEventListener("click",()=>{
+    passwordPanel.hidden=!passwordPanel.hidden;
+    addPanel.hidden=true;
+    importPanel.hidden=true;
+    setTimeout(notifyParentOfHeight,40);
+  });
+  document.getElementById("cancelIncidentPassword")?.addEventListener("click",()=>{
+    passwordPanel.hidden=true;
+    document.getElementById("incidentPasswordForm").reset();
+    showIncidentMessage("incidentPasswordMessage","","");
+    setTimeout(notifyParentOfHeight,40);
+  });
+  document.getElementById("incidentPasswordForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const p1=document.getElementById("incidentNewPassword").value;
+    const p2=document.getElementById("incidentConfirmPassword").value;
+    if(p1.length<8){
+      showIncidentMessage("incidentPasswordMessage","Use a password of at least 8 characters.","error");
+      return;
+    }
+    if(p1!==p2){
+      showIncidentMessage("incidentPasswordMessage","The two passwords do not match.","error");
+      return;
+    }
+    try{
+      const {error}=await canalSupabase.auth.updateUser({password:p1});
+      if(error) throw error;
+      showIncidentMessage("incidentPasswordMessage","Administrator password saved successfully.","ok");
+      document.getElementById("incidentPasswordForm").reset();
+    }catch(error){
+      showIncidentMessage("incidentPasswordMessage",`Password could not be saved: ${error.message}`,"error");
+    }
+  });
   const importPanel=document.getElementById("importIncidentsPanel");
   document.getElementById("showAddIncident")?.addEventListener("click",()=>{
     addPanel.hidden=!addPanel.hidden; importPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
