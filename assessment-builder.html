@@ -54,6 +54,21 @@
       </table>
     </div>
 
+    <div class="qp-builder-coliform" style="margin-top:16px">
+      <label for="qpBuilderAlgaeType">Algae / floating vegetation type</label>
+      <select id="qpBuilderAlgaeType">
+        <option value="none">None observed</option>
+        <option value="duckweed">Duckweed</option>
+        <option value="algae">Algae</option>
+        <option value="mixed">Mixed algae / duckweed</option>
+        <option value="other">Other floating vegetation</option>
+        <option value="uncertain">Uncertain</option>
+      </select>
+      <div class="qp-builder-coliform-help">
+        Select “Uncertain” if the floating material cannot be identified confidently from visual observation alone.
+      </div>
+    </div>
+
     <div id="qpBuilderOverall" class="qp-builder-overall good">
       <div class="qp-builder-overall-label">Overall Canal Watch Assessment</div>
       <div id="qpBuilderOverallResult" class="qp-builder-overall-result">◆ Good</div>
@@ -331,6 +346,14 @@
     ["Surface pollution",[
       ["None visible",5],["Trace",4],["Some visible",3],["Significant",2],["Severe",1]
     ]],
+    ["Algae / floating vegetation coverage",[
+      ["None — 0%",5],
+      ["Trace — less than 10%",5],
+      ["Low — 10–25%",4],
+      ["Moderate — 25–50%",3],
+      ["High — 50–75%",2],
+      ["Extensive — more than 75%",1]
+    ]],
     ["Wildlife activity",[
       ["Abundant / diverse",5],["Several observations",4],["Some observed",3],["Very little observed",2],["N/A – none observed",1]
     ]],
@@ -492,6 +515,12 @@
       ? `<div style="margin:0 0 10px;color:#66746b;font-size:12px">${meta.map(esc).join(" · ")}</div>\n`
       : "";
 
+    const algaeTypeSelect=document.getElementById("qpBuilderAlgaeType");
+    const algaeTypeLabel=algaeTypeSelect.options[algaeTypeSelect.selectedIndex].textContent;
+    const algaeTypeHtml = algaeTypeSelect.value!=="none"
+      ? `<div style="margin:0 0 10px;color:#526158;font-size:12px"><strong>Algae / floating vegetation type:</strong> ${esc(algaeTypeLabel)}</div>\n`
+      : "";
+
     const coliformHtml = coliformSelect.value!=="not-tested"
       ? `<div class="qp-coliform-screening" style="margin:0 0 14px;padding:12px 14px;border:1px solid #dfe7e1;border-radius:8px;background:#f7faf7">
   <strong>LaMotte coliform screening:</strong> ${esc(coliformRule.label)}<br>
@@ -500,7 +529,7 @@
 `
       : "";
 
-    return `${metaHtml}${coliformHtml}<div class="qp-assessment-table">
+    return `${metaHtml}${algaeTypeHtml}${coliformHtml}<div class="qp-assessment-table">
   <table class="qp-results-table">
     <thead>
       <tr>
@@ -546,6 +575,7 @@
     document.getElementById("qpBuilderDate").value="";
     document.getElementById("qpBuilderTime").value="";
     coliformSelect.value="not-tested";
+    document.getElementById("qpBuilderAlgaeType").value="none";
     rowsEl.querySelectorAll("select").forEach(s=>s.selectedIndex=0);
     update();
   }
