@@ -766,6 +766,13 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-row-actions{white-space:nowrap}
 .incident-row-actions button{padding:5px 8px;margin:0 3px 3px 0;font-size:11px}
 .incident-danger{border-color:#b42318!important;color:#b42318!important}
+
+.incident-table th:nth-child(4),
+.incident-table td:nth-child(4){
+  min-width:140px;
+  width:160px;
+  white-space:normal;
+}
 </style>
 </head>
 <body>
@@ -2962,7 +2969,10 @@ function setupIncidentAdmin(){
     setIncidentFormMode(null); showIncidentMessage("incidentFormMessage","","");
   });
   document.getElementById("cancelIncidentEdit")?.addEventListener("click",()=>{
-    setIncidentFormMode(null); showIncidentMessage("incidentFormMessage","","");
+    setIncidentFormMode(null);
+    addPanel.hidden=true;
+    showIncidentMessage("incidentFormMessage","","");
+    setTimeout(notifyParentOfHeight,40);
   });
   document.getElementById("deleteIncidentButton")?.addEventListener("click",async()=>{
     if(!incidentEditingId)return;
@@ -2970,8 +2980,10 @@ function setupIncidentAdmin(){
     try{
       await deleteIncidentById(incidentEditingId);
       setIncidentFormMode(null);
+      addPanel.hidden=true;
       showIncidentMessage("incidentFormMessage","Incident deleted.","ok");
       await loadPollutionIncidents();
+      setTimeout(notifyParentOfHeight,40);
     }catch(error){showIncidentMessage("incidentFormMessage",`Could not delete incident: ${error.message}`,"error");}
   });
   document.getElementById("incidentForm")?.addEventListener("submit",async event=>{
@@ -2993,7 +3005,9 @@ function setupIncidentAdmin(){
         showIncidentMessage("incidentFormMessage","Incident saved to Supabase.","ok");
       }
       setIncidentFormMode(null);
+      addPanel.hidden=true;
       await loadPollutionIncidents();
+      setTimeout(notifyParentOfHeight,40);
     }catch(error){
       showIncidentMessage("incidentFormMessage",`Could not save incident: ${error.message}. Check that the table and RLS policies have been created.`,"error");
     }
