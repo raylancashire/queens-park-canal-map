@@ -762,6 +762,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-login-form label{display:block;font-size:11px;font-weight:750;margin-bottom:4px}
 .incident-login-form input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font:inherit}
 @media(max-width:760px){.incident-login-form{grid-template-columns:1fr}}
+
+.incident-row-actions{white-space:nowrap}
+.incident-row-actions button{padding:5px 8px;margin:0 3px 3px 0;font-size:11px}
+.incident-danger{border-color:#b42318!important;color:#b42318!important}
 </style>
 </head>
 <body>
@@ -1028,6 +1032,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         </div>
 
         <div id="addIncidentPanel" class="incident-admin-panel" hidden>
+          <div id="incidentFormMode" style="font-weight:750;margin-bottom:8px">Add new incident</div>
           <form id="incidentForm" class="incident-form">
             <div class="incident-form-grid">
               <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="date" required></div>
@@ -1057,7 +1062,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
               <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="date"></div>
               <div class="wide"><label for="incidentNotes">Notes</label><textarea id="incidentNotes" name="notes"></textarea></div>
             </div>
-            <div class="incident-form-actions"><button class="primary" type="submit">Save incident</button><button id="clearIncidentForm" type="button">Clear</button></div>
+            <div class="incident-form-actions">
+              <button id="saveIncidentButton" class="primary" type="submit">Save incident</button>
+              <button id="cancelIncidentEdit" type="button" hidden>Cancel edit</button>
+              <button id="deleteIncidentButton" class="incident-danger" type="button" hidden>Delete incident</button>
+              <button id="clearIncidentForm" type="button">Clear</button>
+            </div>
             <div id="incidentFormMessage" class="incident-message" role="status"></div>
           </form>
         </div>
@@ -2571,9 +2581,11 @@ function renderPollutionIncidents(){
   const resolved=/resolved|closed|cleared/i;
   document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
-  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity</th><th>Status</th><th>Description</th></tr></thead><tbody>${rows.map(r=>{
+  const admin=!!incidentCurrentUser;
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity</th><th>Status</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
     const severity=incidentField(r,"Severity","severity")||"Not rated";
-    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span></td><td>${esc(incidentStatus(r))}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td></tr>`;
+    const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
+    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span></td><td>${esc(incidentStatus(r))}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
@@ -2687,6 +2699,59 @@ async function insertIncidentPayloads(payloads){
     body:JSON.stringify(payloads)
   });
 }
+let incidentEditingId=null;
+
+async function updateIncidentPayload(id,payload){
+  return await supabaseIncidentRequest(`${INCIDENT_TABLE}?id=eq.${encodeURIComponent(id)}`,{
+    method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify(payload)
+  });
+}
+async function deleteIncidentById(id){
+  return await supabaseIncidentRequest(`${INCIDENT_TABLE}?id=eq.${encodeURIComponent(id)}`,{
+    method:"DELETE",headers:{Prefer:"return=representation"}
+  });
+}
+function setIncidentFormMode(row=null){
+  const form=document.getElementById("incidentForm");
+  const mode=document.getElementById("incidentFormMode");
+  const save=document.getElementById("saveIncidentButton");
+  const cancel=document.getElementById("cancelIncidentEdit");
+  const del=document.getElementById("deleteIncidentButton");
+  incidentEditingId=row?.id||null;
+  if(!row){
+    form.reset();
+    document.getElementById("incidentSource").value="Canal Watch";
+    document.getElementById("incidentResolvedDate").value="";
+    mode.textContent="Add new incident"; save.textContent="Save incident";
+    cancel.hidden=true; del.hidden=true;
+    return;
+  }
+  const set=(name,val)=>{const el=form.elements[name]; if(el) el.value=val??"";};
+  set("incident_date",row.incident_date||ukToISODate(row.Date));
+  set("location",row.location??row.Location);
+  set("latitude",row.latitude??row.Latitude);
+  set("longitude",row.longitude??row.Longitude);
+  set("classification",row.classification??row.Classification);
+  set("pollution_type",row.pollution_type??row["Pollution type"]);
+  set("severity",row.severity??row.Severity);
+  set("status",row.status??row.Status);
+  set("description",row.description??row.Description);
+  set("source",row.source??row.Source);
+  set("reported_to",row.reported_to??row["Reported to"]);
+  set("reference",row.reference??row.Reference);
+  set("resolved_date",row.resolved_date||ukToISODate(row["Resolved date"]));
+  set("notes",row.notes??row.Notes);
+  mode.textContent="Edit incident"; save.textContent="Save changes";
+  cancel.hidden=false; del.hidden=false;
+  document.getElementById("addIncidentPanel").hidden=false;
+  document.getElementById("importIncidentsPanel").hidden=true;
+  form.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+window.editPollutionIncident=function(id){
+  const row=pollutionIncidents.find(r=>String(r.id)===String(id));
+  if(row) setIncidentFormMode(row);
+};
+
 
 function authStorageKey(){
   try{
@@ -2864,9 +2929,20 @@ function setupIncidentAdmin(){
     importPanel.hidden=!importPanel.hidden; addPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
   });
   document.getElementById("clearIncidentForm")?.addEventListener("click",()=>{
-    document.getElementById("incidentForm").reset();
-    document.getElementById("incidentSource").value="Canal Watch";
-    showIncidentMessage("incidentFormMessage","","");
+    setIncidentFormMode(null); showIncidentMessage("incidentFormMessage","","");
+  });
+  document.getElementById("cancelIncidentEdit")?.addEventListener("click",()=>{
+    setIncidentFormMode(null); showIncidentMessage("incidentFormMessage","","");
+  });
+  document.getElementById("deleteIncidentButton")?.addEventListener("click",async()=>{
+    if(!incidentEditingId)return;
+    if(!window.confirm("Delete this incident permanently? This cannot be undone."))return;
+    try{
+      await deleteIncidentById(incidentEditingId);
+      setIncidentFormMode(null);
+      showIncidentMessage("incidentFormMessage","Incident deleted.","ok");
+      await loadPollutionIncidents();
+    }catch(error){showIncidentMessage("incidentFormMessage",`Could not delete incident: ${error.message}`,"error");}
   });
   document.getElementById("incidentForm")?.addEventListener("submit",async event=>{
     event.preventDefault();
@@ -2875,13 +2951,18 @@ function setupIncidentAdmin(){
     const payload=incidentPayloadFromObject(raw);
     const errors=validateIncidentPayload(payload);
     if(errors.length){showIncidentMessage("incidentFormMessage",`Please check: ${errors.join(", ")}.`,"error");return;}
-    if(existingIncidentKeys().has(incidentDuplicateKey(payload))){
+    if(!incidentEditingId && existingIncidentKeys().has(incidentDuplicateKey(payload))){
       showIncidentMessage("incidentFormMessage","This looks like an existing incident. It was not added.","error"); return;
     }
     try{
-      await insertIncidentPayloads([payload]);
-      showIncidentMessage("incidentFormMessage","Incident saved to Supabase.","ok");
-      form.reset(); document.getElementById("incidentSource").value="Canal Watch";
+      if(incidentEditingId){
+        await updateIncidentPayload(incidentEditingId,payload);
+        showIncidentMessage("incidentFormMessage","Incident changes saved to Supabase.","ok");
+      }else{
+        await insertIncidentPayloads([payload]);
+        showIncidentMessage("incidentFormMessage","Incident saved to Supabase.","ok");
+      }
+      setIncidentFormMode(null);
       await loadPollutionIncidents();
     }catch(error){
       showIncidentMessage("incidentFormMessage",`Could not save incident: ${error.message}. Check that the table and RLS policies have been created.`,"error");
@@ -3366,6 +3447,7 @@ accordionPanels.forEach((panel,index)=>{
 });
 
 setupIncidentAdmin();
+if(document.getElementById("incidentResolvedDate")) document.getElementById("incidentResolvedDate").value="";
 canalSupabase.auth.onAuthStateChange((_event,session)=>{
   incidentAccessToken=session?.access_token||"";
   incidentCurrentUser=session?.user||null;
