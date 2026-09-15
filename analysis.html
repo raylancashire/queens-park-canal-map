@@ -773,6 +773,32 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   width:160px;
   white-space:normal;
 }
+
+/* Incident form validation: make required fields obvious only when they need attention. */
+.incident-field-hint{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:500;
+}
+.incident-form .field-required-empty,
+.incident-form .field-invalid{
+  border-color:#C00000!important;
+  background:#fff4f4!important;
+  box-shadow:0 0 0 2px rgba(192,0,0,.10);
+}
+.incident-form label.field-needs-attention{
+  color:#9b0000;
+}
+.incident-form .field-validation-message{
+  display:block;
+  margin-top:4px;
+  color:#9b0000;
+  font-size:10px;
+  font-weight:700;
+}
+
 </style>
 </head>
 <body>
@@ -1042,7 +1068,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
           <div id="incidentFormMode" style="font-weight:750;margin-bottom:8px">Add new incident</div>
           <form id="incidentForm" class="incident-form">
             <div class="incident-form-grid">
-              <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="date" required></div>
+              <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" required aria-describedby="incidentDateHint"><small id="incidentDateHint" class="incident-field-hint">Enter as DD/MM/YYYY</small></div>
               <div><label for="incidentLocationInput">Location *</label><input id="incidentLocationInput" name="location" required></div>
               <div><label for="incidentLatitude">Latitude</label><input id="incidentLatitude" name="latitude" type="number" step="any"></div>
               <div><label for="incidentLongitude">Longitude</label><input id="incidentLongitude" name="longitude" type="number" step="any"></div>
@@ -1075,7 +1101,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
               <div><label for="incidentSource">Source</label><input id="incidentSource" name="source" value="Canal Watch"></div>
               <div><label for="incidentReportedTo">Reported to</label><input id="incidentReportedTo" name="reported_to"></div>
               <div><label for="incidentReference">Reference</label><input id="incidentReference" name="reference"></div>
-              <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="date"></div>
+              <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" aria-describedby="incidentResolvedDateHint"><small id="incidentResolvedDateHint" class="incident-field-hint">Enter as DD/MM/YYYY</small></div>
               <div class="wide"><label for="incidentNotes">Notes</label><textarea id="incidentNotes" name="notes"></textarea></div>
             </div>
             <div class="incident-form-actions">
@@ -2621,11 +2647,32 @@ function isoToUKDate(value){
 function ukToISODate(value){
   const s=String(value||"").trim();
   if(!s) return null;
+
+  let year,month,day;
   let m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(m) return s;
-  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if(!m) return null;
-  return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+  if(m){
+    year=Number(m[1]); month=Number(m[2]); day=Number(m[3]);
+  }else{
+    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(!m) return null;
+    day=Number(m[1]); month=Number(m[2]); year=Number(m[3]);
+  }
+
+  const d=new Date(Date.UTC(year,month-1,day));
+  if(
+    d.getUTCFullYear()!==year ||
+    d.getUTCMonth()!==month-1 ||
+    d.getUTCDate()!==day
+  ) return null;
+
+  return `${String(year).padStart(4,"0")}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
+
+function incidentDateForInput(value){
+  const s=String(value||"").trim();
+  if(!s) return "";
+  const iso=ukToISODate(s);
+  return iso ? isoToUKDate(iso) : s;
 }
 function supabaseIncidentToDisplay(row){
   return {
@@ -2749,6 +2796,7 @@ async function deleteIncidentById(id){
 }
 function setIncidentFormMode(row=null){
   const form=document.getElementById("incidentForm");
+  clearIncidentFieldValidation(form);
   const mode=document.getElementById("incidentFormMode");
   const save=document.getElementById("saveIncidentButton");
   const cancelEntry=document.getElementById("cancelIncidentEntry");
@@ -2764,7 +2812,7 @@ function setIncidentFormMode(row=null){
     return;
   }
   const set=(name,val)=>{const el=form.elements[name]; if(el) el.value=val??"";};
-  set("incident_date",row.incident_date||ukToISODate(row.Date));
+  set("incident_date",incidentDateForInput(row.incident_date||row.Date));
   set("location",row.location??row.Location);
   set("latitude",row.latitude??row.Latitude);
   set("longitude",row.longitude??row.Longitude);
@@ -2783,7 +2831,7 @@ function setIncidentFormMode(row=null){
   set("source",row.source??row.Source);
   set("reported_to",row.reported_to??row["Reported to"]);
   set("reference",row.reference??row.Reference);
-  set("resolved_date",row.resolved_date||ukToISODate(row["Resolved date"]));
+  set("resolved_date",incidentDateForInput(row.resolved_date||row["Resolved date"]));
   set("notes",row.notes??row.Notes);
   mode.textContent="Edit incident"; save.textContent="Save changes";
   cancelEntry.hidden=true; cancel.hidden=false; del.hidden=false;
@@ -2969,8 +3017,79 @@ function downloadIncidentCsvTemplate(){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+
+function clearIncidentFieldValidation(form){
+  if(!form) return;
+  form.querySelectorAll(".field-required-empty,.field-invalid").forEach(el=>{
+    el.classList.remove("field-required-empty","field-invalid");
+    el.removeAttribute("aria-invalid");
+  });
+  form.querySelectorAll("label.field-needs-attention").forEach(el=>el.classList.remove("field-needs-attention"));
+  form.querySelectorAll(".field-validation-message").forEach(el=>el.remove());
+}
+
+function markIncidentFieldInvalid(el,message,kind="field-invalid"){
+  if(!el) return;
+  el.classList.add(kind);
+  el.setAttribute("aria-invalid","true");
+  const label=el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
+  if(label) label.classList.add("field-needs-attention");
+  const msg=document.createElement("small");
+  msg.className="field-validation-message";
+  msg.textContent=message;
+  el.insertAdjacentElement("afterend",msg);
+}
+
+function validateIncidentFormFields(form){
+  clearIncidentFieldValidation(form);
+  let firstInvalid=null;
+
+  form.querySelectorAll("[required]").forEach(el=>{
+    if(!String(el.value||"").trim()){
+      markIncidentFieldInvalid(el,"Required field","field-required-empty");
+      if(!firstInvalid) firstInvalid=el;
+    }
+  });
+
+  const incidentDate=document.getElementById("incidentDate");
+  if(incidentDate && incidentDate.value.trim() && !ukToISODate(incidentDate.value)){
+    markIncidentFieldInvalid(incidentDate,"Enter a valid date as DD/MM/YYYY");
+    if(!firstInvalid) firstInvalid=incidentDate;
+  }
+
+  const resolvedDate=document.getElementById("incidentResolvedDate");
+  if(resolvedDate && resolvedDate.value.trim() && !ukToISODate(resolvedDate.value)){
+    markIncidentFieldInvalid(resolvedDate,"Enter a valid date as DD/MM/YYYY");
+    if(!firstInvalid) firstInvalid=resolvedDate;
+  }
+
+  if(firstInvalid){
+    firstInvalid.focus();
+    firstInvalid.scrollIntoView({behavior:"smooth",block:"center"});
+    return false;
+  }
+  return true;
+}
+
+function setupIncidentLiveValidation(form){
+  if(!form) return;
+  form.addEventListener("input",event=>{
+    const el=event.target;
+    if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) return;
+    if(el.classList.contains("field-required-empty") && String(el.value||"").trim()){
+      el.classList.remove("field-required-empty");
+      el.removeAttribute("aria-invalid");
+      const label=el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
+      if(label) label.classList.remove("field-needs-attention");
+      const next=el.nextElementSibling;
+      if(next?.classList.contains("field-validation-message")) next.remove();
+    }
+  });
+}
+
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
+  setupIncidentLiveValidation(document.getElementById("incidentForm"));
   document.getElementById("downloadIncidentCsvTemplate")?.addEventListener("click",downloadIncidentCsvTemplate);
   document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
   document.getElementById("incidentResetPassword")?.addEventListener("click",incidentRequestPasswordReset);
@@ -3046,6 +3165,10 @@ function setupIncidentAdmin(){
   document.getElementById("incidentForm")?.addEventListener("submit",async event=>{
     event.preventDefault();
     const form=event.currentTarget;
+    if(!validateIncidentFormFields(form)){
+      showIncidentMessage("incidentFormMessage","Please complete the highlighted required fields and correct any invalid dates.","error");
+      return;
+    }
     const raw=Object.fromEntries(new FormData(form).entries());
     const payload=incidentPayloadFromObject(raw);
     const errors=validateIncidentPayload(payload);
