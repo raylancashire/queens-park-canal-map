@@ -751,6 +751,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-preview small{color:var(--muted)}
 @media(max-width:700px){.incident-form-grid{grid-template-columns:1fr}}
 
+/* Optional incident photograph */
+.incident-photo-box{border:1px solid var(--line);border-radius:9px;padding:12px;background:#fff}
+.incident-photo-preview{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-top:10px}
+.incident-photo-preview img{display:block;max-width:240px;max-height:180px;width:auto;height:auto;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.incident-photo-meta{font-size:11px;color:var(--muted);line-height:1.45}
+.incident-photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.incident-register-photo{display:block;width:90px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+
 
 .incident-auth-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#f8faf8}
 .incident-auth-status{font-size:12px;color:var(--muted)}
@@ -1102,6 +1110,20 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
               <div><label for="incidentReportedTo">Reported to</label><input id="incidentReportedTo" name="reported_to"></div>
               <div><label for="incidentReference">Reference</label><input id="incidentReference" name="reference"></div>
               <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" aria-describedby="incidentResolvedDateHint"><small id="incidentResolvedDateHint" class="incident-field-hint">Enter as DD/MM/YYYY</small></div>
+              <div class="wide incident-photo-box">
+                <label for="incidentPhoto">Incident photo <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
+                <input id="incidentPhoto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+                <small class="incident-field-hint">The image is reduced to a maximum of 1200 px before upload to save storage space.</small>
+                <div id="incidentPhotoPreview" class="incident-photo-preview" hidden>
+                  <img id="incidentPhotoPreviewImage" alt="Incident photo preview">
+                  <div>
+                    <div id="incidentPhotoMeta" class="incident-photo-meta"></div>
+                    <div class="incident-photo-actions">
+                      <button id="removeIncidentPhoto" type="button">Remove photo</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="wide"><label for="incidentNotes">Notes</label><textarea id="incidentNotes" name="notes"></textarea></div>
             </div>
             <div class="incident-form-actions">
@@ -2630,10 +2652,10 @@ function renderPollutionIncidents(){
   document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
   const admin=!!incidentCurrentUser;
-  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Photo</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map(r=>{
     const severity=incidentField(r,"Severity","severity")||"Not rated";
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
-    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
+    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${incidentField(r,"Photo URL","photo_url")?`<a href="${esc(incidentField(r,"Photo URL","photo_url"))}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(incidentField(r,"Photo URL","photo_url"))}" alt="Incident photograph"></a>`:"—"}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
@@ -2697,6 +2719,7 @@ function supabaseIncidentToDisplay(row){
     Status:row.status||"",
     "Resolved date":isoToUKDate(row.resolved_date),
     Notes:row.notes||"",
+    "Photo URL":row.photo_url||"",
     id:row.id
   };
 }
@@ -2749,7 +2772,8 @@ function incidentPayloadFromObject(obj){
     reference:n(obj.reference??obj.Reference)||null,
     status:n(obj.status??obj.Status)||"Observed",
     resolved_date:ukToISODate(obj.resolved_date??obj["Resolved date"]),
-    notes:n(obj.notes??obj.Notes)||null
+    notes:n(obj.notes??obj.Notes)||null,
+    photo_url:n(obj.photo_url??obj["Photo URL"])||null
   };
 }
 function validateIncidentPayload(p){
@@ -2783,6 +2807,55 @@ async function insertIncidentPayloads(payloads){
   });
 }
 let incidentEditingId=null;
+let incidentPhotoFile=null;
+let incidentExistingPhotoUrl="";
+let incidentRemoveExistingPhoto=false;
+
+function humanFileSize(bytes){
+  if(!Number.isFinite(bytes)) return "";
+  if(bytes<1024) return `${bytes} B`;
+  if(bytes<1024*1024) return `${(bytes/1024).toFixed(0)} KB`;
+  return `${(bytes/(1024*1024)).toFixed(1)} MB`;
+}
+function setIncidentPhotoPreview(url,meta=""){
+  const box=document.getElementById("incidentPhotoPreview");
+  const img=document.getElementById("incidentPhotoPreviewImage");
+  const text=document.getElementById("incidentPhotoMeta");
+  if(!box||!img||!text) return;
+  if(!url){ box.hidden=true; img.removeAttribute("src"); text.textContent=""; return; }
+  img.src=url; text.textContent=meta; box.hidden=false;
+}
+async function resizeIncidentPhoto(file){
+  const bitmap=await createImageBitmap(file);
+  const max=1200;
+  const scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
+  const width=Math.max(1,Math.round(bitmap.width*scale));
+  const height=Math.max(1,Math.round(bitmap.height*scale));
+  const canvas=document.createElement("canvas"); canvas.width=width; canvas.height=height;
+  canvas.getContext("2d").drawImage(bitmap,0,0,width,height);
+  if(bitmap.close) bitmap.close();
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Could not resize image.")),"image/jpeg",0.80));
+  return {blob,width,height};
+}
+async function uploadIncidentPhoto(file){
+  const resized=await resizeIncidentPhoto(file);
+  const path=`${new Date().toISOString().slice(0,10)}/${crypto.randomUUID()}.jpg`;
+  const {error}=await canalSupabase.storage.from("incident-photos").upload(path,resized.blob,{contentType:"image/jpeg",upsert:false});
+  if(error) throw error;
+  const {data}=canalSupabase.storage.from("incident-photos").getPublicUrl(path);
+  return {url:data.publicUrl,path,size:resized.blob.size,width:resized.width,height:resized.height};
+}
+function storagePathFromIncidentPhotoUrl(url){
+  const marker="/storage/v1/object/public/incident-photos/";
+  const i=String(url||"").indexOf(marker);
+  return i>=0 ? decodeURIComponent(String(url).slice(i+marker.length)) : "";
+}
+async function deleteIncidentPhotoFromStorage(url){
+  const path=storagePathFromIncidentPhotoUrl(url);
+  if(!path) return;
+  const {error}=await canalSupabase.storage.from("incident-photos").remove([path]);
+  if(error) throw error;
+}
 
 async function updateIncidentPayload(id,payload){
   return await supabaseIncidentRequest(`${INCIDENT_TABLE}?id=eq.${encodeURIComponent(id)}`,{
@@ -2807,6 +2880,9 @@ function setIncidentFormMode(row=null){
     form.reset();
     document.getElementById("incidentSource").value="Canal Watch";
     document.getElementById("incidentResolvedDate").value="";
+    document.getElementById("incidentPhoto").value="";
+    incidentPhotoFile=null; incidentExistingPhotoUrl=""; incidentRemoveExistingPhoto=false;
+    setIncidentPhotoPreview("");
     mode.textContent="Add new incident"; save.textContent="Save incident";
     cancelEntry.hidden=false; cancel.hidden=true; del.hidden=true;
     return;
@@ -2833,6 +2909,10 @@ function setIncidentFormMode(row=null){
   set("reference",row.reference??row.Reference);
   set("resolved_date",incidentDateForInput(row.resolved_date||row["Resolved date"]));
   set("notes",row.notes??row.Notes);
+  incidentPhotoFile=null; incidentRemoveExistingPhoto=false;
+  incidentExistingPhotoUrl=row.photo_url??row["Photo URL"]??"";
+  document.getElementById("incidentPhoto").value="";
+  setIncidentPhotoPreview(incidentExistingPhotoUrl,incidentExistingPhotoUrl?"Current incident photo":"");
   mode.textContent="Edit incident"; save.textContent="Save changes";
   cancelEntry.hidden=true; cancel.hidden=false; del.hidden=false;
   document.getElementById("addIncidentPanel").hidden=false;
@@ -3090,6 +3170,24 @@ function setupIncidentLiveValidation(form){
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
   setupIncidentLiveValidation(document.getElementById("incidentForm"));
+  document.getElementById("incidentPhoto")?.addEventListener("change",async event=>{
+    const file=event.target.files?.[0]||null;
+    incidentPhotoFile=file; incidentRemoveExistingPhoto=false;
+    if(!file){ setIncidentPhotoPreview(incidentExistingPhotoUrl,incidentExistingPhotoUrl?"Current incident photo":""); return; }
+    try{
+      const resized=await resizeIncidentPhoto(file);
+      const previewUrl=URL.createObjectURL(resized.blob);
+      setIncidentPhotoPreview(previewUrl,`${resized.width} × ${resized.height}px · ${humanFileSize(resized.blob.size)} after resizing (original ${humanFileSize(file.size)})`);
+      document.getElementById("incidentPhotoPreviewImage").onload=()=>URL.revokeObjectURL(previewUrl);
+    }catch(error){
+      incidentPhotoFile=null; event.target.value="";
+      showIncidentMessage("incidentFormMessage",`Photo could not be prepared: ${error.message}`,"error");
+    }
+  });
+  document.getElementById("removeIncidentPhoto")?.addEventListener("click",()=>{
+    incidentPhotoFile=null; incidentRemoveExistingPhoto=!!incidentExistingPhotoUrl;
+    document.getElementById("incidentPhoto").value=""; setIncidentPhotoPreview("");
+  });
   document.getElementById("downloadIncidentCsvTemplate")?.addEventListener("click",downloadIncidentCsvTemplate);
   document.getElementById("incidentLoginForm")?.addEventListener("submit",incidentAdministratorSignIn);
   document.getElementById("incidentResetPassword")?.addEventListener("click",incidentRequestPasswordReset);
@@ -3154,7 +3252,9 @@ function setupIncidentAdmin(){
     if(!incidentEditingId)return;
     if(!window.confirm("Delete this incident permanently? This cannot be undone."))return;
     try{
+      const oldPhoto=incidentExistingPhotoUrl;
       await deleteIncidentById(incidentEditingId);
+      if(oldPhoto){try{await deleteIncidentPhotoFromStorage(oldPhoto)}catch(e){console.warn("Incident photo could not be removed",e)}}
       setIncidentFormMode(null);
       addPanel.hidden=true;
       showIncidentMessage("incidentFormMessage","Incident deleted.","ok");
@@ -3177,8 +3277,18 @@ function setupIncidentAdmin(){
       showIncidentMessage("incidentFormMessage","This looks like an existing incident. It was not added.","error"); return;
     }
     try{
+      let uploadedPhoto=null;
+      if(incidentPhotoFile){
+        uploadedPhoto=await uploadIncidentPhoto(incidentPhotoFile);
+        payload.photo_url=uploadedPhoto.url;
+      }else if(incidentEditingId){
+        payload.photo_url=incidentRemoveExistingPhoto ? null : (incidentExistingPhotoUrl||null);
+      }
       if(incidentEditingId){
         await updateIncidentPayload(incidentEditingId,payload);
+        if((incidentRemoveExistingPhoto || uploadedPhoto) && incidentExistingPhotoUrl){
+          try{await deleteIncidentPhotoFromStorage(incidentExistingPhotoUrl)}catch(e){console.warn("Old incident photo could not be removed",e)}
+        }
         showIncidentMessage("incidentFormMessage","Incident changes saved to Supabase.","ok");
       }else{
         await insertIncidentPayloads([payload]);
