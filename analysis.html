@@ -707,6 +707,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .weather-muted{color:var(--muted)}
 .weather-empty{padding:18px 4px;color:var(--muted);font-size:13px;text-align:center}
 
+
+/* Water pollution incident register */
+.incident-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.incident-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.incident-filter label{font-size:13px;font-weight:700}.incident-filter select{padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+.incident-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid rgba(0,0,0,.1)}
+.incident-table td{vertical-align:top}.incident-description{min-width:220px;line-height:1.4}
+@media(max-width:760px){.incident-summary{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -904,9 +912,35 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
     </div>
   </section>
 
+  <section class="outer-analysis-panel">
+    <button id="incidentsToggle" class="outer-analysis-toggle" type="button" aria-expanded="false" aria-controls="incidentsContent">
+      <span>Water pollution incidents</span><span id="incidentsIcon" aria-hidden="true">＋</span>
+    </button>
+    <div id="incidentsContent" class="outer-analysis-content" hidden>
+      <section class="header">
+        <h1>Water pollution incidents</h1>
+        <p>Separate event register for pollution incidents, suspected pollution and environmental events observed along the canal.</p>
+      </section>
+      <section class="incident-summary">
+        <div class="stat"><strong id="incidentCount">0</strong><span>Incidents in view</span></div>
+        <div class="stat"><strong id="incidentLocations">0</strong><span>Locations affected</span></div>
+        <div class="stat"><strong id="incidentOpen">0</strong><span>Open / unresolved</span></div>
+      </section>
+      <div class="incident-filter">
+        <label for="incidentTypeFilter">Show:</label>
+        <select id="incidentTypeFilter"><option value="all">All incidents and events</option></select>
+      </div>
+      <div id="incidentRegister" class="table-wrap"><div class="change-empty">Loading pollution incident register…</div></div>
+      <p id="incidentNote" class="change-note"></p>
+    </div>
+  </section>
+
 </div>
 <script>
 const CSV_SOURCES=["./freshwater.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"];
+const INCIDENT_SOURCES=["./water-pollution-incidents.csv","https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/water-pollution-incidents.csv"];
+let pollutionIncidents=[];
+let incidentLoadError="";
 const SUPABASE_URL="https://jjepxsrvqcwprjwcxekj.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_zhLETs1BxtRGVUVpG_o2UA_jdjmraIS";
 let weatherMonitoringSites=[];
@@ -2350,6 +2384,55 @@ function initialiseSiteChanges(){
   renderParticipantsTimeChart();
 }
 
+function incidentField(row,...names){return getField(row,...names)}
+function incidentDateValue(row){
+  const raw=incidentField(row,"Date","Incident date","incident_date");
+  const d=parseUKDate(raw);
+  return d ? d.getTime() : 0;
+}
+function incidentClassification(row){return incidentField(row,"Classification","classification")||"Unclassified"}
+function incidentStatus(row){return incidentField(row,"Status","status")||"Observed"}
+function incidentLocation(row){return incidentField(row,"Location","Site / location","location")||"Location not recorded"}
+function incidentSeverityStyle(value){
+  const v=String(value||"").toLowerCase();
+  if(v.includes("severe")||v.includes("high")) return "background:#C00000;color:#fff";
+  if(v.includes("moderate")) return "background:#FFD966;color:#17321f";
+  if(v.includes("low")) return "background:#dcefe1;color:#17321f";
+  return "background:#eef2ef;color:#17321f";
+}
+function renderPollutionIncidents(){
+  const register=document.getElementById("incidentRegister");
+  const filter=document.getElementById("incidentTypeFilter");
+  if(!register||!filter) return;
+  const classes=[...new Set(pollutionIncidents.map(incidentClassification).filter(Boolean))].sort();
+  const previous=filter.value||"all";
+  filter.innerHTML='<option value="all">All incidents and events</option>'+classes.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  filter.value=[...filter.options].some(o=>o.value===previous)?previous:"all";
+  const selected=filter.value;
+  const rows=pollutionIncidents.filter(r=>selected==="all"||incidentClassification(r)===selected).slice().sort((a,b)=>incidentDateValue(b)-incidentDateValue(a));
+  document.getElementById("incidentCount").textContent=rows.length;
+  document.getElementById("incidentLocations").textContent=new Set(rows.map(r=>siteKeyForFocus(incidentLocation(r))).filter(Boolean)).size;
+  const resolved=/resolved|closed|cleared/i;
+  document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
+  if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity</th><th>Status</th><th>Description</th></tr></thead><tbody>${rows.map(r=>{
+    const severity=incidentField(r,"Severity","severity")||"Not rated";
+    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span></td><td>${esc(incidentStatus(r))}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td></tr>`;
+  }).join("")}</tbody></table>`;
+}
+async function loadPollutionIncidents(){
+  try{
+    pollutionIncidents=parseCSV(await fetchFromSources(INCIDENT_SOURCES));
+    incidentLoadError="";
+  }catch(error){
+    pollutionIncidents=[];
+    incidentLoadError=error instanceof Error?error.message:String(error);
+  }
+  renderPollutionIncidents();
+  const note=document.getElementById("incidentNote");
+  if(note) note.textContent=incidentLoadError ? "The incident CSV has not been found yet. Add water-pollution-incidents.csv beside this page (or to the GitHub repository) and it will load automatically." : "Environmental events such as algae or duckweed can be recorded without automatically classifying them as confirmed pollution.";
+}
+
 async function load(){try{
  const data=parseCSV(await fetchCSV());
 
@@ -2363,6 +2446,7 @@ async function load(){try{
  renderSampleAnalysisForFocusedSite();
  await loadWeatherData();
  renderWeatherAtSurvey();
+ await loadPollutionIncidents();
 
  setTimeout(notifyParentOfHeight,80);
  }catch(e){
@@ -2682,6 +2766,8 @@ document.getElementById("participantsTimeSiteSelect").addEventListener("change",
 
 
 
+document.getElementById("incidentTypeFilter").addEventListener("change",()=>{renderPollutionIncidents();setTimeout(notifyParentOfHeight,40);});
+
 const accordionPanels=[
   {
     button:document.getElementById("occurrencesToggle"),
@@ -2697,6 +2783,11 @@ const accordionPanels=[
     button:document.getElementById("participantsTimeToggle"),
     content:document.getElementById("participantsTimeContent"),
     icon:document.getElementById("participantsTimeIcon")
+  },
+  {
+    button:document.getElementById("incidentsToggle"),
+    content:document.getElementById("incidentsContent"),
+    icon:document.getElementById("incidentsIcon")
   }
 ];
 
@@ -2714,6 +2805,10 @@ function setAccordionPanel(index,open){
 
   if(open && index===2){
     renderParticipantsTimeChart();
+  }
+
+  if(open && index===3){
+    renderPollutionIncidents();
   }
 
   setTimeout(notifyParentOfHeight,40);
