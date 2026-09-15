@@ -1080,6 +1080,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
             </div>
             <div class="incident-form-actions">
               <button id="saveIncidentButton" class="primary" type="submit">Save incident</button>
+              <button id="cancelIncidentEntry" type="button">Cancel entry</button>
               <button id="cancelIncidentEdit" type="button" hidden>Cancel edit</button>
               <button id="deleteIncidentButton" class="incident-danger" type="button" hidden>Delete incident</button>
               <button id="clearIncidentForm" type="button">Clear</button>
@@ -2750,6 +2751,7 @@ function setIncidentFormMode(row=null){
   const form=document.getElementById("incidentForm");
   const mode=document.getElementById("incidentFormMode");
   const save=document.getElementById("saveIncidentButton");
+  const cancelEntry=document.getElementById("cancelIncidentEntry");
   const cancel=document.getElementById("cancelIncidentEdit");
   const del=document.getElementById("deleteIncidentButton");
   incidentEditingId=row?.id||null;
@@ -2758,7 +2760,7 @@ function setIncidentFormMode(row=null){
     document.getElementById("incidentSource").value="Canal Watch";
     document.getElementById("incidentResolvedDate").value="";
     mode.textContent="Add new incident"; save.textContent="Save incident";
-    cancel.hidden=true; del.hidden=true;
+    cancelEntry.hidden=false; cancel.hidden=true; del.hidden=true;
     return;
   }
   const set=(name,val)=>{const el=form.elements[name]; if(el) el.value=val??"";};
@@ -2784,7 +2786,7 @@ function setIncidentFormMode(row=null){
   set("resolved_date",row.resolved_date||ukToISODate(row["Resolved date"]));
   set("notes",row.notes??row.Notes);
   mode.textContent="Edit incident"; save.textContent="Save changes";
-  cancel.hidden=false; del.hidden=false;
+  cancelEntry.hidden=true; cancel.hidden=false; del.hidden=false;
   document.getElementById("addIncidentPanel").hidden=false;
   document.getElementById("importIncidentsPanel").hidden=true;
   form.scrollIntoView({behavior:"smooth",block:"nearest"});
@@ -3013,6 +3015,12 @@ function setupIncidentAdmin(){
   });
   document.getElementById("showImportIncidents")?.addEventListener("click",()=>{
     importPanel.hidden=!importPanel.hidden; addPanel.hidden=true; setTimeout(notifyParentOfHeight,40);
+  });
+  document.getElementById("cancelIncidentEntry")?.addEventListener("click",()=>{
+    setIncidentFormMode(null);
+    addPanel.hidden=true;
+    showIncidentMessage("incidentFormMessage","","");
+    setTimeout(notifyParentOfHeight,40);
   });
   document.getElementById("clearIncidentForm")?.addEventListener("click",()=>{
     setIncidentFormMode(null); showIncidentMessage("incidentFormMessage","","");
