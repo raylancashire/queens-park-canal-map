@@ -3255,6 +3255,19 @@ function setupIncidentLiveValidation(form){
   });
 }
 
+const INCIDENT_REFRESH_KEY="qpt-pollution-incidents-updated";
+const incidentRefreshChannel=("BroadcastChannel" in window)
+  ? new BroadcastChannel("qpt-pollution-incidents")
+  : null;
+
+function notifyPollutionIncidentMapRefresh(){
+  const stamp=String(Date.now());
+  try{ localStorage.setItem(INCIDENT_REFRESH_KEY,stamp); }catch(e){}
+  if(incidentRefreshChannel){
+    incidentRefreshChannel.postMessage({type:"pollution-incidents-updated",updatedAt:stamp});
+  }
+}
+
 function setupIncidentAdmin(){
   const addPanel=document.getElementById("addIncidentPanel");
   setupIncidentLiveValidation(document.getElementById("incidentForm"));
@@ -3347,6 +3360,7 @@ function setupIncidentAdmin(){
       addPanel.hidden=true;
       showIncidentMessage("incidentFormMessage","Incident deleted.","ok");
       await loadPollutionIncidents();
+      notifyPollutionIncidentMapRefresh();
       setTimeout(notifyParentOfHeight,40);
     }catch(error){showIncidentMessage("incidentFormMessage",`Could not delete incident: ${error.message}`,"error");}
   });
@@ -3385,6 +3399,7 @@ function setupIncidentAdmin(){
       setIncidentFormMode(null);
       addPanel.hidden=true;
       await loadPollutionIncidents();
+      notifyPollutionIncidentMapRefresh();
       setTimeout(notifyParentOfHeight,40);
     }catch(error){
       showIncidentMessage("incidentFormMessage",`Could not save incident: ${error.message}. Check that the table and RLS policies have been created.`,"error");

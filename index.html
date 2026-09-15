@@ -1536,8 +1536,12 @@ function incidentPopup(r){
   </div>`;
 }
 
-async function loadPollutionIncidentMarkers(){
-  if(pollutionIncidentsLoaded) return;
+async function loadPollutionIncidentMarkers(forceRefresh=false){
+  if(pollutionIncidentsLoaded && !forceRefresh) return;
+  if(forceRefresh){
+    pollutionIncidentLayer.clearLayers();
+    pollutionIncidentsLoaded=false;
+  }
   const status=document.getElementById("pollutionIncidentStatus");
   if(status) status.textContent="Loading incidents…";
   const fields="id,incident_date,location,latitude,longitude,classification,pollution_type,severity,official_category,status,suspected_source,extent,description,response_action,wildlife_impact,wildlife_impact_details,organisations_involved,reported_to,reference,resolved_date,notes";
@@ -1591,6 +1595,35 @@ loadPollutionIncidentMarkers().catch(error=>{
   if(status) status.textContent="Unable to load incidents";
   console.error(error);
 });
+
+// Keep the map's incident layer in sync with saves made in the Analysis page.
+const INCIDENT_REFRESH_KEY="qpt-pollution-incidents-updated";
+const incidentRefreshChannel=("BroadcastChannel" in window)
+  ? new BroadcastChannel("qpt-pollution-incidents")
+  : null;
+
+async function refreshPollutionIncidentMarkers(){
+  const toggle=document.getElementById("pollutionIncidentToggle");
+  if(!toggle?.checked) return;
+  try{
+    await loadPollutionIncidentMarkers(true);
+    if(toggle.checked && !map.hasLayer(pollutionIncidentLayer)){
+      pollutionIncidentLayer.addTo(map);
+    }
+  }catch(error){
+    console.error("Could not refresh pollution incidents",error);
+  }
+}
+
+window.addEventListener("storage",event=>{
+  if(event.key===INCIDENT_REFRESH_KEY) refreshPollutionIncidentMarkers();
+});
+if(incidentRefreshChannel){
+  incidentRefreshChannel.addEventListener("message",event=>{
+    if(event.data?.type==="pollution-incidents-updated") refreshPollutionIncidentMarkers();
+  });
+}
+
 
 
 function uniqueMapSampleRows(rows){
