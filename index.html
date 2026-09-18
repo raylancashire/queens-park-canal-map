@@ -539,6 +539,25 @@ select {
 .pollution-incident-popup td{padding:5px 4px;border-bottom:1px solid #e5e9e6;vertical-align:top}
 .pollution-incident-popup td:first-child{font-weight:700;width:38%}
 .pollution-incident-popup .incident-description{margin-top:9px;line-height:1.4}
+.pollution-incident-popup .incident-count{
+  margin:0 0 9px;
+  font-size:12px;
+  font-weight:700;
+  color:#5f6f64;
+}
+.pollution-incident-popup .incident-entry{
+  padding:9px 0 12px;
+  border-top:2px solid #e5e9e6;
+}
+.pollution-incident-popup .incident-entry:first-of-type{
+  border-top:0;
+  padding-top:0;
+}
+.pollution-incident-popup .incident-entry-heading{
+  margin:0 0 5px;
+  font-size:14px;
+  color:#8b1e1e;
+}
 </style>
 
 <style>
@@ -1592,14 +1611,33 @@ async function incidentPhotoSignedUrl(value){
   return signed ? (signed.startsWith("http") ? signed : `${SUPABASE_URL}/storage/v1${signed}`) : "";
 }
 
-function incidentPopup(r,photoUrl=""){
+function incidentLocationKey(r){
+  const location=String(r.location||"").trim().toLowerCase().replace(/\s+/g," ");
+  if(location) return `location:${location}`;
+
+  // If a location name is absent, group only genuinely identical coordinates.
+  const lat=Number(r.latitude), lon=Number(r.longitude);
+  return `coords:${lat.toFixed(6)},${lon.toFixed(6)}`;
+}
+
+function incidentGroupSeverity(incidents){
+  const rank=severity=>{
+    const value=String(severity||"").trim().toLowerCase();
+    if(value.includes("critical") || value.includes("severe")) return 4;
+    if(value.includes("major") || value.includes("high")) return 3;
+    if(value.includes("moderate") || value.includes("medium")) return 2;
+    if(value.includes("minor") || value.includes("low")) return 1;
+    return 0;
+  };
+  return [...incidents].sort((a,b)=>rank(b.severity)-rank(a.severity))[0]?.severity||"";
+}
+
+function incidentEntryHTML(r,photoUrl=""){
   const row=(label,value)=>value?`<tr><td>${esc(label)}</td><td>${esc(value)}</td></tr>`:"";
-  return `<div class="pollution-incident-popup">
-    <h3>${esc(r.location||"Water pollution incident")}</h3>
+  return `<section class="incident-entry">
+    <h4 class="incident-entry-heading">${esc(formatIncidentDate(r.incident_date))}${r.pollution_type?` · ${esc(r.pollution_type)}`:""}</h4>
     ${photoUrl?`<img class="incident-photo" src="${esc(photoUrl)}" alt="Photograph of pollution incident at ${esc(r.location||"recorded location")}" loading="lazy">`:""}
-    <div class="incident-date">Incident / report date: ${esc(formatIncidentDate(r.incident_date))}</div>
     <table>
-      ${row("Type",r.pollution_type)}
       ${row("Severity",r.severity)}
       ${row("Official category",r.official_category)}
       ${row("Status",r.status)}
@@ -1611,6 +1649,16 @@ function incidentPopup(r,photoUrl=""){
     </table>
     ${r.description?`<div class="incident-description"><strong>Description</strong><br>${esc(r.description)}</div>`:""}
     ${r.response_action?`<div class="incident-description"><strong>Response / action</strong><br>${esc(r.response_action)}</div>`:""}
+  </section>`;
+}
+
+function incidentPopup(incidents,photoUrls=[]){
+  const first=incidents[0]||{};
+  const count=incidents.length;
+  return `<div class="pollution-incident-popup">
+    <h3>${esc(first.location||"Water pollution incident")}</h3>
+    <div class="incident-count">${count} ${count===1?"incident":"incidents"} recorded at this location</div>
+    ${incidents.map((r,index)=>incidentEntryHTML(r,photoUrls[index]||"")).join("")}
   </div>`;
 }
 
@@ -1629,26 +1677,49 @@ async function loadPollutionIncidentMarkers(forceRefresh=false){
   );
   if(!response.ok) throw new Error(`Pollution incident data ${response.status}`);
   const incidents=await response.json();
-  let plotted=0;
+
+  // Group incidents by their recorded location. The API query is newest first,
+  // so the first incident in each group remains the latest one.
+  const groups=new Map();
   for(const r of incidents){
     const lat=Number(r.latitude), lon=Number(r.longitude);
     if(!Number.isFinite(lat)||!Number.isFinite(lon)) continue;
-    let photoUrl="";
-    if(r.photo_url){
-      try{ photoUrl=await incidentPhotoSignedUrl(r.photo_url); }
-      catch(error){ console.warn("Incident photo could not be loaded",error); }
+    const key=incidentLocationKey(r);
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(r);
+  }
+
+  let plottedIncidents=0;
+  for(const group of groups.values()){
+    const first=group[0];
+    const lat=Number(first.latitude), lon=Number(first.longitude);
+    const photoUrls=[];
+
+    for(const r of group){
+      let photoUrl="";
+      if(r.photo_url){
+        try{ photoUrl=await incidentPhotoSignedUrl(r.photo_url); }
+        catch(error){ console.warn("Incident photo could not be loaded",error); }
+      }
+      photoUrls.push(photoUrl);
     }
+
+    const count=group.length;
     L.marker([lat,lon],{
-      icon:pollutionIncidentIcon(r.severity),
-      title:`Pollution incident: ${r.location||formatIncidentDate(r.incident_date)}`
-    }).bindPopup(incidentPopup(r,photoUrl),{
-      maxWidth:390,maxHeight:430,autoPan:true,
+      icon:pollutionIncidentIcon(incidentGroupSeverity(group)),
+      title:`${count} pollution ${count===1?"incident":"incidents"}: ${first.location||formatIncidentDate(first.incident_date)}`
+    }).bindPopup(incidentPopup(group,photoUrls),{
+      maxWidth:410,maxHeight:500,autoPan:true,
       autoPanPaddingTopLeft:[20,150],autoPanPaddingBottomRight:[20,20]
     }).addTo(pollutionIncidentLayer);
-    plotted++;
+
+    plottedIncidents+=count;
   }
+
   pollutionIncidentsLoaded=true;
-  if(status) status.textContent=`${plotted} ${plotted===1?"incident":"incidents"} on map`;
+  if(status){
+    status.textContent=`${plottedIncidents} ${plottedIncidents===1?"incident":"incidents"} at ${groups.size} ${groups.size===1?"location":"locations"}`;
+  }
 }
 
 document.getElementById("pollutionIncidentToggle")?.addEventListener("change",async event=>{
