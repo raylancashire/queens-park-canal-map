@@ -825,19 +825,36 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 .incident-form .field-required-empty,
 .incident-form .field-invalid{
-  border-color:#C00000!important;
-  background:#fff4f4!important;
-  box-shadow:0 0 0 2px rgba(192,0,0,.10);
+  border:2px solid #C00000!important;
+  background:#fff0f0!important;
+  box-shadow:0 0 0 3px rgba(192,0,0,.14)!important;
 }
 .incident-form label.field-needs-attention{
   color:#9b0000;
+  font-weight:850;
 }
 .incident-form .field-validation-message{
   display:block;
-  margin-top:4px;
+  margin-top:5px;
   color:#9b0000;
-  font-size:10px;
+  font-size:12px;
+  font-weight:800;
+}
+.incident-validation-summary{
+  margin:0 0 14px;
+  padding:12px 14px;
+  border:2px solid #C00000;
+  border-radius:9px;
+  background:#fff0f0;
+  color:#7d0000;
+  font-size:13px;
   font-weight:700;
+  line-height:1.45;
+}
+.incident-validation-summary strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:14px;
 }
 
 </style>
@@ -1107,9 +1124,10 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
         <div id="addIncidentPanel" class="incident-admin-panel" hidden>
           <div id="incidentFormMode" style="font-weight:750;margin-bottom:8px">Add new incident</div>
-          <form id="incidentForm" class="incident-form">
+          <form id="incidentForm" class="incident-form" novalidate>
+            <div id="incidentValidationSummary" class="incident-validation-summary" role="alert" hidden></div>
             <div class="incident-form-grid">
-              <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" required aria-describedby="incidentDateHint"><small id="incidentDateHint" class="incident-field-hint">Enter as DD/MM/YYYY</small></div>
+              <div><label for="incidentDate">Incident date *</label><input id="incidentDate" name="incident_date" type="date" required></div>
               <div><label for="incidentLocationInput">Location *</label><input id="incidentLocationInput" name="location" required></div>
               <div><label for="incidentLatitude">Latitude</label><input id="incidentLatitude" name="latitude" type="number" step="any"></div>
               <div><label for="incidentLongitude">Longitude</label><input id="incidentLongitude" name="longitude" type="number" step="any"></div>
@@ -1142,7 +1160,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
               <div><label for="incidentSource">Source</label><input id="incidentSource" name="source" value="Canal Watch"></div>
               <div><label for="incidentReportedTo">Reported to</label><input id="incidentReportedTo" name="reported_to"></div>
               <div><label for="incidentReference">Reference</label><input id="incidentReference" name="reference"></div>
-              <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" autocomplete="off" aria-describedby="incidentResolvedDateHint"><small id="incidentResolvedDateHint" class="incident-field-hint">Enter as DD/MM/YYYY</small></div>
+              <div><label for="incidentResolvedDate">Resolved date</label><input id="incidentResolvedDate" name="resolved_date" type="date"></div>
               <div class="wide incident-photo-box">
                 <label for="incidentPhoto">Incident photo <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
                 <input id="incidentPhoto" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
@@ -2729,8 +2747,7 @@ function ukToISODate(value){
 function incidentDateForInput(value){
   const s=String(value||"").trim();
   if(!s) return "";
-  const iso=ukToISODate(s);
-  return iso ? isoToUKDate(iso) : s;
+  return ukToISODate(s) || "";
 }
 function supabaseIncidentToDisplay(row){
   return {
@@ -3194,6 +3211,17 @@ function clearIncidentFieldValidation(form){
   });
   form.querySelectorAll("label.field-needs-attention").forEach(el=>el.classList.remove("field-needs-attention"));
   form.querySelectorAll(".field-validation-message").forEach(el=>el.remove());
+  const summary=document.getElementById("incidentValidationSummary");
+  if(summary){
+    summary.hidden=true;
+    summary.innerHTML="";
+  }
+}
+
+function incidentFieldLabel(el){
+  if(!el) return "Field";
+  const label=el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
+  return String(label?.textContent||el.name||"Field").replace(/\s*\*.*$/,"").trim();
 }
 
 function markIncidentFieldInvalid(el,message,kind="field-invalid"){
@@ -3210,25 +3238,37 @@ function markIncidentFieldInvalid(el,message,kind="field-invalid"){
 
 function validateIncidentFormFields(form){
   clearIncidentFieldValidation(form);
+  const problems=[];
   let firstInvalid=null;
 
   form.querySelectorAll("[required]").forEach(el=>{
     if(!String(el.value||"").trim()){
-      markIncidentFieldInvalid(el,"Required field","field-required-empty");
+      markIncidentFieldInvalid(el,"This field is required.","field-required-empty");
+      problems.push(`${incidentFieldLabel(el)} is required`);
       if(!firstInvalid) firstInvalid=el;
     }
   });
 
   const incidentDate=document.getElementById("incidentDate");
-  if(incidentDate && incidentDate.value.trim() && !ukToISODate(incidentDate.value)){
-    markIncidentFieldInvalid(incidentDate,"Enter a valid date as DD/MM/YYYY");
+  if(incidentDate && incidentDate.value && !ukToISODate(incidentDate.value)){
+    markIncidentFieldInvalid(incidentDate,"Choose a valid incident date.");
+    problems.push("Incident date is invalid");
     if(!firstInvalid) firstInvalid=incidentDate;
   }
 
   const resolvedDate=document.getElementById("incidentResolvedDate");
-  if(resolvedDate && resolvedDate.value.trim() && !ukToISODate(resolvedDate.value)){
-    markIncidentFieldInvalid(resolvedDate,"Enter a valid date as DD/MM/YYYY");
+  if(resolvedDate && resolvedDate.value && !ukToISODate(resolvedDate.value)){
+    markIncidentFieldInvalid(resolvedDate,"Choose a valid resolved date.");
+    problems.push("Resolved date is invalid");
     if(!firstInvalid) firstInvalid=resolvedDate;
+  }
+
+  if(problems.length){
+    const summary=document.getElementById("incidentValidationSummary");
+    if(summary){
+      summary.innerHTML=`<strong>⚠ Please check the incident form</strong>${esc(problems.join(" · "))}`;
+      summary.hidden=false;
+    }
   }
 
   if(firstInvalid){
@@ -3241,18 +3281,21 @@ function validateIncidentFormFields(form){
 
 function setupIncidentLiveValidation(form){
   if(!form) return;
-  form.addEventListener("input",event=>{
-    const el=event.target;
-    if(!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) return;
-    if(el.classList.contains("field-required-empty") && String(el.value||"").trim()){
-      el.classList.remove("field-required-empty");
+
+  const clearFieldError=el=>{
+    if(!el) return;
+    if(String(el.value||"").trim()){
+      el.classList.remove("field-required-empty","field-invalid");
       el.removeAttribute("aria-invalid");
       const label=el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
       if(label) label.classList.remove("field-needs-attention");
       const next=el.nextElementSibling;
       if(next?.classList.contains("field-validation-message")) next.remove();
     }
-  });
+  };
+
+  form.addEventListener("input",event=>clearFieldError(event.target));
+  form.addEventListener("change",event=>clearFieldError(event.target));
 }
 
 const INCIDENT_REFRESH_KEY="qpt-pollution-incidents-updated";
@@ -3368,7 +3411,7 @@ function setupIncidentAdmin(){
     event.preventDefault();
     const form=event.currentTarget;
     if(!validateIncidentFormFields(form)){
-      showIncidentMessage("incidentFormMessage","Please complete the highlighted required fields and correct any invalid dates.","error");
+      showIncidentMessage("incidentFormMessage","The incident has not been saved. Please correct the highlighted fields above.","error");
       return;
     }
     const raw=Object.fromEntries(new FormData(form).entries());
