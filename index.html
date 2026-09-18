@@ -1612,12 +1612,17 @@ async function incidentPhotoSignedUrl(value){
 }
 
 function incidentLocationKey(r){
-  const location=String(r.location||"").trim().toLowerCase().replace(/\s+/g," ");
-  if(location) return `location:${location}`;
-
-  // If a location name is absent, group only genuinely identical coordinates.
+  // Incidents belong to the same map location when their GPS coordinates match.
+  // Use six decimal places (roughly 0.1 m precision) so identical saved
+  // coordinates are grouped even if the incident location names differ.
   const lat=Number(r.latitude), lon=Number(r.longitude);
-  return `coords:${lat.toFixed(6)},${lon.toFixed(6)}`;
+  if(Number.isFinite(lat) && Number.isFinite(lon)){
+    return `coords:${lat.toFixed(6)},${lon.toFixed(6)}`;
+  }
+
+  // Fallback only for records without usable coordinates.
+  const location=String(r.location||"").trim().toLowerCase().replace(/\s+/g," ");
+  return `location:${location}`;
 }
 
 function incidentGroupSeverity(incidents){
