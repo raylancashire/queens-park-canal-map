@@ -4011,8 +4011,15 @@ function sampleTrendAnalysis(points,metric){
   };
 }
 
-function sampleTrendRecentDirection(points,metric){
+function sampleTrendRecentDirection(points,metric,analysis=null){
   if(points.length<2) return "Insufficient data";
+
+  // Keep the recent-direction card consistent with the established overall
+  // trend. If the regression is within the ±10% stability threshold, a
+  // short-term movement in the last few samples should not be presented as
+  // an established improvement or deterioration.
+  if(analysis && analysis.label==="Stable") return "Stable";
+
   const info=sampleTrendMetricInfo(metric);
   const recent=points.slice(-Math.min(3,points.length));
   const first=recent[0].value;
@@ -4172,7 +4179,7 @@ function renderSampleTrend(){
     <div class="sample-trend-status-detail" style="margin-top:5px;">${esc(dateRange)}</div>
   `;
 
-  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric);
+  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric,analysis);
   evidence.innerHTML=`
     <div class="sample-trend-card" tabindex="0">
       <small>First result</small>
