@@ -797,15 +797,18 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .incident-table th:nth-child(9),.incident-table td:nth-child(9){width:8%}
 .incident-table th:nth-child(10),.incident-table td:nth-child(10){width:17%}
 .incident-table th:nth-child(11),.incident-table td:nth-child(11){width:7%}
-.incident-description{
-  min-width:0;
-  line-height:1.4;
+.incident-description{min-width:0;line-height:1.4}
+.incident-description-text{
   display:-webkit-box;
   -webkit-box-orient:vertical;
   -webkit-line-clamp:5;
   line-clamp:5;
   overflow:hidden;
+  line-height:1.4;
   max-height:7em;
+  overflow-wrap:break-word;
+  word-break:normal;
+  cursor:help;
 }
 .incident-register-photo{width:64px;height:48px;max-width:100%}
 .incident-row-actions{white-space:normal;text-align:center}
@@ -2868,7 +2871,7 @@ async function renderPollutionIncidents(){
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
     const photoUrl=photoUrls[index];
     const photoCell=photoUrl?`<a href="${esc(photoUrl)}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(photoUrl)}" alt="Incident photograph"></a>`:"—";
-    return `<tr><td>${esc(incidentDateDisplayShort(r))}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
+    return `<tr><td>${esc(incidentDateDisplayShort(r))}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description"><div class="incident-description-text" title="${esc(incidentField(r,"Description","description")||"—")}">${esc(incidentField(r,"Description","description")||"—")}</div></td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
