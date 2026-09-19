@@ -4246,6 +4246,10 @@ function applySampleTrendSiteFocus(site){
    pH ANALYSIS — NEUTRAL-CENTRED VIEW
    ========================================================= */
 
+/* Keep the pH panel's site selection independent so it always
+   opens on All sites, regardless of another panel's saved focus. */
+let currentPHAnalysisSite="all";
+
 function phAnalysisValue(row){
   return snapshotFirstNumber(row,["pH","PH"]);
 }
@@ -4253,11 +4257,11 @@ function phAnalysisValue(row){
 function phAnalysisRows(){
   const source=snapshotAdditionalData || [];
 
-  if(currentFocusedSite==="all") return source;
+  if(currentPHAnalysisSite==="all") return source;
 
   return filterAdditionalForSite(
     source,
-    currentFocusedSite
+    currentPHAnalysisSite
   );
 }
 
@@ -4342,9 +4346,9 @@ function phAnalysisDistanceText(value){
 }
 
 function phAnalysisSiteLabel(){
-  return currentFocusedSite==="all"
+  return currentPHAnalysisSite==="all"
     ? "All sites"
-    : siteDisplayName(currentFocusedSite);
+    : siteDisplayName(currentPHAnalysisSite);
 }
 
 function populatePHAnalysisSiteSelect(){
@@ -4378,7 +4382,7 @@ function syncPHAnalysisSiteUI(){
   const select=document.getElementById("phAnalysisSiteSelect");
   if(!select) return;
 
-  if(currentFocusedSite==="all"){
+  if(currentPHAnalysisSite==="all"){
     select.value="all";
     return;
   }
@@ -4386,45 +4390,21 @@ function syncPHAnalysisSiteUI(){
   const match=[...select.options].find(
     option=>
       normaliseSiteForMatch(option.value)===
-      normaliseSiteForMatch(currentFocusedSite)
+      normaliseSiteForMatch(currentPHAnalysisSite)
   );
 
   if(match){
     select.value=match.value;
   }else{
+    currentPHAnalysisSite="all";
     select.value="all";
   }
 }
 
 function applyPHAnalysisSiteFocus(site){
-  currentFocusedSite=site || "all";
-
+  currentPHAnalysisSite=site || "all";
   syncPHAnalysisSiteUI();
-  syncSnapshotSiteUI();
-  syncSeasonalSiteUI();
-  syncChangeSummarySiteUI();
-  syncColiformRecurrenceSiteUI();
-
-  try{
-    localStorage.setItem(
-      SITE_SYNC_KEY,
-      currentFocusedSite
-    );
-  }catch(e){}
-
-  if(siteSyncChannel){
-    siteSyncChannel.postMessage({
-      type:"site-focus",
-      site:currentFocusedSite
-    });
-  }
-
   renderPHAnalysis();
-  if(typeof renderSnapshot==="function") renderSnapshot();
-  if(typeof renderChangeSummary==="function") renderChangeSummary();
-  if(typeof renderSeasonalPattern==="function") renderSeasonalPattern();
-  if(typeof renderColiformRecurrence==="function") renderColiformRecurrence();
-
   setTimeout(notifyParentOfHeight,40);
 }
 
