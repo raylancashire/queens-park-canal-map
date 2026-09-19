@@ -711,6 +711,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 /* Water pollution incident register */
 .incident-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
 .incident-summary .stat strong{overflow-wrap:anywhere}
+.incident-summary-filter{cursor:pointer;transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease}
+.incident-summary-filter:hover{box-shadow:0 3px 10px rgba(0,0,0,.09);transform:translateY(-1px)}
+.incident-summary-filter:focus-visible{outline:3px solid rgba(46,125,50,.28);outline-offset:2px}
+.incident-summary-filter.active{border-color:var(--green);box-shadow:0 0 0 2px rgba(46,125,50,.13)}
+.incident-summary-filter-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-2px 0 14px;padding:9px 11px;border-radius:9px;background:#eef6ef;border:1px solid #c9dfcc;font-size:12px;color:var(--ink)}
+.incident-summary-filter-bar button{padding:6px 10px;border-radius:8px;border:1px solid var(--green);background:#fff;color:var(--green);font-weight:800;cursor:pointer}
 .incident-repeat-summary{
   margin:-2px 0 14px;
   padding:10px 12px;
@@ -1076,14 +1082,18 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <p>Separate event register for pollution incidents, suspected pollution and environmental events observed along the canal.</p>
       </section>
       <section class="incident-summary">
-        <div class="stat"><strong id="incidentCount">0</strong><span>Incidents in view</span></div>
-        <div class="stat"><strong id="incidentLocations">0</strong><span>Locations affected</span></div>
-        <div class="stat"><strong id="incidentRepeatLocations">0</strong><span>Repeat-incident locations</span></div>
-        <div class="stat"><strong id="incidentOpen">0</strong><span>Open / unresolved</span></div>
-        <div class="stat"><strong id="incidentWildlife">0</strong><span>Incidents with wildlife impact</span></div>
-        <div class="stat"><strong id="incidentTopType">—</strong><span>Most recorded pollution type</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="all" role="button" tabindex="0" aria-pressed="false"><strong id="incidentCount">0</strong><span>Incidents in view</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="locations" role="button" tabindex="0" aria-pressed="false"><strong id="incidentLocations">0</strong><span>Locations affected</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="repeat" role="button" tabindex="0" aria-pressed="false"><strong id="incidentRepeatLocations">0</strong><span>Repeat-incident locations</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="open" role="button" tabindex="0" aria-pressed="false"><strong id="incidentOpen">0</strong><span>Open / unresolved</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="wildlife" role="button" tabindex="0" aria-pressed="false"><strong id="incidentWildlife">0</strong><span>Incidents with wildlife impact</span></div>
+        <div class="stat incident-summary-filter" data-incident-summary-filter="top-type" role="button" tabindex="0" aria-pressed="false"><strong id="incidentTopType">—</strong><span>Most recorded pollution type</span></div>
       </section>
       <div id="incidentRepeatSummary" class="incident-repeat-summary" hidden></div>
+      <div id="incidentSummaryFilterBar" class="incident-summary-filter-bar" hidden>
+        <span id="incidentSummaryFilterText"></span>
+        <button id="incidentShowAll" type="button">Show all incidents</button>
+      </div>
       <div class="incident-filter">
         <label for="incidentTypeFilter">Show:</label>
         <select id="incidentTypeFilter"><option value="all">All incidents and events</option></select>
@@ -2693,6 +2703,12 @@ function incidentDateValue(row){
   const d=parseUKDate(raw);
   return d ? d.getTime() : 0;
 }
+function incidentDateDisplayShort(row){
+  const raw=incidentField(row,"Date","Incident date","incident_date");
+  const d=parseUKDate(raw);
+  if(!d) return raw||"—";
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getFullYear()).slice(-2)}`;
+}
 function incidentClassification(row){return incidentField(row,"Classification","classification")||"Unclassified"}
 function incidentStatus(row){return incidentField(row,"Status","status")||"Observed"}
 function incidentLocation(row){return incidentField(row,"Location","Site / location","location")||"Location not recorded"}
@@ -2756,6 +2772,36 @@ function pollutionIncidentSummary(rows){
   };
 }
 
+let activeIncidentSummaryFilter="all";
+
+function incidentSummaryFilteredRows(rows,summary){
+  const resolved=/resolved|closed|cleared/i;
+  if(activeIncidentSummaryFilter==="repeat"){
+    const counts=new Map();
+    rows.forEach(row=>{
+      const key=incidentLocationKey(row);
+      counts.set(key,(counts.get(key)||0)+1);
+    });
+    return rows.filter(row=>(counts.get(incidentLocationKey(row))||0)>1);
+  }
+  if(activeIncidentSummaryFilter==="open") return rows.filter(row=>!resolved.test(incidentStatus(row)));
+  if(activeIncidentSummaryFilter==="wildlife") return rows.filter(incidentHasWildlifeImpact);
+  if(activeIncidentSummaryFilter==="top-type"){
+    if(!summary.topType||summary.topType==="—") return [];
+    return rows.filter(row=>String(incidentField(row,"Pollution type","Type","pollution_type")||"").trim().toLowerCase()===summary.topType.toLowerCase());
+  }
+  return rows;
+}
+
+function incidentSummaryFilterLabel(summary){
+  if(activeIncidentSummaryFilter==="repeat") return "Showing incidents at repeat-incident locations";
+  if(activeIncidentSummaryFilter==="open") return "Showing open / unresolved incidents";
+  if(activeIncidentSummaryFilter==="wildlife") return "Showing incidents with wildlife impact";
+  if(activeIncidentSummaryFilter==="top-type") return `Showing ${summary.topType} incidents`;
+  if(activeIncidentSummaryFilter==="locations") return "Showing all incidents across affected locations";
+  return "";
+}
+
 async function renderPollutionIncidents(){
   const register=document.getElementById("incidentRegister");
   const filter=document.getElementById("incidentTypeFilter");
@@ -2790,15 +2836,30 @@ async function renderPollutionIncidents(){
     }
   }
 
+  const filteredRows=incidentSummaryFilteredRows(rows,summary);
+  document.querySelectorAll("[data-incident-summary-filter]").forEach(card=>{
+    const selected=card.dataset.incidentSummaryFilter===activeIncidentSummaryFilter;
+    card.classList.toggle("active",selected);
+    card.setAttribute("aria-pressed",selected?"true":"false");
+  });
+  const filterBar=document.getElementById("incidentSummaryFilterBar");
+  const filterText=document.getElementById("incidentSummaryFilterText");
+  const filterLabel=incidentSummaryFilterLabel(summary);
+  if(filterBar&&filterText){
+    filterBar.hidden=!filterLabel;
+    filterText.textContent=filterLabel?`${filterLabel} · ${filteredRows.length} ${filteredRows.length===1?"record":"records"}`:"";
+  }
+
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
+  if(!filteredRows.length){register.innerHTML='<div class="change-empty">No pollution incidents match this summary filter.</div>';return;}
   const admin=!!incidentCurrentUser;
-  const photoUrls=await Promise.all(rows.map(r=>incidentPhotoDisplayUrl(incidentField(r,"Photo URL","photo_url"))));
-  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Photo</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${rows.map((r,index)=>{
+  const photoUrls=await Promise.all(filteredRows.map(r=>incidentPhotoDisplayUrl(incidentField(r,"Photo URL","photo_url"))));
+  register.innerHTML=`<table class="incident-table"><thead><tr><th>Date</th><th>Location</th><th>Classification</th><th>Type</th><th>Severity / category</th><th>Status</th><th>Extent</th><th>Wildlife</th><th>Photo</th><th>Description</th>${admin?"<th>Manage</th>":""}</tr></thead><tbody>${filteredRows.map((r,index)=>{
     const severity=incidentField(r,"Severity","severity")||"Not rated";
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
     const photoUrl=photoUrls[index];
     const photoCell=photoUrl?`<a href="${esc(photoUrl)}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(photoUrl)}" alt="Incident photograph"></a>`:"—";
-    return `<tr><td>${esc(incidentField(r,"Date","Incident date","incident_date")||"—")}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
+    return `<tr><td>${esc(incidentDateDisplayShort(r))}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description">${esc(incidentField(r,"Description","description")||"—")}</td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
 
@@ -3947,6 +4008,26 @@ document.getElementById("participantsTimeSiteSelect").addEventListener("change",
 
 
 document.getElementById("incidentTypeFilter").addEventListener("change",()=>{renderPollutionIncidents();setTimeout(notifyParentOfHeight,40);});
+
+document.querySelectorAll("[data-incident-summary-filter]").forEach(card=>{
+  const activate=()=>{
+    activeIncidentSummaryFilter=card.dataset.incidentSummaryFilter||"all";
+    renderPollutionIncidents();
+    setTimeout(()=>{
+      document.getElementById("incidentRegister")?.scrollIntoView({behavior:"smooth",block:"start"});
+      notifyParentOfHeight();
+    },40);
+  };
+  card.addEventListener("click",activate);
+  card.addEventListener("keydown",event=>{
+    if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}
+  });
+});
+document.getElementById("incidentShowAll")?.addEventListener("click",()=>{
+  activeIncidentSummaryFilter="all";
+  renderPollutionIncidents();
+  setTimeout(notifyParentOfHeight,40);
+});
 
 const accordionPanels=[
   {
