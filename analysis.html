@@ -710,6 +710,18 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 
 /* Water pollution incident register */
 .incident-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.incident-summary .stat strong{overflow-wrap:anywhere}
+.incident-repeat-summary{
+  margin:-2px 0 14px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#f8faf8;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.incident-repeat-summary strong{color:var(--ink)}
 .incident-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .incident-filter label{font-size:13px;font-weight:700}.incident-filter select{padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
 .incident-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid rgba(0,0,0,.1)}
@@ -1066,8 +1078,12 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       <section class="incident-summary">
         <div class="stat"><strong id="incidentCount">0</strong><span>Incidents in view</span></div>
         <div class="stat"><strong id="incidentLocations">0</strong><span>Locations affected</span></div>
+        <div class="stat"><strong id="incidentRepeatLocations">0</strong><span>Repeat-incident locations</span></div>
         <div class="stat"><strong id="incidentOpen">0</strong><span>Open / unresolved</span></div>
+        <div class="stat"><strong id="incidentWildlife">0</strong><span>Incidents with wildlife impact</span></div>
+        <div class="stat"><strong id="incidentTopType">—</strong><span>Most recorded pollution type</span></div>
       </section>
+      <div id="incidentRepeatSummary" class="incident-repeat-summary" hidden></div>
       <div class="incident-filter">
         <label for="incidentTypeFilter">Show:</label>
         <select id="incidentTypeFilter"><option value="all">All incidents and events</option></select>
@@ -2687,6 +2703,59 @@ function incidentSeverityStyle(value){
   if(v.includes("low")) return "background:#dcefe1;color:#17321f";
   return "background:#eef2ef;color:#17321f";
 }
+function incidentCoordinateValue(row,...names){
+  const raw=incidentField(row,...names);
+  if(raw===null||raw===undefined||String(raw).trim()==="") return null;
+  const value=Number(raw);
+  return Number.isFinite(value)?value:null;
+}
+function incidentLocationKey(row){
+  const lat=incidentCoordinateValue(row,"Latitude","latitude");
+  const lon=incidentCoordinateValue(row,"Longitude","longitude");
+  if(lat!==null&&lon!==null) return `coords:${lat.toFixed(6)},${lon.toFixed(6)}`;
+  return `location:${siteKeyForFocus(incidentLocation(row))}`;
+}
+function incidentHasWildlifeImpact(row){
+  const value=String(incidentField(row,"Wildlife impact","wildlife_impact")||"").trim().toLowerCase();
+  if(!value) return false;
+  return !/^(no|none|nil|n\/a|not known|unknown|not observed|no impact)$/i.test(value);
+}
+function pollutionIncidentSummary(rows){
+  const locations=new Map();
+  const types=new Map();
+
+  rows.forEach(row=>{
+    const key=incidentLocationKey(row);
+    if(!locations.has(key)) locations.set(key,{count:0,names:new Set()});
+    const location=locations.get(key);
+    location.count++;
+    const name=incidentLocation(row);
+    if(name&&name!=="Location not recorded") location.names.add(name);
+
+    const type=String(incidentField(row,"Pollution type","Type","pollution_type")||"").trim();
+    if(type){
+      const typeKey=type.toLowerCase();
+      const current=types.get(typeKey)||{label:type,count:0};
+      current.count++;
+      types.set(typeKey,current);
+    }
+  });
+
+  const repeatLocations=[...locations.values()]
+    .filter(location=>location.count>1)
+    .sort((a,b)=>b.count-a.count);
+
+  const topType=[...types.values()]
+    .sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label))[0];
+
+  return {
+    locationCount:locations.size,
+    repeatLocations,
+    wildlifeCount:rows.filter(incidentHasWildlifeImpact).length,
+    topType:topType?topType.label:"—"
+  };
+}
+
 async function renderPollutionIncidents(){
   const register=document.getElementById("incidentRegister");
   const filter=document.getElementById("incidentTypeFilter");
@@ -2697,10 +2766,30 @@ async function renderPollutionIncidents(){
   filter.value=[...filter.options].some(o=>o.value===previous)?previous:"all";
   const selected=filter.value;
   const rows=pollutionIncidents.filter(r=>selected==="all"||incidentClassification(r)===selected).slice().sort((a,b)=>incidentDateValue(b)-incidentDateValue(a));
+  const summary=pollutionIncidentSummary(rows);
   document.getElementById("incidentCount").textContent=rows.length;
-  document.getElementById("incidentLocations").textContent=new Set(rows.map(r=>siteKeyForFocus(incidentLocation(r))).filter(Boolean)).size;
+  document.getElementById("incidentLocations").textContent=summary.locationCount;
+  document.getElementById("incidentRepeatLocations").textContent=summary.repeatLocations.length;
   const resolved=/resolved|closed|cleared/i;
   document.getElementById("incidentOpen").textContent=rows.filter(r=>!resolved.test(incidentStatus(r))).length;
+  document.getElementById("incidentWildlife").textContent=summary.wildlifeCount;
+  document.getElementById("incidentTopType").textContent=summary.topType;
+
+  const repeatSummary=document.getElementById("incidentRepeatSummary");
+  if(repeatSummary){
+    if(summary.repeatLocations.length){
+      repeatSummary.hidden=false;
+      repeatSummary.innerHTML=`<strong>Repeat locations:</strong> ${summary.repeatLocations.map(location=>{
+        const names=[...location.names];
+        const label=names.length?names.join(" / "):"Recorded location";
+        return `${esc(label)} (${location.count} incidents)`;
+      }).join(" · ")}`;
+    }else{
+      repeatSummary.hidden=true;
+      repeatSummary.innerHTML="";
+    }
+  }
+
   if(!rows.length){register.innerHTML='<div class="change-empty">No pollution incidents recorded for this view.</div>';return;}
   const admin=!!incidentCurrentUser;
   const photoUrls=await Promise.all(rows.map(r=>incidentPhotoDisplayUrl(incidentField(r,"Photo URL","photo_url"))));
