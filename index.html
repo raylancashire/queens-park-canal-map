@@ -520,7 +520,9 @@ select {
 }
 
 
-.pollution-incident-marker{background:transparent!important;border:0!important}
+.pollution-incident-marker{background:transparent!important;border:0!important;overflow:visible!important}
+.pollution-incident-pin-wrap{position:relative;width:32px;height:32px;overflow:visible}
+.pollution-incident-count-badge{position:absolute;top:-7px;right:-12px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fff;color:#8b1e1e;border:2px solid #8b1e1e;box-shadow:0 1px 4px rgba(0,0,0,.3);font-size:11px;line-height:1;font-weight:800}
 .pollution-incident-pin{
   width:32px;height:32px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -1546,16 +1548,19 @@ function incidentSeverityPresentation(severity){
   return {colour:"#777777",symbol:"?",label:"Severity not rated"};
 }
 
-function pollutionIncidentIcon(severity){
+function pollutionIncidentIcon(severity,count=1){
   const presentation=incidentSeverityPresentation(severity);
   const fontSize=presentation.symbol==="⚠" ? "16px" : presentation.symbol==="!!" ? "13px" : "18px";
   return L.divIcon({
     className:"pollution-incident-marker",
-    html:`<span class="pollution-incident-pin"
-      style="background:${presentation.colour};font-size:${fontSize}"
-      role="img"
-      aria-label="Pollution incident – ${presentation.label}"
-      title="Pollution incident – ${presentation.label}">${presentation.symbol}</span>`,
+    html:`<span class="pollution-incident-pin-wrap">
+      <span class="pollution-incident-pin"
+        style="background:${presentation.colour};font-size:${fontSize}"
+        role="img"
+        aria-label="Pollution incident – ${presentation.label}"
+        title="Pollution incident – ${presentation.label}">${presentation.symbol}</span>
+      ${count>1?`<span class="pollution-incident-count-badge" aria-label="${count} incidents at this location">${count}</span>`:""}
+    </span>`,
     iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]
   });
 }
@@ -1711,7 +1716,7 @@ async function loadPollutionIncidentMarkers(forceRefresh=false){
 
     const count=group.length;
     L.marker([lat,lon],{
-      icon:pollutionIncidentIcon(incidentGroupSeverity(group)),
+      icon:pollutionIncidentIcon(incidentGroupSeverity(group),count),
       title:`${count} pollution ${count===1?"incident":"incidents"}: ${first.location||formatIncidentDate(first.incident_date)}`
     }).bindPopup(incidentPopup(group,photoUrls),{
       maxWidth:410,maxHeight:500,autoPan:true,
