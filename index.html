@@ -579,6 +579,9 @@ select {
 .timelapse-date-ticks{position:relative;height:42px;margin:0 8px;font-size:11px;color:#52695b}
 .timelapse-date-tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25}
 .timelapse-date-tick::before{content:"";display:block;width:1px;height:8px;background:#829c88;margin:0 auto 4px}
+.timelapse-date-tick:not(.has-label){height:8px}
+.timelapse-date-tick:not(.has-label)::before{margin-bottom:0}
+.timelapse-date-tick.has-label::before{height:12px;background:#426f50;width:2px}
 .timelapse-date-tick:first-child{transform:translateX(-7px);text-align:left}
 .timelapse-date-tick:first-child::before{margin-left:7px}
 .timelapse-date-tick:last-child{transform:translateX(calc(-100% + 7px));text-align:right}
@@ -2311,7 +2314,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const dateText=ms=>new Date(ms).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
   function stop(){if(timer!==null){clearInterval(timer);timer=null;}playButton.textContent="▶ Play";}
   // Date labels are placed at their actual survey positions along the slider.
-  // Show a readable subset when there are many dates; every date remains selectable.
+  // Show all survey ticks but only a readable subset of date labels.
   function renderTimelineDates(){
     const ticks=$("timelapseDateTicks");
     ticks.replaceChildren();
@@ -2320,13 +2323,17 @@ document.addEventListener("DOMContentLoaded",()=>{
     const count=Math.min(dates.length,maxLabels);
     const positions=[...new Set(Array.from({length:count},(_,i)=>
       count===1?0:Math.round(i*(dates.length-1)/(count-1))))];
-    positions.forEach(i=>{
+    const labelled=new Set(positions);
+    // Every survey date gets a visible tick, even when its label will not fit.
+    dates.forEach((date,i)=>{
       const tick=document.createElement("span");
-      tick.className="timelapse-date-tick";
+      tick.className="timelapse-date-tick"+(labelled.has(i)?" has-label":"");
       tick.style.left=(dates.length===1?0:100*i/(dates.length-1))+"%";
-      tick.textContent=new Date(dates[i]).toLocaleDateString("en-GB",{
-        day:"numeric",month:"short",year:"2-digit",timeZone:"UTC"});
-      tick.title=dateText(dates[i]);
+      tick.title=dateText(date);
+      if(labelled.has(i)){
+        tick.textContent=new Date(date).toLocaleDateString("en-GB",{
+          day:"numeric",month:"short",year:"2-digit",timeZone:"UTC"});
+      }
       ticks.appendChild(tick);
     });
   }
@@ -2475,16 +2482,25 @@ document.addEventListener("DOMContentLoaded",()=>{
     const entries=type==='assessment'?[['Excellent','#006400'],['Good','#00a86b'],['Fair','#ffd966'],['Poor','#c00000']]
       :type==='turbidity'?[['Very clear','#006400'],['Moderate','#d5a900'],['Highly turbid','#c00000']]
       :[['Good','#006400'],['Moderate','#d5a900'],['Poor','#c00000'],['Unclassified','#777777']];
-    const lh=entries.length*23+37,boxW=165;
-    ctx.fillStyle='rgba(255,255,255,.96)';roundedRect(ctx,w-boxW-12,h-lh-12,boxW,lh,8);
-    ctx.fillStyle='#183b28';ctx.font='bold 13px Arial,sans-serif';ctx.fillText('Colour key',w-boxW,h-lh+9);
-    ctx.font='13px Arial,sans-serif';entries.forEach(([label,colour],i)=>{
-      const y=h-lh+34+i*23;ctx.beginPath();ctx.arc(w-boxW+6,y-4,7,0,Math.PI*2);
+    // Horizontal colour key along the bottom of every exported frame.
+    // On narrow maps, use two rows to keep all labels readable.
+    const narrow=w<540, columns=narrow?2:entries.length;
+    const rows=Math.ceil(entries.length/columns);
+    const barH=rows*25+38,barY=h-barH-8,barX=12,barW=w-24;
+    ctx.fillStyle='rgba(255,255,255,.96)';roundedRect(ctx,barX,barY,barW,barH,8);
+    ctx.fillStyle='#183b28';ctx.font='bold 13px Arial,sans-serif';
+    ctx.fillText('Colour key',barX+12,barY+19);
+    const cellW=(barW-24)/columns;
+    ctx.font='13px Arial,sans-serif';
+    entries.forEach(([label,colour],i)=>{
+      const col=i%columns,row=Math.floor(i/columns);
+      const x=barX+12+col*cellW,y=barY+43+row*25;
+      ctx.beginPath();ctx.arc(x+7,y-4,7,0,Math.PI*2);
       ctx.fillStyle=colour;ctx.fill();ctx.strokeStyle='#26382e';ctx.lineWidth=1;ctx.stroke();
-      ctx.fillStyle='#183b28';ctx.fillText(label,w-boxW+21,y);
+      ctx.fillStyle='#183b28';ctx.fillText(label,x+21,y,Math.max(35,cellW-25));
     });
-    ctx.font='11px Arial,sans-serif';ctx.fillStyle='#40574a';
-    ctx.fillText(tiles.length?'Map tiles: map provider':'Map background unavailable for export',12,h-10,Math.max(30,w-200));
+    ctx.font='10px Arial,sans-serif';ctx.fillStyle='#40574a';
+    ctx.fillText(tiles.length?'Map © OpenStreetMap contributors':'Map background unavailable for export',barX+12,h-16,Math.max(30,barW-24));
     ctx.setTransform(1,0,0,1,0,0);
   }
   async function exportCanvasSetup(){
