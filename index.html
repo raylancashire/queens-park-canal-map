@@ -577,6 +577,11 @@ select {
 #timelapseSlider{flex:1;min-width:160px;accent-color:#006400}
 #timelapseDate{font-weight:750;min-width:140px}
 #timelapseStatus{font-size:13px;color:#52695b;line-height:1.5}
+.timelapse-legend{display:flex;flex-wrap:wrap;align-items:center;gap:9px 16px;padding:10px 12px;border:1px solid #dfe7e1;border-radius:8px;background:#f8faf8;font-size:13px}
+.timelapse-legend strong{width:100%;font-size:13px}
+.timelapse-legend-item{display:inline-flex;align-items:center;gap:6px}
+.timelapse-legend-swatch{width:15px;height:15px;display:inline-block;border:1px solid #455348;border-radius:50%;flex:none}
+.timelapse-legend-note{width:100%;color:#52695b;font-size:12px;line-height:1.4}
 .timelapse-marker{background:transparent;border:0}
 .timelapse-dot{width:29px;height:29px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 6px #0006;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;text-shadow:0 1px 2px #0008}
 .timelapse-dot.stale{opacity:.52;border-style:dashed}
@@ -632,6 +637,7 @@ select {
       <button id="timelapseForward" type="button" aria-label="Next survey date">▶</button>
       <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
     </div>
+    <div id="timelapseLegend" class="timelapse-legend" aria-label="Time-lapse indicator colour legend"></div>
     <div id="timelapseStatus" role="status">Loading survey dates…</div>
   </div>
 </section>
@@ -1061,23 +1067,20 @@ function getFeedback(r) {
 }
 
 function assessment(r) {
-  const text = (
-    getField(r, "Assessment", "assessment") + " " +
-    getFeedback(r)
-  ).toLowerCase();
-
-  if (text.includes("excellent") || text.includes("very good")) {
-    return ["Excellent", "#006400", "circle"];
-  }
-  if (text.includes("good")) {
-    return ["Good", "#00a86b", "diamond"];
-  }
-  if (text.includes("fair") || text.includes("moderate")) {
-    return ["Fair", "#ffd966", "triangle"];
-  }
-  if (text.includes("poor")) {
-    return ["Poor", "#c00000", "square"];
-  }
+  // Prefer an explicitly recorded assessment. FreshWater Watch feedback is
+  // an ecological-status interpretation, not necessarily a visual assessment.
+  const explicit = getField(r, "Assessment", "assessment").trim().toLowerCase();
+  const feedback = getFeedback(r).toLowerCase();
+  const text = explicit || feedback;
+  // Match an actual status phrase, rather than an unrelated word in a long
+  // feedback paragraph. Poor takes precedence over moderate if both appear.
+  const status = explicit ||
+    (feedback.match(/(?:has a|status(?: is|:)?|assessment(?: is|:)?)\s+(very poor|very good|excellent|good|moderate|fair|poor)\b/i)?.[1] || "");
+  if (/^very poor\b/.test(status)) return ["Very Poor", "#c00000", "square"];
+  if (/^(excellent|very good)\b/.test(status)) return ["Excellent", "#006400", "circle"];
+  if (/^good\b/.test(status)) return ["Good", "#00a86b", "diamond"];
+  if (/^poor\b/.test(status)) return ["Poor", "#c00000", "square"];
+  if (/^(fair|moderate)\b/.test(status)) return ["Fair", "#ffd966", "triangle"];
   return ["Not yet assessed", "#777777", "circle"];
 }
 
@@ -1274,15 +1277,17 @@ function resultRow(label, range, midpoint) {
 
 function toDateValue(text) {
   if (!text) return 0;
-
-  const parsed = Date.parse(text);
-  if (!Number.isNaN(parsed)) return parsed;
-
-  const m = text.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m) {
-    return new Date(Number(m[3]), Number(m[2])-1, Number(m[1])).getTime();
+  const value = String(text).trim();
+  // FreshWater Watch CSV exports dates as M/D/YYYY, optionally with a time.
+  const us = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s|$)/);
+  if (us) {
+    const month = Number(us[1]), day = Number(us[2]), year = Number(us[3]);
+    const d = new Date(Date.UTC(year, month - 1, day));
+    return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day
+      ? d.getTime() : 0;
   }
-
+  const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return Date.parse(iso[0] + "T00:00:00Z") || 0;
   return 0;
 }
 
@@ -2304,6 +2309,27 @@ document.addEventListener("DOMContentLoaded",()=>{
     const colour=level==="Good"?"#006400":level==="Moderate"?"#d5a900":level==="Poor"?"#c00000":"#777777";
     return {label:normaliseNutrientRange(raw||mid)+" mg/L"+(level?" ("+level+")":""),colour,symbol:""};
   }
+  const legend=$('timelapseLegend');
+  function updateLegend(){
+    const type=indicator.value;
+    const headings={assessment:'Visual condition',nitrate:'Nitrate (mg/L)',phosphate:'Phosphate (mg/L)',turbidity:'Secchi-tube turbidity'};
+    const entries=type==='assessment'
+      ? [['Excellent','#006400'],['Good','#00a86b'],['Fair','#ffd966'],['Poor','#c00000']]
+      : type==='turbidity'
+        ? [['Excellent / Very clear','#006400'],['Fair / Moderately turbid','#d5a900'],['Poor / Highly turbid','#c00000']]
+        : [['Good','#006400'],['Moderate','#d5a900'],['Poor','#c00000'],['Unclassified','#777777']];
+    const thresholds=type==='nitrate'
+      ? 'Nitrate midpoint: Good ≤1; Moderate >1–2; Poor >2 mg/L.'
+      : type==='phosphate'
+        ? 'Phosphate midpoint: Good ≤0.1; Moderate >0.1–0.2; Poor >0.2 mg/L.'
+        : type==='turbidity'
+          ? 'FreshWater Watch turbidity categories; colours indicate clarity, not overall visual condition.'
+          : 'Uses the existing map’s assessment colours. Very Poor is not separately classified in the current data parser.';
+    legend.innerHTML='<strong>'+esc(headings[type])+' — colour key</strong>'+
+      entries.map(([name,colour])=>'<span class="timelapse-legend-item"><span class="timelapse-legend-swatch" style="background:'+colour+'"></span>'+esc(name)+'</span>').join('')+
+      '<span class="timelapse-legend-note">'+esc(thresholds)+' Faded, dashed-outline markers show earlier results carried forward. Sites with no earlier result are hidden.</span>';
+  }
+  updateLegend();
   function showFrame(){
     if(!ready||!dates.length)return;
     layer.clearLayers();map.closePopup();
@@ -2347,7 +2373,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   toggle.addEventListener("click",()=>setActive(!active));
   slider.addEventListener("input",()=>{stop();setIndex(Number(slider.value));});
-  indicator.addEventListener("change",()=>{if(active)showFrame();});
+  indicator.addEventListener("change",()=>{updateLegend();if(active)showFrame();});
   $("timelapseBack").addEventListener("click",()=>{stop();setIndex(index-1);});
   $("timelapseForward").addEventListener("click",()=>{stop();setIndex(index+1);});
   function start(){if(!active||dates.length<2)return;
@@ -2371,7 +2397,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       .sort().map(day=>Date.parse(day+"T00:00:00Z"));
     slider.max=String(Math.max(0,dates.length-1));
     index=Math.max(0,dates.length-1);
-    status.textContent=dates.length+' survey dates available. Open the time-lapse to explore them.';
+    status.textContent=dates.length+' survey dates available; latest: '+(dates.length?dateText(dates[dates.length-1]):'none')+'. Open the time-lapse to explore them.';
     if(!dates.length){toggle.disabled=true;status.textContent="No dated surveys found.";}
   });
 })();
