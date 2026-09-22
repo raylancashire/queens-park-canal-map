@@ -623,7 +623,7 @@ select {
     <div class="timelapse-heading"><h2>Water-quality results over time</h2><span id="timelapseDate" aria-live="polite">—</span></div>
     <div class="timelapse-row"><label for="timelapseIndicator">Show</label>
       <select id="timelapseIndicator">
-        <option value="assessment">Visual condition</option>
+        <option value="assessment">FreshWater Watch ecological status</option>
         <option value="nitrate">Nitrate</option>
         <option value="phosphate">Phosphate</option>
         <option value="turbidity">Turbidity (Secchi tube)</option>
@@ -2294,7 +2294,16 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   function sampleValue(r,type){
     if(type==="assessment"){
-      const a=assessment(r);return a[0]==="Not yet assessed"?null:{label:a[0],colour:a[1],symbol:""};
+      // The time-lapse's assessment is the FreshWater Watch ecological status.
+      // Read the status sentence from this survey's feedback, not descriptive
+      // words elsewhere in the paragraph or an earlier survey's result.
+      const feedback=getField(r,"feedback_core","feedback_eng","Feedback");
+      const match=feedback.match(/\b(?:has\s+an?\s+|(?:ecological\s+)?status\s*(?:is|:)?\s*)(very poor|excellent|very good|good|moderate|fair|poor)\s+ecological\s+status\b|\b(?:ecological\s+)?status\s*(?:is|:)?\s*(very poor|excellent|very good|good|moderate|fair|poor)\b/i);
+      const explicit=getField(r,"Assessment","assessment").trim();
+      const label=(match?(match[1]||match[2]):explicit).toLowerCase();
+      const classes={"excellent":["Excellent","#006400"],"very good":["Excellent","#006400"],"good":["Good","#00a86b"],"moderate":["Fair","#ffd966"],"fair":["Fair","#ffd966"],"poor":["Poor","#c00000"],"very poor":["Very Poor","#c00000"]};
+      const result=classes[label];
+      return result?{label:result[0],colour:result[1],symbol:""}:null;
     }
     if(type==="turbidity"){
       const a=turbidityAssessment(getTurbidity(r),getTurbiditySortOrder(r));
@@ -2312,7 +2321,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   const legend=$('timelapseLegend');
   function updateLegend(){
     const type=indicator.value;
-    const headings={assessment:'Visual condition',nitrate:'Nitrate (mg/L)',phosphate:'Phosphate (mg/L)',turbidity:'Secchi-tube turbidity'};
+    const headings={assessment:'FreshWater Watch ecological status',nitrate:'Nitrate (mg/L)',phosphate:'Phosphate (mg/L)',turbidity:'Secchi-tube turbidity'};
     const entries=type==='assessment'
       ? [['Excellent','#006400'],['Good','#00a86b'],['Fair','#ffd966'],['Poor','#c00000']]
       : type==='turbidity'
@@ -2324,7 +2333,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         ? 'Phosphate midpoint: Good ≤0.1; Moderate >0.1–0.2; Poor >0.2 mg/L.'
         : type==='turbidity'
           ? 'FreshWater Watch turbidity categories; colours indicate clarity, not overall visual condition.'
-          : 'Uses the existing map’s assessment colours. Very Poor is not separately classified in the current data parser.';
+          : 'Ecological status reported by FreshWater Watch for each survey. Moderate is shown as Fair. Faded markers carry earlier survey results.';
     legend.innerHTML='<strong>'+esc(headings[type])+' — colour key</strong>'+
       entries.map(([name,colour])=>'<span class="timelapse-legend-item"><span class="timelapse-legend-swatch" style="background:'+colour+'"></span>'+esc(name)+'</span>').join('')+
       '<span class="timelapse-legend-note">'+esc(thresholds)+' Faded, dashed-outline markers show earlier results carried forward. Sites with no earlier result are hidden.</span>';
@@ -2348,7 +2357,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         html:'<span class="timelapse-dot'+(isCurrent?'':' stale')+'" style="background:'+value.colour+'" title="'+esc(value.label)+'">'+(isCurrent?'●':'·')+'</span>'});
       const content='<div class="popup"><h3>'+esc(getSite(matching))+'</h3><p><strong>'+esc(value.label)+'</strong></p>'+
         '<p>Sample: '+esc(dateText(sampleDate))+'</p>'+
-        (isCurrent?'<p>Surveyed on this frame’s date.</p>':'<p><strong>Earlier result carried forward</strong> — no new '+esc(type==='assessment'?'visual assessment':type)+' result on this date.</p>')+'</div>';
+        (isCurrent?'<p>Surveyed on this frame’s date.</p>':'<p><strong>Earlier result carried forward</strong> — no new '+esc(type==='assessment'?'ecological status':type)+' result on this date.</p>')+'</div>';
       L.marker([lat,lon],{icon,title:getSite(matching)}).bindPopup(content,{maxWidth:320})
         .on("click",event=>{if(event.originalEvent)L.DomEvent.stopPropagation(event.originalEvent);})
         .addTo(layer);
