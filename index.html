@@ -577,7 +577,10 @@ select {
 #timelapseSlider{width:100%;margin:0;accent-color:#006400}
 .timelapse-track{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px;padding:4px 0 0}
 .timelapse-date-ticks{position:relative;height:42px;margin:0 8px;font-size:11px;color:#52695b}
-.timelapse-date-tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25}
+.timelapse-date-tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25;background:transparent;border:0;padding:0;min-width:12px;min-height:26px;color:inherit;font:inherit;cursor:pointer}
+.timelapse-date-tick:hover::before,.timelapse-date-tick:focus-visible::before{background:#006400;width:3px;height:16px}
+.timelapse-date-tick:focus-visible{outline:2px solid #006400;outline-offset:3px;border-radius:2px}
+.timelapse-date-tick[aria-current="date"]::before{background:#006400;width:3px;height:16px}
 .timelapse-date-tick::before{content:"";display:block;width:1px;height:8px;background:#829c88;margin:0 auto 4px}
 .timelapse-date-tick:not(.has-label){height:8px}
 .timelapse-date-tick:not(.has-label)::before{margin-bottom:0}
@@ -653,7 +656,7 @@ select {
       <button id="timelapseForward" type="button" aria-label="Next survey date">▶</button>
       <div class="timelapse-track">
         <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
-        <div id="timelapseDateTicks" class="timelapse-date-ticks" aria-hidden="true"></div>
+        <div id="timelapseDateTicks" class="timelapse-date-ticks" aria-label="Jump to a survey date"></div>
       </div>
     </div>
     <div class="timelapse-export" aria-label="Export time-lapse">
@@ -2326,7 +2329,11 @@ document.addEventListener("DOMContentLoaded",()=>{
     const labelled=new Set(positions);
     // Every survey date gets a visible tick, even when its label will not fit.
     dates.forEach((date,i)=>{
-      const tick=document.createElement("span");
+      const tick=document.createElement("button");
+      tick.type="button";
+      tick.setAttribute("aria-label","Jump to "+dateText(date));
+      if(i===index)tick.setAttribute("aria-current","date");
+      tick.addEventListener("click",()=>{stop();setIndex(i);});
       tick.className="timelapse-date-tick"+(labelled.has(i)?" has-label":"");
       tick.style.left=(dates.length===1?0:100*i/(dates.length-1))+"%";
       tick.title=dateText(date);
@@ -2415,6 +2422,10 @@ document.addEventListener("DOMContentLoaded",()=>{
       plotted++;if(isCurrent)current++;else carried++;
     }
     slider.value=String(index);
+    $("timelapseDateTicks").querySelectorAll(".timelapse-date-tick").forEach((tick,i)=>{
+      if(i===index)tick.setAttribute("aria-current","date");
+      else tick.removeAttribute("aria-current");
+    });
     dateLabel.textContent=dateText(date);
     status.textContent=current+' '+(current===1?'site':'sites')+' with a result on this date; '+carried+
       ' retaining their most recent earlier result. Markers keep their last known colour; sites without an earlier result are hidden.'+
@@ -2482,25 +2493,22 @@ document.addEventListener("DOMContentLoaded",()=>{
     const entries=type==='assessment'?[['Excellent','#006400'],['Good','#00a86b'],['Fair','#ffd966'],['Poor','#c00000']]
       :type==='turbidity'?[['Very clear','#006400'],['Moderate','#d5a900'],['Highly turbid','#c00000']]
       :[['Good','#006400'],['Moderate','#d5a900'],['Poor','#c00000'],['Unclassified','#777777']];
-    // Horizontal colour key along the bottom of every exported frame.
-    // On narrow maps, use two rows to keep all labels readable.
-    const narrow=w<540, columns=narrow?2:entries.length;
+    // Compact bottom key: one row on desktop; two only on narrow maps.
+    const narrow=w<390, columns=narrow?2:entries.length;
     const rows=Math.ceil(entries.length/columns);
-    const barH=rows*25+38,barY=h-barH-8,barX=12,barW=w-24;
-    ctx.fillStyle='rgba(255,255,255,.96)';roundedRect(ctx,barX,barY,barW,barH,8);
-    ctx.fillStyle='#183b28';ctx.font='bold 13px Arial,sans-serif';
-    ctx.fillText('Colour key',barX+12,barY+19);
-    const cellW=(barW-24)/columns;
-    ctx.font='13px Arial,sans-serif';
+    const rowH=20,barH=rows*rowH+19,barX=8,barW=w-16,barY=h-barH-6;
+    ctx.fillStyle='rgba(255,255,255,.94)';roundedRect(ctx,barX,barY,barW,barH,6);
+    const cellW=(barW-16)/columns;
+    ctx.font='12px Arial,sans-serif';
     entries.forEach(([label,colour],i)=>{
       const col=i%columns,row=Math.floor(i/columns);
-      const x=barX+12+col*cellW,y=barY+43+row*25;
-      ctx.beginPath();ctx.arc(x+7,y-4,7,0,Math.PI*2);
-      ctx.fillStyle=colour;ctx.fill();ctx.strokeStyle='#26382e';ctx.lineWidth=1;ctx.stroke();
-      ctx.fillStyle='#183b28';ctx.fillText(label,x+21,y,Math.max(35,cellW-25));
+      const x=barX+8+col*cellW,y=barY+16+row*rowH;
+      ctx.beginPath();ctx.arc(x+5,y-4,5,0,Math.PI*2);
+      ctx.fillStyle=colour;ctx.fill();ctx.strokeStyle='#26382e';ctx.lineWidth=.8;ctx.stroke();
+      ctx.fillStyle='#183b28';ctx.fillText(label,x+14,y,Math.max(28,cellW-17));
     });
-    ctx.font='10px Arial,sans-serif';ctx.fillStyle='#40574a';
-    ctx.fillText(tiles.length?'Map © OpenStreetMap contributors':'Map background unavailable for export',barX+12,h-16,Math.max(30,barW-24));
+    ctx.font='9px Arial,sans-serif';ctx.fillStyle='#40574a';
+    ctx.fillText(tiles.length?'© OpenStreetMap contributors':'Map background unavailable for export',barX+8,barY+barH-5,Math.max(30,barW-16));
     ctx.setTransform(1,0,0,1,0,0);
   }
   async function exportCanvasSetup(){
