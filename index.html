@@ -560,6 +560,27 @@ select {
   font-size:14px;
   color:#8b1e1e;
 }
+
+/* Independent water-quality time-lapse; existing map controls remain unchanged. */
+.timelapse-toggle{border:1px solid #9cb9a4;background:#fff;color:#173e28;border-radius:7px;padding:9px 13px;font-weight:700;cursor:pointer}
+.timelapse-toggle[aria-expanded="true"]{background:#e5f2e9;border-color:#398458}
+.timelapse-panel{background:#fff;border-bottom:1px solid var(--line);padding:15px 20px;display:none}
+.timelapse-panel.open{display:block}
+.timelapse-inner{max-width:1100px;margin:auto;display:grid;gap:12px}
+.timelapse-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.timelapse-heading h2{margin:0;font-size:19px}
+.timelapse-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.timelapse-row label{font-size:13px;font-weight:700}
+.timelapse-row select{min-width:180px}
+.timelapse-row button{border:1px solid #a9c2b0;border-radius:6px;padding:8px 12px;background:#fff;color:#173e28;cursor:pointer;font-weight:700}
+.timelapse-row button:disabled{opacity:.4;cursor:default}
+#timelapseSlider{flex:1;min-width:160px;accent-color:#006400}
+#timelapseDate{font-weight:750;min-width:140px}
+#timelapseStatus{font-size:13px;color:#52695b;line-height:1.5}
+.timelapse-marker{background:transparent;border:0}
+.timelapse-dot{width:29px;height:29px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 6px #0006;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;text-shadow:0 1px 2px #0008}
+.timelapse-dot.stale{opacity:.52;border-style:dashed}
+@media(max-width:600px){.timelapse-panel{padding:12px}.timelapse-row select{width:100%}#timelapseDate{min-width:0}}
 </style>
 
 <style>
@@ -590,9 +611,30 @@ select {
     <span>Show pollution incidents</span>
   </label>
   <span id="pollutionIncidentStatus" style="font-size:12px;color:#5f6f64;"></span>
+  <button id="timelapseToggle" class="timelapse-toggle" type="button" aria-expanded="false" aria-controls="timelapsePanel">▶ Water-quality time-lapse</button>
 </section>
-
-
+<section id="timelapsePanel" class="timelapse-panel" aria-label="Water-quality time-lapse">
+  <div class="timelapse-inner">
+    <div class="timelapse-heading"><h2>Water-quality results over time</h2><span id="timelapseDate" aria-live="polite">—</span></div>
+    <div class="timelapse-row"><label for="timelapseIndicator">Show</label>
+      <select id="timelapseIndicator">
+        <option value="assessment">Visual condition</option>
+        <option value="nitrate">Nitrate</option>
+        <option value="phosphate">Phosphate</option>
+        <option value="turbidity">Turbidity (Secchi tube)</option>
+      </select>
+      <label for="timelapseSpeed">Speed</label>
+      <select id="timelapseSpeed"><option value="1800">Slow</option><option value="1100" selected>Normal</option><option value="550">Fast</option></select>
+    </div>
+    <div class="timelapse-row">
+      <button id="timelapseBack" type="button" aria-label="Previous survey date">◀</button>
+      <button id="timelapsePlay" type="button">▶ Play</button>
+      <button id="timelapseForward" type="button" aria-label="Next survey date">▶</button>
+      <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
+    </div>
+    <div id="timelapseStatus" role="status">Loading survey dates…</div>
+  </div>
+</section>
 
 <div id="error" class="error" style="display:none;"></div>
 <div id="map"></div>
@@ -2000,6 +2042,11 @@ async function loadData() {
       bounds.push([lat, lon]);
     }
 
+    // Time-lapse receives the existing, deduplicated records and marker objects.
+    window.dispatchEvent(new CustomEvent("canal-timelapse-ready", {
+      detail:{groups, markers, siteFilter:sel}
+    }));
+
     if (bounds.length) {
       defaultResultBounds = L.latLngBounds(bounds);
       map.fitBounds(defaultResultBounds, {padding:[25,25]});
@@ -2199,7 +2246,7 @@ map.on("popupclose", ()=>{
    */
   setTimeout(()=>{
     const openPopup=map.getContainer().querySelector(".leaflet-popup");
-    if(!openPopup && sel.value !== "all"){
+    if(!openPopup && document.getElementById("siteFilter").value !== "all"){
       resetMapSummaryToAll();
 
       if (defaultResultBounds && defaultResultBounds.isValid()) {
@@ -2221,6 +2268,113 @@ document.addEventListener("DOMContentLoaded",()=>{
   setTimeout(dedupeAllSiteDropdowns,0);
   setTimeout(dedupeAllSiteDropdowns,250);
 });
+</script>
+
+<script>
+/* Independent time-lapse: does not change original sample markers, popups or statistics. */
+(function(){
+  const $=id=>document.getElementById(id);
+  const panel=$("timelapsePanel"), toggle=$("timelapseToggle"), slider=$("timelapseSlider");
+  const indicator=$("timelapseIndicator"), dateLabel=$("timelapseDate"), status=$("timelapseStatus");
+  const playButton=$("timelapsePlay"), speed=$("timelapseSpeed");
+  const layer=L.layerGroup();
+  let ready=null, dates=[], index=0, timer=null, active=false;
+  const dayKey=ms=>new Date(ms).toISOString().slice(0,10);
+  const dateText=ms=>new Date(ms).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+  function stop(){if(timer!==null){clearInterval(timer);timer=null;}playButton.textContent="▶ Play";}
+  function selectedGroups(){
+    if(!ready)return [];
+    const chosen=ready.siteFilter.value;
+    return Object.entries(ready.groups).filter(([key])=>chosen==="all"||key===canonicalSiteKey(chosen));
+  }
+  function sampleValue(r,type){
+    if(type==="assessment"){
+      const a=assessment(r);return a[0]==="Not yet assessed"?null:{label:a[0],colour:a[1],symbol:""};
+    }
+    if(type==="turbidity"){
+      const a=turbidityAssessment(getTurbidity(r),getTurbiditySortOrder(r));
+      if(a==="Not assessed")return null;
+      return {label:getTurbidity(r).replaceAll("_"," ")+" ("+a+")",
+        colour:a.startsWith("Excellent")?"#006400":a.startsWith("Fair")?"#d5a900":"#c00000",symbol:""};
+    }
+    const raw=type==="nitrate"?getNitrate(r):getPhosphate(r);
+    const mid=type==="nitrate"?getNitrateMid(r):getPhosphateMid(r);
+    if(!raw&&!mid)return null;
+    const level=nutrientLevel(type,mid);
+    const colour=level==="Good"?"#006400":level==="Moderate"?"#d5a900":level==="Poor"?"#c00000":"#777777";
+    return {label:normaliseNutrientRange(raw||mid)+" mg/L"+(level?" ("+level+")":""),colour,symbol:""};
+  }
+  function showFrame(){
+    if(!ready||!dates.length)return;
+    layer.clearLayers();map.closePopup();
+    const date=dates[index], type=indicator.value;
+    let current=0, carried=0, plotted=0;
+    for(const [siteKey,rows] of selectedGroups()){
+      // Show the latest valid result at or before this date. Never show future samples.
+      const matching=rows.filter(r=>toDateValue(getDate(r))>0&&toDateValue(getDate(r))<=date)
+        .find(r=>sampleValue(r,type)!==null);
+      if(!matching)continue;
+      const value=sampleValue(matching,type), sampleDate=toDateValue(getDate(matching));
+      const isCurrent=dayKey(sampleDate)===dayKey(date);
+      const lat=getLat(matching),lon=getLon(matching);
+      if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
+      const icon=L.divIcon({className:"timelapse-marker",iconSize:[30,30],iconAnchor:[15,15],
+        html:'<span class="timelapse-dot'+(isCurrent?'':' stale')+'" style="background:'+value.colour+'" title="'+esc(value.label)+'">'+(isCurrent?'●':'·')+'</span>'});
+      const content='<div class="popup"><h3>'+esc(getSite(matching))+'</h3><p><strong>'+esc(value.label)+'</strong></p>'+
+        '<p>Sample: '+esc(dateText(sampleDate))+'</p>'+
+        (isCurrent?'<p>Surveyed on this frame’s date.</p>':'<p><strong>Earlier result carried forward</strong> — no new '+esc(type==='assessment'?'visual assessment':type)+' result on this date.</p>')+'</div>';
+      L.marker([lat,lon],{icon,title:getSite(matching)}).bindPopup(content,{maxWidth:320})
+        .on("click",event=>{if(event.originalEvent)L.DomEvent.stopPropagation(event.originalEvent);})
+        .addTo(layer);
+      plotted++;if(isCurrent)current++;else carried++;
+    }
+    slider.value=String(index);
+    dateLabel.textContent=dateText(date);
+    status.textContent=current+' '+(current===1?'site':'sites')+' with a result on this date; '+carried+
+      ' showing their most recent earlier result. Faded markers are carried forward; sites without an earlier result are hidden.'+
+      (plotted===0?' No results for this indicator yet.':'');
+  }
+  function setIndex(i){index=Math.max(0,Math.min(dates.length-1,i));showFrame();}
+  function hideOriginal(){if(!ready)return;ready.markers.forEach(m=>map.removeLayer(m));}
+  function restoreOriginal(){if(!ready)return;const chosen=ready.siteFilter.value;
+    ready.markers.forEach(m=>{if(chosen==="all"||m.site===canonicalSiteKey(chosen))m.addTo(map);else map.removeLayer(m);});}
+  function setActive(next){
+    if(!ready){status.textContent="Waiting for sampling data…";return;}
+    active=next;panel.classList.toggle("open",active);toggle.setAttribute("aria-expanded",String(active));
+    toggle.textContent=active?"✕ Close time-lapse":"▶ Water-quality time-lapse";
+    if(active){hideOriginal();layer.addTo(map);showFrame();}
+    else{stop();map.closePopup();map.removeLayer(layer);restoreOriginal();}
+  }
+  toggle.addEventListener("click",()=>setActive(!active));
+  slider.addEventListener("input",()=>{stop();setIndex(Number(slider.value));});
+  indicator.addEventListener("change",()=>{if(active)showFrame();});
+  $("timelapseBack").addEventListener("click",()=>{stop();setIndex(index-1);});
+  $("timelapseForward").addEventListener("click",()=>{stop();setIndex(index+1);});
+  function start(){if(!active||dates.length<2)return;
+    if(index===dates.length-1)setIndex(0);
+    timer=setInterval(()=>{if(index>=dates.length-1){stop();return;}setIndex(index+1);},Number(speed.value));
+    playButton.textContent="❚❚ Pause";
+  }
+  playButton.addEventListener("click",()=>timer===null?start():stop());
+  speed.addEventListener("change",()=>{if(timer!==null){stop();start();}});
+  // Existing site filter continues to work; keep its original markers hidden in time-lapse mode.
+  $("siteFilter").addEventListener("change",()=>{if(active){hideOriginal();showFrame();}});
+  // The existing Home button may re-add markers; retain time-lapse display if open.
+  map.on("layeradd",e=>{if(active&&ready&&ready.markers.includes(e.layer)){
+    // Defer to avoid interfering with the original control's synchronous work.
+    queueMicrotask(()=>{if(active)map.removeLayer(e.layer);});
+  }});
+  window.addEventListener("canal-timelapse-ready",event=>{
+    ready=event.detail;
+    const all=Object.values(ready.groups).flat();
+    dates=[...new Set(all.map(r=>toDateValue(getDate(r))).filter(ms=>ms>0).map(dayKey))]
+      .sort().map(day=>Date.parse(day+"T00:00:00Z"));
+    slider.max=String(Math.max(0,dates.length-1));
+    index=Math.max(0,dates.length-1);
+    status.textContent=dates.length+' survey dates available. Open the time-lapse to explore them.';
+    if(!dates.length){toggle.disabled=true;status.textContent="No dated surveys found.";}
+  });
+})();
 </script>
 </body>
 </html>
