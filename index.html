@@ -582,6 +582,17 @@ select {
 .timelapse-track{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px;padding:4px 0 0}
 .timelapse-date-ticks{position:relative;height:42px;margin:0 8px;font-size:11px;color:#52695b}
 .timelapse-date-tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25;background:transparent;border:0;padding:0;min-width:12px;min-height:26px;color:inherit;font:inherit;cursor:pointer}
+/* Override the general time-lapse button styling: date ticks remain clickable
+   without visible button boxes, while keyboard focus stays visible. */
+.timelapse-row .timelapse-date-tick,
+.timelapse-row .timelapse-date-tick:hover,
+.timelapse-row .timelapse-date-tick:active{
+  appearance:none;-webkit-appearance:none;
+  background:transparent;border:0;border-radius:0;box-shadow:none;
+  padding:0;min-width:12px;min-height:26px;
+  color:inherit;font:inherit;font-weight:inherit;
+}
+.timelapse-row .timelapse-date-tick:focus:not(:focus-visible){outline:none}
 .timelapse-date-tick:hover::before,.timelapse-date-tick:focus-visible::before{background:#006400;width:3px;height:16px}
 .timelapse-date-tick:focus-visible{outline:2px solid #006400;outline-offset:3px;border-radius:2px}
 .timelapse-date-tick[aria-current="date"]::before{background:#006400;width:3px;height:16px}
