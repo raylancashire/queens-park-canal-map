@@ -83,8 +83,8 @@ select {
 #map { height:590px; width:100%; position:relative; z-index:1; overflow:hidden; }
 /* Give the map more room while time-lapse controls are visible. */
 #map { transition:height 220ms ease; }
-#map.timelapse-map-expanded { height:clamp(650px, 75vh, 950px); }
-@media(max-width:600px){ #map.timelapse-map-expanded { height:clamp(540px, 68vh, 780px); } }
+#map.timelapse-map-expanded { height:clamp(390px, calc(100dvh - 355px), 720px); }
+@media(max-width:600px){ #map.timelapse-map-expanded { height:clamp(310px, 52dvh, 540px); } }
 
 .bottom-stats {
   display:grid;
@@ -620,6 +620,20 @@ select {
 .timelapse-export button:disabled{opacity:.45;cursor:wait}
 #timelapseExportStatus{font-size:12px;color:#52695b;line-height:1.4}
 @media(max-width:600px){.timelapse-panel{padding:12px}.timelapse-row select{width:100%}#timelapseDate{min-width:0}}
+
+/* Keep the map immediately below the compact playback controls. Export and
+   the full explanatory legend follow the map, instead of pushing it down. */
+.timelapse-details{display:none;max-width:1100px;margin:0 auto;padding:10px 16px 14px;gap:8px}
+.timelapse-details.open{display:grid}
+.timelapse-panel{padding:10px 16px 7px}
+.timelapse-inner{gap:7px}
+.timelapse-track{gap:2px;padding-top:0}
+.timelapse-date-ticks{height:38px}
+.timelapse-details .timelapse-legend{padding:7px 10px;gap:5px 14px}
+.timelapse-details .timelapse-legend strong{width:auto;margin-right:10px}
+.timelapse-details .timelapse-legend-note{font-size:11px}
+.timelapse-details .timelapse-export{padding:4px 0}
+@media(max-width:600px){.timelapse-panel{padding:9px 12px}.timelapse-inner{gap:7px}.timelapse-details{padding:8px 12px}}
 </style>
 
 <style>
@@ -674,6 +688,13 @@ select {
         <div id="timelapseDateTicks" class="timelapse-date-ticks" aria-label="Jump to a survey date"></div>
       </div>
     </div>
+  </div>
+</section>
+
+<div id="error" class="error" style="display:none;"></div>
+<div id="map"></div>
+
+<section id="timelapseDetails" class="timelapse-details" aria-label="Time-lapse export and colour key">
     <div class="timelapse-export" aria-label="Export time-lapse">
       <strong>Export:</strong>
       <button id="timelapseExportPNG" type="button">Save current view (PNG)</button>
@@ -683,11 +704,7 @@ select {
     </div>
     <div id="timelapseLegend" class="timelapse-legend" aria-label="Time-lapse indicator colour legend"></div>
     <div id="timelapseStatus" role="status">Loading survey dates…</div>
-  </div>
 </section>
-
-<div id="error" class="error" style="display:none;"></div>
-<div id="map"></div>
 
 <section class="below">
   <div class="bottom-stats">
@@ -2610,7 +2627,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     ready.markers.forEach(m=>{if(chosen==="all"||m.site===canonicalSiteKey(chosen))m.addTo(map);else map.removeLayer(m);});}
   function setActive(next){
     if(!ready){status.textContent="Waiting for sampling data…";return;}
-    active=next;panel.classList.toggle("open",active);toggle.setAttribute("aria-expanded",String(active));
+    active=next;panel.classList.toggle("open",active);$("timelapseDetails").classList.toggle("open",active);toggle.setAttribute("aria-expanded",String(active));
     $("map").classList.toggle("timelapse-map-expanded",active);
     // Leaflet must recalculate its viewport as the map expands or collapses.
     requestAnimationFrame(()=>map.invalidateSize({pan:false}));
