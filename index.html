@@ -584,7 +584,11 @@ select {
 .timelapse-legend-note{width:100%;color:#52695b;font-size:12px;line-height:1.4}
 .timelapse-marker{background:transparent;border:0}
 .timelapse-dot{width:29px;height:29px;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 6px #0006;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;text-shadow:0 1px 2px #0008}
-.timelapse-dot.stale{opacity:.52;border-style:dashed}
+.timelapse-dot.stale{opacity:1;border-style:solid}
+.timelapse-export{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:9px 0}
+.timelapse-export button{border:1px solid #9cb9a4;border-radius:7px;padding:9px 13px;background:#fff;color:#173e28;font-weight:700;cursor:pointer}
+.timelapse-export button:disabled{opacity:.45;cursor:wait}
+#timelapseExportStatus{font-size:12px;color:#52695b;line-height:1.4}
 @media(max-width:600px){.timelapse-panel{padding:12px}.timelapse-row select{width:100%}#timelapseDate{min-width:0}}
 </style>
 
@@ -636,6 +640,12 @@ select {
       <button id="timelapsePlay" type="button">▶ Play</button>
       <button id="timelapseForward" type="button" aria-label="Next survey date">▶</button>
       <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
+    </div>
+    <div class="timelapse-export" aria-label="Export time-lapse">
+      <strong>Export:</strong>
+      <button id="timelapseExportPNG" type="button">Save current view (PNG)</button>
+      <button id="timelapseExportVideo" type="button">Record time-lapse (WebM)</button>
+      <span id="timelapseExportStatus" role="status" aria-live="polite">Exports include the date, markers and indicator legend.</span>
     </div>
     <div id="timelapseLegend" class="timelapse-legend" aria-label="Time-lapse indicator colour legend"></div>
     <div id="timelapseStatus" role="status">Loading survey dates…</div>
@@ -2333,10 +2343,10 @@ document.addEventListener("DOMContentLoaded",()=>{
         ? 'Phosphate midpoint: Good ≤0.1; Moderate >0.1–0.2; Poor >0.2 mg/L.'
         : type==='turbidity'
           ? 'FreshWater Watch turbidity categories; colours indicate clarity, not overall visual condition.'
-          : 'Ecological status reported by FreshWater Watch for each survey. Moderate is shown as Fair. Faded markers carry earlier survey results.';
+          : 'Ecological status reported by FreshWater Watch for each survey. Moderate is shown as Fair. Markers retain the last recorded result until the next survey.';
     legend.innerHTML='<strong>'+esc(headings[type])+' — colour key</strong>'+
       entries.map(([name,colour])=>'<span class="timelapse-legend-item"><span class="timelapse-legend-swatch" style="background:'+colour+'"></span>'+esc(name)+'</span>').join('')+
-      '<span class="timelapse-legend-note">'+esc(thresholds)+' Faded, dashed-outline markers show earlier results carried forward. Sites with no earlier result are hidden.</span>';
+      '<span class="timelapse-legend-note">'+esc(thresholds)+' Markers retain the last recorded result until the next survey. Sites without an earlier result are hidden.</span>';
   }
   updateLegend();
   function showFrame(){
@@ -2354,7 +2364,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       const lat=getLat(matching),lon=getLon(matching);
       if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
       const icon=L.divIcon({className:"timelapse-marker",iconSize:[30,30],iconAnchor:[15,15],
-        html:'<span class="timelapse-dot'+(isCurrent?'':' stale')+'" style="background:'+value.colour+'" title="'+esc(value.label)+'">'+(isCurrent?'●':'·')+'</span>'});
+        html:'<span class="timelapse-dot'+''+'" style="background:'+value.colour+'" title="'+esc(value.label)+'">'+'●'+'</span>'});
       const content='<div class="popup"><h3>'+esc(getSite(matching))+'</h3><p><strong>'+esc(value.label)+'</strong></p>'+
         '<p>Sample: '+esc(dateText(sampleDate))+'</p>'+
         (isCurrent?'<p>Surveyed on this frame’s date.</p>':'<p><strong>Earlier result carried forward</strong> — no new '+esc(type==='assessment'?'ecological status':type)+' result on this date.</p>')+'</div>';
@@ -2366,9 +2376,147 @@ document.addEventListener("DOMContentLoaded",()=>{
     slider.value=String(index);
     dateLabel.textContent=dateText(date);
     status.textContent=current+' '+(current===1?'site':'sites')+' with a result on this date; '+carried+
-      ' showing their most recent earlier result. Faded markers are carried forward; sites without an earlier result are hidden.'+
+      ' retaining their most recent earlier result. Markers keep their last known colour; sites without an earlier result are hidden.'+
       (plotted===0?' No results for this indicator yet.':'');
   }
+  // Browser-only exports: no server, changes to the CSV, or external screenshot service.
+  // CORS-approved map tiles are included when available; otherwise a clearly
+  // labelled plain background is used rather than exporting a blank/tainted image.
+  const exportPNG=$("timelapseExportPNG"), exportVideo=$("timelapseExportVideo");
+  const exportStatus=$("timelapseExportStatus");
+  const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  function exportBusy(busy){exportPNG.disabled=busy;exportVideo.disabled=busy;}
+  function downloadBlob(blob,filename){
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }
+  function currentFramePoints(){
+    return layer.getLayers().map(marker=>{
+      const el=document.createElement('div');el.innerHTML=marker.options.icon.options.html;
+      const dot=el.querySelector('.timelapse-dot');
+      return {latlng:marker.getLatLng(),colour:dot?dot.style.backgroundColor:'#777777',
+        label:marker.options.title||'Sampling site'};
+    });
+  }
+  function roundedRect(ctx,x,y,w,h,r){
+    ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
+  }
+  async function mapTileImages(){
+    const mapRect=map.getContainer().getBoundingClientRect();
+    const imgs=[...map.getContainer().querySelectorAll('.leaflet-tile-pane img.leaflet-tile')]
+      .filter(img=>img.complete&&img.naturalWidth>0&&img.getBoundingClientRect().width>0);
+    const tiles=[];
+    await Promise.all(imgs.map(async img=>{
+      try{
+        const response=await fetch(img.currentSrc||img.src,{mode:'cors'});
+        if(!response.ok) return;
+        const blob=await response.blob();
+        const bitmap=await createImageBitmap(blob);
+        const rect=img.getBoundingClientRect();
+        tiles.push({bitmap,x:rect.left-mapRect.left,y:rect.top-mapRect.top,w:rect.width,h:rect.height});
+      }catch(e){ /* The map provider may disallow browser canvas exports. */ }
+    }));
+    return tiles;
+  }
+  function drawExportFrame(ctx,tiles,w,h){
+    const W=ctx.canvas.width,H=ctx.canvas.height,scale=W/w;
+    ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#f0f3f1';ctx.fillRect(0,0,W,H);
+    ctx.setTransform(scale,0,0,scale,0,0);
+    ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();
+    for(const t of tiles)ctx.drawImage(t.bitmap,t.x,t.y,t.w,t.h);
+    for(const pt of currentFramePoints()){
+      const xy=map.latLngToContainerPoint(pt.latlng);
+      if(xy.x<0||xy.y<0||xy.x>w||xy.y>h)continue;
+      ctx.beginPath();ctx.arc(xy.x,xy.y,11,0,Math.PI*2);
+      ctx.fillStyle=pt.colour;ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle='#fff';ctx.stroke();
+    }
+    ctx.restore();
+    const type=indicator.value;
+    const names={assessment:'FreshWater Watch ecological status',nitrate:'Nitrate',phosphate:'Phosphate',turbidity:'Secchi-tube turbidity'};
+    ctx.fillStyle='rgba(255,255,255,.96)';roundedRect(ctx,14,14,Math.min(w-28,440),67,8);
+    ctx.fillStyle='#183b28';ctx.font='bold 17px Arial,sans-serif';
+    ctx.fillText('Canal Watch — '+names[type],26,39,Math.max(20,w-55));
+    ctx.font='15px Arial,sans-serif';ctx.fillText(dateText(dates[index]),26,64);
+    const entries=type==='assessment'?[['Excellent','#006400'],['Good','#00a86b'],['Fair','#ffd966'],['Poor','#c00000']]
+      :type==='turbidity'?[['Very clear','#006400'],['Moderate','#d5a900'],['Highly turbid','#c00000']]
+      :[['Good','#006400'],['Moderate','#d5a900'],['Poor','#c00000'],['Unclassified','#777777']];
+    const lh=entries.length*23+37,boxW=165;
+    ctx.fillStyle='rgba(255,255,255,.96)';roundedRect(ctx,w-boxW-12,h-lh-12,boxW,lh,8);
+    ctx.fillStyle='#183b28';ctx.font='bold 13px Arial,sans-serif';ctx.fillText('Colour key',w-boxW,h-lh+9);
+    ctx.font='13px Arial,sans-serif';entries.forEach(([label,colour],i)=>{
+      const y=h-lh+34+i*23;ctx.beginPath();ctx.arc(w-boxW+6,y-4,7,0,Math.PI*2);
+      ctx.fillStyle=colour;ctx.fill();ctx.strokeStyle='#26382e';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle='#183b28';ctx.fillText(label,w-boxW+21,y);
+    });
+    ctx.font='11px Arial,sans-serif';ctx.fillStyle='#40574a';
+    ctx.fillText(tiles.length?'Map tiles: map provider':'Map background unavailable for export',12,h-10,Math.max(30,w-200));
+    ctx.setTransform(1,0,0,1,0,0);
+  }
+  async function exportCanvasSetup(){
+    if(!active||!ready||!dates.length)throw Error('Open the time-lapse before exporting.');
+    const rect=map.getContainer().getBoundingClientRect();
+    const w=Math.round(rect.width),h=Math.round(rect.height);
+    if(w<100||h<100)throw Error('The map is too small to export.');
+    const canvas=document.createElement('canvas');canvas.width=w*2;canvas.height=h*2;
+    const tiles=await mapTileImages();
+    return {canvas,ctx:canvas.getContext('2d'),tiles,w,h};
+  }
+  exportPNG.addEventListener('click',async()=>{
+    stop();exportBusy(true);exportStatus.textContent='Preparing PNG…';
+    try{
+      const {canvas,ctx,tiles,w,h}=await exportCanvasSetup();
+      drawExportFrame(ctx,tiles,w,h);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      if(!blob)throw Error('PNG creation failed.');
+      downloadBlob(blob,'canal-watch-'+indicator.value+'-'+dayKey(dates[index])+'.png');
+      exportStatus.textContent=tiles.length?'PNG saved with available map tiles.':'PNG saved with a plain background (map tiles do not allow export).';
+      tiles.forEach(t=>t.bitmap.close());
+    }catch(err){exportStatus.textContent='PNG export: '+err.message;}
+    finally{exportBusy(false);}
+  });
+  exportVideo.addEventListener('click',async()=>{
+    stop();exportBusy(true);exportStatus.textContent='Preparing video…';
+    const previous=index;
+    let recorder=null,stream=null,tiles=[];
+    try{
+      if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)
+        throw Error('Video recording is not supported in this browser. Try Chrome or Firefox.');
+      const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+        .find(type=>MediaRecorder.isTypeSupported(type));
+      if(!mime)throw Error('WebM recording is unavailable in this browser. Try Chrome or Firefox.');
+      const setup=await exportCanvasSetup();
+      const {canvas,ctx,w,h}=setup;tiles=setup.tiles;
+      setIndex(0);drawExportFrame(ctx,tiles,w,h);
+      stream=canvas.captureStream(30);
+      const chunks=[];
+      recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:3500000});
+      const completed=new Promise((resolve,reject)=>{
+        recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+        recorder.onerror=e=>reject(e.error||Error('Recording failed.'));
+        recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));
+      });
+      recorder.start();
+      const frameMs=Math.max(550,Number(speed.value)||1100);
+      for(let i=0;i<dates.length;i++){
+        setIndex(i);drawExportFrame(ctx,tiles,w,h);
+        exportStatus.textContent='Recording '+(i+1)+' of '+dates.length+' survey dates…';
+        await pause(i===dates.length-1?1800:frameMs);
+      }
+      recorder.stop();
+      const blob=await completed;
+      if(!blob.size)throw Error('The recording was empty.');
+      downloadBlob(blob,'canal-watch-'+indicator.value+'-timelapse.webm');
+      exportStatus.textContent=tiles.length?'WebM video saved.':'WebM saved with a plain background (map tiles do not allow export).';
+    }catch(err){exportStatus.textContent='Video export: '+err.message;}
+    finally{
+      if(recorder&&recorder.state==='recording')recorder.stop();
+      if(stream)stream.getTracks().forEach(t=>t.stop());
+      tiles.forEach(t=>t.bitmap.close());
+      setIndex(previous);exportBusy(false);
+    }
+  });
+
   function setIndex(i){index=Math.max(0,Math.min(dates.length-1,i));showFrame();}
   function hideOriginal(){if(!ready)return;ready.markers.forEach(m=>map.removeLayer(m));}
   function restoreOriginal(){if(!ready)return;const chosen=ready.siteFilter.value;
