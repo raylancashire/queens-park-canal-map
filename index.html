@@ -574,7 +574,16 @@ select {
 .timelapse-row select{min-width:180px}
 .timelapse-row button{border:1px solid #a9c2b0;border-radius:6px;padding:8px 12px;background:#fff;color:#173e28;cursor:pointer;font-weight:700}
 .timelapse-row button:disabled{opacity:.4;cursor:default}
-#timelapseSlider{flex:1;min-width:160px;accent-color:#006400}
+#timelapseSlider{width:100%;margin:0;accent-color:#006400}
+.timelapse-track{flex:1;min-width:220px;display:flex;flex-direction:column;gap:5px;padding:4px 0 0}
+.timelapse-date-ticks{position:relative;height:42px;margin:0 8px;font-size:11px;color:#52695b}
+.timelapse-date-tick{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;line-height:1.25}
+.timelapse-date-tick::before{content:"";display:block;width:1px;height:8px;background:#829c88;margin:0 auto 4px}
+.timelapse-date-tick:first-child{transform:translateX(-7px);text-align:left}
+.timelapse-date-tick:first-child::before{margin-left:7px}
+.timelapse-date-tick:last-child{transform:translateX(calc(-100% + 7px));text-align:right}
+.timelapse-date-tick:last-child::before{margin-right:7px}
+@media(max-width:600px){.timelapse-track{flex-basis:100%;min-width:0}.timelapse-date-ticks{font-size:10px}}
 #timelapseDate{font-weight:750;min-width:140px}
 #timelapseStatus{font-size:13px;color:#52695b;line-height:1.5}
 .timelapse-legend{display:flex;flex-wrap:wrap;align-items:center;gap:9px 16px;padding:10px 12px;border:1px solid #dfe7e1;border-radius:8px;background:#f8faf8;font-size:13px}
@@ -639,13 +648,17 @@ select {
       <button id="timelapseBack" type="button" aria-label="Previous survey date">◀</button>
       <button id="timelapsePlay" type="button">▶ Play</button>
       <button id="timelapseForward" type="button" aria-label="Next survey date">▶</button>
-      <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
+      <div class="timelapse-track">
+        <input id="timelapseSlider" type="range" min="0" max="0" value="0" aria-label="Survey date">
+        <div id="timelapseDateTicks" class="timelapse-date-ticks" aria-hidden="true"></div>
+      </div>
     </div>
     <div class="timelapse-export" aria-label="Export time-lapse">
       <strong>Export:</strong>
       <button id="timelapseExportPNG" type="button">Save current view (PNG)</button>
       <button id="timelapseExportVideo" type="button">Record time-lapse (WebM)</button>
-      <span id="timelapseExportStatus" role="status" aria-live="polite">Exports include the date, markers and indicator legend.</span>
+      <button id="timelapseExportMP4" type="button">Record time-lapse (MP4)</button>
+      <span id="timelapseExportStatus" role="status" aria-live="polite">Exports include the date, markers and indicator legend. MP4 availability depends on your browser.</span>
     </div>
     <div id="timelapseLegend" class="timelapse-legend" aria-label="Time-lapse indicator colour legend"></div>
     <div id="timelapseStatus" role="status">Loading survey dates…</div>
@@ -2297,6 +2310,27 @@ document.addEventListener("DOMContentLoaded",()=>{
   const dayKey=ms=>new Date(ms).toISOString().slice(0,10);
   const dateText=ms=>new Date(ms).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
   function stop(){if(timer!==null){clearInterval(timer);timer=null;}playButton.textContent="▶ Play";}
+  // Date labels are placed at their actual survey positions along the slider.
+  // Show a readable subset when there are many dates; every date remains selectable.
+  function renderTimelineDates(){
+    const ticks=$("timelapseDateTicks");
+    ticks.replaceChildren();
+    if(!dates.length)return;
+    const maxLabels=window.matchMedia("(max-width:600px)").matches?3:7;
+    const count=Math.min(dates.length,maxLabels);
+    const positions=[...new Set(Array.from({length:count},(_,i)=>
+      count===1?0:Math.round(i*(dates.length-1)/(count-1))))];
+    positions.forEach(i=>{
+      const tick=document.createElement("span");
+      tick.className="timelapse-date-tick";
+      tick.style.left=(dates.length===1?0:100*i/(dates.length-1))+"%";
+      tick.textContent=new Date(dates[i]).toLocaleDateString("en-GB",{
+        day:"numeric",month:"short",year:"2-digit",timeZone:"UTC"});
+      tick.title=dateText(dates[i]);
+      ticks.appendChild(tick);
+    });
+  }
+  window.addEventListener("resize",renderTimelineDates);
   function selectedGroups(){
     if(!ready)return [];
     const chosen=ready.siteFilter.value;
@@ -2382,10 +2416,10 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Browser-only exports: no server, changes to the CSV, or external screenshot service.
   // CORS-approved map tiles are included when available; otherwise a clearly
   // labelled plain background is used rather than exporting a blank/tainted image.
-  const exportPNG=$("timelapseExportPNG"), exportVideo=$("timelapseExportVideo");
+  const exportPNG=$("timelapseExportPNG"), exportVideo=$("timelapseExportVideo"), exportMP4=$("timelapseExportMP4");
   const exportStatus=$("timelapseExportStatus");
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-  function exportBusy(busy){exportPNG.disabled=busy;exportVideo.disabled=busy;}
+  function exportBusy(busy){exportPNG.disabled=busy;exportVideo.disabled=busy;exportMP4.disabled=busy;}
   function downloadBlob(blob,filename){
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
@@ -2475,16 +2509,22 @@ document.addEventListener("DOMContentLoaded",()=>{
     }catch(err){exportStatus.textContent='PNG export: '+err.message;}
     finally{exportBusy(false);}
   });
-  exportVideo.addEventListener('click',async()=>{
-    stop();exportBusy(true);exportStatus.textContent='Preparing video…';
+  // MP4 is recorded directly when the browser exposes an MP4 MediaRecorder
+  // encoder. Never rename WebM data to .mp4: that produces an invalid file.
+  async function recordTimelapse(format){
+    stop();exportBusy(true);exportStatus.textContent='Preparing '+format.toUpperCase()+' video…';
     const previous=index;
     let recorder=null,stream=null,tiles=[];
     try{
       if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)
-        throw Error('Video recording is not supported in this browser. Try Chrome or Firefox.');
-      const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
-        .find(type=>MediaRecorder.isTypeSupported(type));
-      if(!mime)throw Error('WebM recording is unavailable in this browser. Try Chrome or Firefox.');
+        throw Error('Video recording is not supported in this browser.');
+      const candidates=format==='mp4'
+        ? ['video/mp4;codecs="avc1.42E01E"','video/mp4;codecs=avc1.42E01E','video/mp4;codecs=h264','video/mp4']
+        : ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+      const mime=candidates.find(type=>MediaRecorder.isTypeSupported(type));
+      if(!mime)throw Error(format==='mp4'
+        ? 'This browser cannot record MP4 directly. Try an up-to-date Safari, or use WebM export and convert it to MP4.'
+        : 'WebM recording is unavailable in this browser. Try Chrome or Firefox.');
       const setup=await exportCanvasSetup();
       const {canvas,ctx,w,h}=setup;tiles=setup.tiles;
       setIndex(0);drawExportFrame(ctx,tiles,w,h);
@@ -2494,28 +2534,36 @@ document.addEventListener("DOMContentLoaded",()=>{
       const completed=new Promise((resolve,reject)=>{
         recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
         recorder.onerror=e=>reject(e.error||Error('Recording failed.'));
-        recorder.onstop=()=>resolve(new Blob(chunks,{type:mime}));
+        recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||mime}));
       });
       recorder.start();
       const frameMs=Math.max(550,Number(speed.value)||1100);
       for(let i=0;i<dates.length;i++){
         setIndex(i);drawExportFrame(ctx,tiles,w,h);
-        exportStatus.textContent='Recording '+(i+1)+' of '+dates.length+' survey dates…';
+        exportStatus.textContent='Recording '+format.toUpperCase()+' — '+(i+1)+' of '+dates.length+' survey dates…';
         await pause(i===dates.length-1?1800:frameMs);
       }
       recorder.stop();
       const blob=await completed;
       if(!blob.size)throw Error('The recording was empty.');
-      downloadBlob(blob,'canal-watch-'+indicator.value+'-timelapse.webm');
-      exportStatus.textContent=tiles.length?'WebM video saved.':'WebM saved with a plain background (map tiles do not allow export).';
-    }catch(err){exportStatus.textContent='Video export: '+err.message;}
+      // Some implementations may fall back to another container. Check the
+      // actual recorder MIME type before assigning a file extension.
+      const actualType=(recorder.mimeType||blob.type||'').toLowerCase();
+      if(format==='mp4'&&!actualType.includes('mp4'))
+        throw Error('The browser returned a non-MP4 recording; no MP4 file was saved. Use WebM export instead.');
+      const extension=format==='mp4'?'mp4':'webm';
+      downloadBlob(blob,'canal-watch-'+indicator.value+'-timelapse.'+extension);
+      exportStatus.textContent=tiles.length?format.toUpperCase()+' video saved.':format.toUpperCase()+' saved with a plain background (map tiles do not allow export).';
+    }catch(err){exportStatus.textContent=format.toUpperCase()+' export: '+err.message;}
     finally{
       if(recorder&&recorder.state==='recording')recorder.stop();
       if(stream)stream.getTracks().forEach(t=>t.stop());
       tiles.forEach(t=>t.bitmap.close());
       setIndex(previous);exportBusy(false);
     }
-  });
+  }
+  exportVideo.addEventListener('click',()=>recordTimelapse('webm'));
+  exportMP4.addEventListener('click',()=>recordTimelapse('mp4'));
 
   function setIndex(i){index=Math.max(0,Math.min(dates.length-1,i));showFrame();}
   function hideOriginal(){if(!ready)return;ready.markers.forEach(m=>map.removeLayer(m));}
@@ -2553,6 +2601,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     dates=[...new Set(all.map(r=>toDateValue(getDate(r))).filter(ms=>ms>0).map(dayKey))]
       .sort().map(day=>Date.parse(day+"T00:00:00Z"));
     slider.max=String(Math.max(0,dates.length-1));
+    renderTimelineDates();
     index=Math.max(0,dates.length-1);
     status.textContent=dates.length+' survey dates available; latest: '+(dates.length?dateText(dates[dates.length-1]):'none')+'. Open the time-lapse to explore them.';
     if(!dates.length){toggle.disabled=true;status.textContent="No dated surveys found.";}
