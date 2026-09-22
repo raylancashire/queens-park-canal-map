@@ -81,6 +81,10 @@ select {
 
 
 #map { height:590px; width:100%; position:relative; z-index:1; overflow:hidden; }
+/* Give the map more room while time-lapse controls are visible. */
+#map { transition:height 220ms ease; }
+#map.timelapse-map-expanded { height:clamp(650px, 75vh, 950px); }
+@media(max-width:600px){ #map.timelapse-map-expanded { height:clamp(540px, 68vh, 780px); } }
 
 .bottom-stats {
   display:grid;
@@ -2596,10 +2600,16 @@ document.addEventListener("DOMContentLoaded",()=>{
   function setActive(next){
     if(!ready){status.textContent="Waiting for sampling data…";return;}
     active=next;panel.classList.toggle("open",active);toggle.setAttribute("aria-expanded",String(active));
+    $("map").classList.toggle("timelapse-map-expanded",active);
+    // Leaflet must recalculate its viewport as the map expands or collapses.
+    requestAnimationFrame(()=>map.invalidateSize({pan:false}));
     toggle.textContent=active?"✕ Close time-lapse":"▶ Water-quality time-lapse";
     if(active){hideOriginal();layer.addTo(map);showFrame();}
     else{stop();map.closePopup();map.removeLayer(layer);restoreOriginal();}
   }
+  $("map").addEventListener("transitionend",event=>{
+    if(event.propertyName==="height")map.invalidateSize({pan:false});
+  });
   toggle.addEventListener("click",()=>setActive(!active));
   slider.addEventListener("input",()=>{stop();setIndex(Number(slider.value));});
   indicator.addEventListener("change",()=>{updateLegend();if(active)showFrame();});
