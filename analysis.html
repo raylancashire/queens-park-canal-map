@@ -887,6 +887,27 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   font-size:14px;
 }
 
+
+
+/* Temperature time-series chart */
+.temperature-timeseries{position:relative;margin-top:4px}
+.temperature-chart-scroll{overflow-x:auto;padding:2px 0 4px}
+.temperature-chart-svg{display:block;width:100%;min-width:680px;height:auto;overflow:visible}
+.temperature-grid{stroke:#dfe8e1;stroke-width:1}
+.temperature-axis{stroke:#8da091;stroke-width:1}
+.temperature-axis-label{fill:#52695b;font-size:11px;font-weight:650}
+.temperature-point-label{font-size:11px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.temperature-site-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.temperature-site-point{stroke:#fff;stroke-width:2;cursor:pointer;outline:none}
+.temperature-site-point:hover,.temperature-site-point:focus{stroke:#17321f;stroke-width:3}
+.temperature-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 0 0;font-size:12px;color:var(--ink)}
+.temperature-legend-item{display:inline-flex;align-items:center;gap:6px}
+.temperature-legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
+.temperature-tooltip{position:absolute;z-index:5;display:none;pointer-events:none;max-width:240px;padding:8px 10px;border-radius:8px;background:#17321f;color:#fff;font-size:12px;line-height:1.35;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+.temperature-tooltip strong{display:block;margin-bottom:2px;font-size:13px}
+.temperature-chart-note{margin:8px 0 0;color:var(--muted);font-size:11px}
+@media(max-width:700px){.temperature-chart-svg{min-width:620px}.temperature-point-label{font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -1676,6 +1697,98 @@ function additionalAssessment(column,value){
 }
 
 
+
+function renderTemperatureTimeSeries(containerId,data){
+  const el=document.getElementById(containerId);
+  const points=data.map(row=>({
+    value:parseAdditionalNumber(row["Temperature °C"]),
+    date:parseUKDate(row["Date"],row["Time"]),
+    dateText:String(row["Date"]||"").trim(),
+    timeText:String(row["Time"]||"").trim(),
+    location:String(row["Location"]||"").trim() || "Site not recorded"
+  })).filter(p=>Number.isFinite(p.value)&&p.date).sort((a,b)=>a.date-b.date);
+
+  if(!points.length){
+    el.innerHTML='<div class="no-results">No temperature results recorded yet.</div>';
+    return;
+  }
+  if(points.length===1){
+    const p=points[0];
+    el.innerHTML=`<div class="single-result"><div><strong>${esc(p.value)} °C</strong><span>${esc([p.dateText,p.timeText].filter(Boolean).join(" "))}<br>${esc(p.location)}</span></div></div>`;
+    return;
+  }
+
+  const sites=[...new Set(points.map(p=>p.location))];
+  const colours=["#1f6f43","#2f6fb0","#9a5b13","#7a4ca3","#b34b59","#3f7f86","#6f6b24","#8b5a3c"];
+  const siteColour=new Map(sites.map((site,i)=>[site,colours[i%colours.length]]));
+  const W=900,H=330,m={l:52,r:24,t:28,b:55};
+  const innerW=W-m.l-m.r,innerH=H-m.t-m.b;
+  const minT=Math.min(...points.map(p=>p.date.getTime()));
+  const maxT=Math.max(...points.map(p=>p.date.getTime()));
+  const spanT=Math.max(1,maxT-minT);
+  let minV=Math.floor(Math.min(...points.map(p=>p.value))-1);
+  let maxV=Math.ceil(Math.max(...points.map(p=>p.value))+1);
+  if(maxV-minV<4){ const mid=(maxV+minV)/2; minV=Math.floor(mid-2); maxV=Math.ceil(mid+2); }
+  const x=t=>m.l+((t-minT)/spanT)*innerW;
+  const y=v=>m.t+((maxV-v)/(maxV-minV))*innerH;
+  const fmtDate=d=>d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"});
+  const yTicks=5;
+  let grid="";
+  for(let i=0;i<yTicks;i++){
+    const v=minV+(maxV-minV)*(i/(yTicks-1));
+    const yy=y(v);
+    grid+=`<line class="temperature-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"></line>`;
+    grid+=`<text class="temperature-axis-label" x="${m.l-9}" y="${yy+4}" text-anchor="end">${Math.round(v*10)/10}°</text>`;
+  }
+  const tickCount=Math.min(6,points.length);
+  let xTicks="";
+  for(let i=0;i<tickCount;i++){
+    const t=minT+spanT*(i/(tickCount-1));
+    const xx=x(t);
+    xTicks+=`<line class="temperature-axis" x1="${xx}" y1="${H-m.b}" x2="${xx}" y2="${H-m.b+5}"></line>`;
+    xTicks+=`<text class="temperature-axis-label" x="${xx}" y="${H-m.b+20}" text-anchor="middle">${fmtDate(new Date(t))}</text>`;
+  }
+
+  let series="";
+  sites.forEach(site=>{
+    const sp=points.filter(p=>p.location===site);
+    const colour=siteColour.get(site);
+    if(sp.length>1){
+      series+=`<polyline class="temperature-site-line" stroke="${colour}" points="${sp.map(p=>`${x(p.date.getTime())},${y(p.value)}`).join(" ")}"></polyline>`;
+    }
+    sp.forEach((p,idx)=>{
+      const xx=x(p.date.getTime()), yy=y(p.value);
+      const tooltip=`${p.location} — ${p.value} °C — ${[p.dateText,p.timeText].filter(Boolean).join(" ")}`;
+      series+=`<g><circle class="temperature-site-point" tabindex="0" role="img" aria-label="${esc(tooltip)}" data-temp-point="1" data-site="${esc(p.location)}" data-value="${esc(p.value)}" data-date="${esc(p.dateText)}" data-time="${esc(p.timeText)}" cx="${xx}" cy="${yy}" r="5" fill="${colour}"><title>${esc(tooltip)}</title></circle><text class="temperature-point-label" fill="${colour}" x="${xx}" y="${yy-10}" text-anchor="middle">${esc(p.value)}°</text></g>`;
+    });
+  });
+
+  const legend=sites.map(site=>`<span class="temperature-legend-item"><span class="temperature-legend-dot" style="background:${siteColour.get(site)}"></span>${esc(site)}</span>`).join("");
+  el.innerHTML=`<div class="temperature-timeseries"><div class="temperature-chart-scroll"><svg class="temperature-chart-svg" viewBox="0 0 ${W} ${H}" aria-label="Water temperature results over time by survey site" role="img">${grid}<line class="temperature-axis" x1="${m.l}" y1="${H-m.b}" x2="${W-m.r}" y2="${H-m.b}"></line><line class="temperature-axis" x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H-m.b}"></line>${xTicks}${series}<text class="temperature-axis-label" x="14" y="${m.t+innerH/2}" transform="rotate(-90 14 ${m.t+innerH/2})" text-anchor="middle">Water temperature (°C)</text></svg></div><div class="temperature-legend">${legend}</div><p class="temperature-chart-note">Each point is an individual survey result. Lines connect readings from the same survey site; horizontal spacing reflects the actual time between surveys.</p><div class="temperature-tooltip" role="status"></div></div>`;
+
+  const wrap=el.querySelector(".temperature-timeseries");
+  const tip=el.querySelector(".temperature-tooltip");
+  const showTip=(target,event)=>{
+    tip.innerHTML=`<strong>${esc(target.dataset.site)}</strong>${esc(target.dataset.value)} °C<br>${esc([target.dataset.date,target.dataset.time].filter(Boolean).join(" "))}`;
+    tip.style.display="block";
+    if(event&&Number.isFinite(event.clientX)){
+      const r=wrap.getBoundingClientRect();
+      tip.style.left=Math.max(6,Math.min(r.width-246,event.clientX-r.left+12))+"px";
+      tip.style.top=Math.max(6,event.clientY-r.top-58)+"px";
+    }else{
+      tip.style.left="12px"; tip.style.top="12px";
+    }
+  };
+  el.querySelectorAll("[data-temp-point]").forEach(point=>{
+    point.addEventListener("mouseenter",e=>showTip(point,e));
+    point.addEventListener("mousemove",e=>showTip(point,e));
+    point.addEventListener("mouseleave",()=>tip.style.display="none");
+    point.addEventListener("focus",()=>showTip(point));
+    point.addEventListener("blur",()=>tip.style.display="none");
+    point.addEventListener("click",e=>{ showTip(point,e); });
+  });
+}
+
 function renderAdditionalSeries(containerId,data,column,unit){
   const el=document.getElementById(containerId);
 
@@ -1817,7 +1930,7 @@ function filterAdditionalForSite(data,site){
 function renderAdditionalForFocusedSite(){
   const data=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite);
 
-  renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
+  renderTemperatureTimeSeries("temperatureChart",data);
   renderAdditionalSeries("phChart",data,"pH","");
   renderAdditionalSeries("coliformChart",data,"Coliform","");
   renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
