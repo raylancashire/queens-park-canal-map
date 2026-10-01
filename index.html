@@ -2674,39 +2674,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
 })();
 </script>
-<!-- Report changes in the map page height to an embedding Webador page. -->
-<script>
-(function () {
-  if (window.parent === window) return;
-  let previousHeight = 0;
-  let pending = false;
-  function reportHeight() {
-    if (pending) return;
-    pending = true;
-    requestAnimationFrame(function () {
-      pending = false;
-      const height = Math.ceil(Math.max(
-        document.documentElement.scrollHeight,
-        document.body ? document.body.scrollHeight : 0
-      ));
-      if (height > 0 && height !== previousHeight) {
-        previousHeight = height;
-        // Only the page height is shared; the parent verifies the sender's origin.
-        window.parent.postMessage({ type: 'canal-watch-height', height: height }, '*');
-      }
-    });
-  }
-  if ('ResizeObserver' in window) {
-    const observer = new ResizeObserver(reportHeight);
-    observer.observe(document.documentElement);
-    if (document.body) observer.observe(document.body);
-  }
-  window.addEventListener('load', reportHeight);
-  window.addEventListener('resize', reportHeight);
-  document.addEventListener('DOMContentLoaded', reportHeight);
-  reportHeight();
-})();
-</script>
 </body>
 </html>
 
