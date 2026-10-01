@@ -1905,8 +1905,9 @@ function uniqueMapSampleRows(rows){
     const date=getField(row,"Sample Date","Date","sample_date");
     const time=getField(row,"Sample Time","Time","sample_time");
     const id=getField(row,"GlobalID","ObjectID","Sample ID","SampleID");
+    // Unsurveyed placeholders can share a source GlobalID; keep each site separate.
     const key=id
-      ? `id:${id}`
+      ? `id:${id}|site:${canonicalSiteKey(site)}`
       : `sample:${canonicalSiteKey(site)}|${String(date).trim()}|${String(time).trim()}`;
 
     if(seen.has(key)) return false;
@@ -2069,10 +2070,13 @@ async function loadData() {
       const lat = getLat(r);
       const lon = getLon(r);
 
+      const isUnsurveyed = !rows.some(row => String(getDate(row) || "").trim());
       const marker = L.marker([lat, lon], {
         icon: markerIcon(r),
         title: site
-      }).bindPopup(popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
+      }).bindPopup(isUnsurveyed
+        ? `<div class="popup"><h3>${esc(site)}</h3><p>No survey results recorded yet.</p></div>`
+        : popup(rows), {maxWidth:430, maxHeight:320, autoPan:true, autoPanPaddingTopLeft:[20,150], autoPanPaddingBottomRight:[20,20], offset:[0,-8]});
 
       marker.site = canonicalSiteKey(site);
       marker.on("click", (e) => {
