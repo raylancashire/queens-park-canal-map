@@ -733,6 +733,10 @@ const CSV_SOURCES = [
   "freshwater.csv",
   "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/freshwater.csv"
 ];
+const MOCK_SITE_SOURCES = [
+  "mock-sites.csv",
+  "https://raw.githubusercontent.com/RayLancashire/queens-park-canal-map/main/mock-sites.csv"
+];
 const SUPABASE_URL = "https://jjepxsrvqcwprjwcxekj.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zhLETs1BxtRGVUVpG_o2UA_jdjmraIS";
 
@@ -1919,7 +1923,22 @@ function uniqueMapSampleRows(rows){
 async function loadData() {
   try {
     const text = await fetchCSV();
-    const data = parseCSV(text);
+    const surveyData = parseCSV(text);
+    // Mock locations are maintained independently of genuine survey results.
+    // Missing mock-sites.csv should not stop the main map from loading.
+    let mockData = [];
+    for (const url of MOCK_SITE_SOURCES) {
+      try {
+        const response = await fetch(url, {cache:"no-store"});
+        if (!response.ok) continue;
+        mockData = parseCSV(await response.text()).map(row => ({...row, __mockSite:true}));
+        break;
+      } catch (error) { /* Try the next location. */ }
+    }
+    const realSiteKeys = new Set(surveyData.map(row => canonicalSiteKey(getSite(row))));
+    // A location automatically ceases to be a mock once real results exist.
+    mockData = mockData.filter(row => !realSiteKeys.has(canonicalSiteKey(getSite(row))));
+    const data = surveyData.concat(mockData);
 
     if (!data.length) {
       throw new Error("freshwater.csv contains no data rows.");
@@ -1938,7 +1957,7 @@ async function loadData() {
         continue;
       }
 
-      validRows++;
+      if (!r.__mockSite) validRows++;
 
       const site = getSite(r);
       const key = canonicalSiteKey(site);
@@ -1977,6 +1996,7 @@ async function loadData() {
       canonicalSiteDisplay(groupSiteNames[a]).localeCompare(canonicalSiteDisplay(groupSiteNames[b]))
     );
     const siteNames = siteKeys.map(key=>groupSiteNames[key]);
+    const actualSiteCount = siteKeys.filter(key => groups[key].some(row => !row.__mockSite)).length;
 
     const sel = document.getElementById("siteFilter");
 
@@ -2022,7 +2042,7 @@ async function loadData() {
         siteCountEl.classList.add("site-name");
         siteCountLabelEl.textContent = "Sampling site";
 
-        sampleCountEl.textContent = rows.length;
+        sampleCountEl.textContent = rows.filter(row => !row.__mockSite).length;
         sampleCountLabelEl.textContent = "Samples in view";
 
         participantCountEl.textContent = totalParticipantsForRows(rows);
@@ -2033,7 +2053,7 @@ async function loadData() {
       } else {
         const latest = latestRowForRows(uniqueData);
 
-        siteCountEl.textContent = siteKeys.length;
+        siteCountEl.textContent = actualSiteCount;
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
 
@@ -2053,9 +2073,11 @@ async function loadData() {
       const fullSite = groupSiteNames[siteKey];
       const displaySite = canonicalSiteDisplay(fullSite);
       const opt = document.createElement("option");
-      const sampleCount = groups[siteKey].length;
+      const sampleCount = groups[siteKey].filter(row => !row.__mockSite).length;
       opt.value = fullSite;
-      opt.textContent = `${displaySite} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`;
+      opt.textContent = sampleCount
+        ? `${displaySite} (${sampleCount} ${sampleCount === 1 ? "sample" : "samples"})`
+        : `${displaySite} (not yet surveyed)`;
       sel.appendChild(opt);
     });
 
@@ -2118,8 +2140,11 @@ async function loadData() {
     }));
 
     if (bounds.length) {
-      defaultResultBounds = L.latLngBounds(bounds);
-      map.fitBounds(defaultResultBounds, {padding:[25,25]});
+      const coreBounds = bounds.filter(([lat, lon]) =>
+        lat >= 51.50 && lat <= 51.55 && lon >= -0.28 && lon <= -0.15
+      );
+      defaultResultBounds = L.latLngBounds(coreBounds.length ? coreBounds : bounds);
+      map.fitBounds(defaultResultBounds, {padding:[25,25], maxZoom:16});
     }
 
     sel.addEventListener("change", () => {
