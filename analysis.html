@@ -979,14 +979,16 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 <section class="charts">
   <article id="nitratePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="nitrateTab">
     <h2>Nitrate occurrences</h2>
-    <p class="sub">Number and percentage of samples in each nitrate result band. The left-hand scale shows the number of samples; colours follow the FreshWater Watch nitrate scale.</p>
+    <p class="sub">All nitrate test bands are shown, including bands with no samples. Low, Moderate and High describe nutrient concentration using Canal Watch display groupings, not official ecological-status classifications. The vertical scale shows the number of samples.</p>
     <div id="nitrateChart" class="bar-list"></div>
+    <p id="nitrateScaleNote" class="sub" aria-live="polite"></p>
   </article>
 
   <article id="phosphatePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="phosphateTab" hidden>
     <h2>Phosphate occurrences</h2>
-    <p class="sub">Number and percentage of samples in each phosphate result band. The left-hand scale shows the number of samples; colours follow the FreshWater Watch phosphate scale.</p>
+    <p class="sub">All phosphate test bands are shown, including bands with no samples. Low, Moderate and High describe nutrient concentrations using the FreshWater Watch reference chart; they are not official ecological-status classifications. The vertical scale shows the number of samples.</p>
     <div id="phosphateChart" class="bar-list"></div>
+    <p id="phosphateScaleNote" class="sub" aria-live="polite"></p>
   </article>
 
   <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
@@ -1509,6 +1511,77 @@ function renderChart(id,counts,total,measure){
  }).join("");
 
  el.innerHTML=axis+`<div class="bar-columns"><div class="bar-grid">${gridLines}</div>${bars}</div>`;
+}
+// Full FreshWater Watch nitrate test scale; concentration groupings are for display.
+const NITRATE_SCALE = [
+  {band:"<0.2", category:"Low"},
+  {band:"0.2-0.5", category:"Low"},
+  {band:"0.5-1", category:"Low"},
+  {band:"1-2", category:"Moderate"},
+  {band:"2-5", category:"Moderate"},
+  {band:"5-10", category:"High"},
+  {band:">10", category:"High"}
+];
+function renderNitrateChart(counts,total){
+  const el=document.getElementById("nitrateChart");
+  // Accept legacy less-than and exact-value exports without losing their samples.
+  const values={...counts};
+  if(values["0-0.2"]){values["<0.2"]=(values["<0.2"]||0)+values["0-0.2"];delete values["0-0.2"]}
+  const entries=NITRATE_SCALE.map(item=>({...item,count:values[item.band]||0}));
+  const axisMax=total<=10?10:Math.ceil(total/5)*5;
+  const ticks=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-axis-tick" style="bottom:${i/axisMax*100}%">${i}</span>`).join("");
+  const grid=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-grid-line" style="bottom:${i/axisMax*100}%"></span>`).join("");
+  const colours={Low:"#c8e6d2",Moderate:"#ffd966",High:"#f4b183"};
+  const bars=entries.map(({band,category,count})=>{
+    const percent=total?(100*count/total).toFixed(1):"0.0";
+    const height=count?Math.max(1,100*count/axisMax):0;
+    return `<div class="bar-row" title="${esc(band)} mg/L — ${category} nutrient concentration — ${count} samples (${percent}%)">
+      <div class="bar-label">${esc(band)}<small style="display:block;font-size:10px;color:#52695b">${category}</small></div>
+      <div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${colours[category]}"><span class="bar-percent">${percent}%</span></div></div>
+    </div>`;
+  }).join("");
+  el.innerHTML=`<div class="bar-axis" aria-hidden="true"><span class="bar-axis-title">Number of samples</span>${ticks}</div><div class="bar-columns"><div class="bar-grid">${grid}</div>${bars}</div>`;
+  // Inform visitors about zero-count bands and the display groupings.
+  const note=document.getElementById("nitrateScaleNote");
+  if(note)note.textContent=`Nitrate concentration (mg/L): Low below 1; Moderate 1–5; High above 5. Display groupings are indicative, not regulatory thresholds. ${total} measured ${total===1?"sample":"samples"} in view.`;
+}
+// Phosphate bands from the supplied FreshWater Watch concentration chart.
+const PHOSPHATE_SCALE = [
+  {band:"<0.02",category:"Low"},
+  {band:"0.02-0.05",category:"Low"},
+  {band:"0.05-0.1",category:"Low"},
+  {band:"0.1-0.2",category:"Moderate"},
+  {band:"0.2-0.5",category:"High"},
+  {band:"0.5-1",category:"High"},
+  {band:">1",category:"High"}
+];
+function renderPhosphateChart(counts,total){
+  const el=document.getElementById("phosphateChart");
+  const values={...counts};
+  // Normalise common alternate export labels while keeping all samples.
+  const aliases={"0-0.02":"<0.02","<0.02":"<0.02","0.5-1.0":"0.5-1",">1.0":">1","1+":">1"};
+  for(const [oldBand,newBand] of Object.entries(aliases)){
+    if(oldBand!==newBand && values[oldBand]){
+      values[newBand]=(values[newBand]||0)+values[oldBand];
+      delete values[oldBand];
+    }
+  }
+  const entries=PHOSPHATE_SCALE.map(item=>({...item,count:values[item.band]||0}));
+  const axisMax=total<=10?10:Math.ceil(total/5)*5;
+  const ticks=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-axis-tick" style="bottom:${i/axisMax*100}%">${i}</span>`).join("");
+  const grid=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-grid-line" style="bottom:${i/axisMax*100}%"></span>`).join("");
+  const colours={Low:"#c8e6d2",Moderate:"#ffd966",High:"#f4b183"};
+  const bars=entries.map(({band,category,count})=>{
+    const percent=total?(100*count/total).toFixed(1):"0.0";
+    const height=count?Math.max(1,100*count/axisMax):0;
+    return `<div class="bar-row" title="${esc(band)} mg/L — ${category} nutrient concentration — ${count} samples (${percent}%)">
+      <div class="bar-label">${esc(band)}<small style="display:block;font-size:10px;color:#52695b">${category}</small></div>
+      <div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${colours[category]}"><span class="bar-percent">${percent}%</span></div></div>
+    </div>`;
+  }).join("");
+  el.innerHTML=`<div class="bar-axis" aria-hidden="true"><span class="bar-axis-title">Number of samples</span>${ticks}</div><div class="bar-columns"><div class="bar-grid">${grid}</div>${bars}</div>`;
+  const note=document.getElementById("phosphateScaleNote");
+  if(note)note.textContent=`Phosphate concentration (mg/L): Low below 0.1; Moderate 0.1–0.2; High above 0.2. Categories are indicative, not regulatory thresholds. ${total} measured ${total===1?"sample":"samples"} in view.`;
 }
 function rows(measure,counts,total){return Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])).map(([band,count])=>`<tr><td>${esc(measure)}</td><td>${esc(band)}</td><td>${count}</td><td>${(total?count/total*100:0).toFixed(1)}%</td></tr>`).join("")}
 
@@ -2195,8 +2268,8 @@ function renderSampleAnalysisForFocusedSite(){
   document.getElementById("phosphateResults").textContent=pVals.length;
   document.getElementById("turbidityResults").textContent=tVals.length;
 
-  renderChart("nitrateChart",occurrences(nVals),nVals.length,"Nitrate");
-  renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate");
+  renderNitrateChart(occurrences(nVals),nVals.length);
+  renderPhosphateChart(occurrences(pVals),pVals.length);
   renderTurbidityChart(turbidityOccurrences(tVals),tVals.length);
   updateScopeText(currentFocusedSite,data);
   renderWeatherAtSurvey();
