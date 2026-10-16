@@ -16,6 +16,25 @@
 .detail-card.missing{background:#f6f7f8}
 .detail-card.missing .detail-value{font-size:15px;color:var(--muted);font-weight:500}
 @media print{.detail-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.detail-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));padding:14px 0}
+.detail-card{background:#fff;border:1px solid #d9e5de;border-top:5px solid #6b8f9c;padding:17px 17px 19px;min-height:185px}
+.detail-card h3{text-transform:uppercase;letter-spacing:.055em;font-size:13px;color:#53685d;margin-bottom:15px}
+.detail-card .comparison-values{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:9px;align-items:end}
+.detail-card .compare-caption{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#788b81;font-weight:700}
+.detail-card .compare-number{font-size:21px;line-height:1.2;font-weight:800;color:#173b2b;overflow-wrap:anywhere;margin-top:5px}
+.detail-card .compare-arrow{font-size:22px;color:#91a49a;font-weight:800;text-align:center;padding-bottom:3px}
+.detail-card .comparison-status{display:inline-block;background:#edf2ef;color:#50645a;font-size:12px;font-weight:700;border-radius:16px;padding:5px 10px;margin-top:15px}
+.detail-card .compare-dates{font-size:11px;color:#71857a;margin-top:9px}
+.detail-card .detail-value{font-size:21px}
+.detail-card[data-kind="chemBody"]{border-top-color:#3c8b73}
+.detail-card[data-kind="physicalBody"]{border-top-color:#d9802d}
+.detail-card[data-kind="bacteriaBody"]{border-top-color:#a46d32}
+.detail-card[data-kind="environmentBody"]{border-top-color:#6b8f9c}
+.detail-card.missing{background:#f8faf9}
+@media(max-width:950px){.detail-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:570px){.detail-card-grid{grid-template-columns:1fr}}
+@media print{.detail-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.detail-card{min-height:140px;padding:10px}.detail-card .compare-number{font-size:16px}}
 </style></head><body><main class="wrap">
 <header><h1>Canal Watch – Site Comparison Report</h1><p class="sub">Latest recorded freshwater observations · Grand Union Canal</p></header>
 <div class="toolbar noprint"><div class="field"><label for="site">Select survey site</label><select id="site" disabled><option>Loading sites…</option></select></div><div class="field"><label for="compare">Compare with</label><select id="compare"><option value="all">All surveyed sites</option><option value="30">Sites surveyed within 30 days of selected survey</option><option value="7">Sites surveyed within 7 days of selected survey</option></select></div><div class="field" style="flex:0 1 230px"><label for="reportLength">Print report length</label><select id="reportLength"><option value="summary">Summary only</option><option value="full">Full site report</option><option value="comparison">Full report + site comparisons</option></select></div><button id="print" class="secondary" type="button">Print / Save as PDF</button><div class="field" style="flex-basis:100%"><label for="upload">Optional: open a local CSV if automatic loading is unavailable</label><input type="file" id="upload" accept=".csv,text/csv"></div></div>
@@ -62,20 +81,39 @@ const DETAIL_FIELDS={
 };
 function nonempty(v){return v!==undefined&&v!==null&&String(v).trim()!=='';}
 function displayValue(v){return nonempty(v)?esc(String(v).replaceAll('_',' ')):'<span class="empty-value">Not recorded</span>';}
+function numericReading(value){
+ const raw=String(value??'').trim();
+ // Only compare genuine numeric results. Ranges and open-ended tests are not exact numbers.
+ return /^-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(raw)?Number(raw):null;
+}
+function comparisonStatus(current,previous){
+ if(!nonempty(previous))return 'Previous survey unavailable';
+ if(!nonempty(current))return 'Current result unavailable';
+ const a=numericReading(current),b=numericReading(previous);
+ if(a!==null&&b!==null)return a>b?'Higher than previous':a<b?'Lower than previous':'Unchanged';
+ return String(current).trim().toLowerCase()===String(previous).trim().toLowerCase()?'Same recorded result':'Different recorded result';
+}
 function renderDetails(rows){
  const current=rows[0];
  for(const [target,fields] of Object.entries(DETAIL_FIELDS)){
    $(target).innerHTML=fields.map(([label,key])=>{
      const value=current.raw?.[key];
      const previous=rows.slice(1).find(r=>nonempty(r.raw?.[key]));
-     const hasValue=nonempty(value);
-     const currentText=hasValue?displayValue(value):'Not recorded';
-     const prevText=previous?displayValue(previous.raw[key]):'No earlier result';
-     return `<article class="detail-card ${hasValue?'':'missing'}">
+     const oldValue=previous?.raw?.[key];
+     const previousDate=previous?dateText(previous.date):'Date unavailable';
+     const currentDate=dateText(current.date);
+     const shownCurrent=nonempty(value)?displayValue(value):'—';
+     const shownPrevious=previous?displayValue(oldValue):'—';
+     const status=comparisonStatus(value,oldValue);
+     return `<article class="detail-card ${nonempty(value)?'':'missing'}" data-kind="${esc(target)}">
        <h3>${esc(label)}</h3>
-       <div class="detail-value">${currentText}</div>
-       <div class="detail-date">Latest survey: ${esc(dateText(current.date))}</div>
-       <div class="detail-previous"><strong>Previous:</strong> ${prevText}${previous?`<div class="detail-date">${esc(dateText(previous.date))}</div>`:''}</div>
+       <div class="comparison-values">
+         <div><div class="compare-caption">Previous</div><div class="compare-number">${shownPrevious}</div></div>
+         <div class="compare-arrow" aria-hidden="true">→</div>
+         <div><div class="compare-caption">Current</div><div class="compare-number">${shownCurrent}</div></div>
+       </div>
+       <div class="comparison-status">${esc(status)}</div>
+       <div class="compare-dates">${esc(previous?previousDate:'Previous date unavailable')} → ${esc(currentDate)}</div>
      </article>`;
    }).join('');
  }
