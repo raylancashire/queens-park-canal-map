@@ -6,6 +6,16 @@
 /* Optional detail sections; no change to existing summary layout */
 .detail-section{margin-bottom:14px}.detail-section>summary{cursor:pointer;font-size:18px;font-weight:750;padding:14px 18px;list-style:none;display:flex;justify-content:space-between;align-items:center}.detail-section>summary::-webkit-details-marker{display:none}.detail-section>summary::after{content:'+';font-size:23px;color:var(--blue)}.detail-section[open]>summary::after{content:'−'}.detail-inner{padding:0 18px 18px}.detail-section .muted{margin-top:0}.detail-table{min-width:570px}.detail-table td:first-child{font-weight:650}.detail-note{font-size:12px;color:var(--muted);margin-top:10px}.empty-value{color:#778994}.report-controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}.report-controls button{font-size:13px;padding:8px 12px}.comparison-section{display:block}
 @media print{.detail-section{break-inside:auto}.detail-section>summary{padding:8px 0}.detail-inner{padding:0}.detail-section:not([open])>.detail-inner{display:block!important}.detail-section:not([open])>summary::after{display:none}body.print-summary .detail-section,body.print-summary .comparison-section{display:none!important}body.print-full .comparison-section{display:none!important}body.print-summary .report-controls,body.print-full .report-controls,body.print-comparison .report-controls{display:none!important}}
+
+.detail-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;padding:14px}
+.detail-card{border:1px solid var(--line);border-radius:11px;background:#f8fbfd;padding:15px;min-width:0;break-inside:avoid}
+.detail-card h3{font-size:14px;margin:0 0 8px;color:var(--navy)}
+.detail-card .detail-value{font-size:19px;font-weight:800;line-height:1.25;overflow-wrap:anywhere;white-space:normal}
+.detail-card .detail-previous{font-size:12px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:8px;overflow-wrap:anywhere}
+.detail-card .detail-date{font-size:11px;color:var(--muted);margin-top:5px}
+.detail-card.missing{background:#f6f7f8}
+.detail-card.missing .detail-value{font-size:15px;color:var(--muted);font-weight:500}
+@media print{.detail-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head><body><main class="wrap">
 <header><h1>Canal Watch – Site Comparison Report</h1><p class="sub">Latest recorded freshwater observations · Grand Union Canal</p></header>
 <div class="toolbar noprint"><div class="field"><label for="site">Select survey site</label><select id="site" disabled><option>Loading sites…</option></select></div><div class="field"><label for="compare">Compare with</label><select id="compare"><option value="all">All surveyed sites</option><option value="30">Sites surveyed within 30 days of selected survey</option><option value="7">Sites surveyed within 7 days of selected survey</option></select></div><div class="field" style="flex:0 1 230px"><label for="reportLength">Print report length</label><select id="reportLength"><option value="summary">Summary only</option><option value="full">Full site report</option><option value="comparison">Full report + site comparisons</option></select></div><button id="print" class="secondary" type="button">Print / Save as PDF</button><div class="field" style="flex-basis:100%"><label for="upload">Optional: open a local CSV if automatic loading is unavailable</label><input type="file" id="upload" accept=".csv,text/csv"></div></div>
@@ -13,10 +23,10 @@
 <section class="panel"><div class="sitehead"><div><h2 id="heading">Site report</h2><div class="muted" id="surveyDate">Select a site to view its latest results.</div></div><span class="tag none" id="sampleCount"></span></div><div class="metrics" style="margin-top:16px"><article class="metric"><h3>Nitrate (N–NO₃, mg/L)</h3><div class="big" id="nitrate">—</div><span id="ncat" class="tag none">No result</span><div class="bands" id="nscale" aria-label="FreshWater Watch nitrate scale"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="scale-labels"><span>Low</span><span>Moderate</span><span>High</span></div><div class="current-band" id="nlevel">Current band: —</div><div class="range" id="nprev">Previous: —</div></article><article class="metric"><h3>Phosphate (P–PO₄, mg/L)</h3><div class="big" id="phosphate">—</div><span id="pcat" class="tag none">No result</span><div class="bands" id="pscale" aria-label="FreshWater Watch phosphate scale"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="scale-labels"><span>Low</span><span>Moderate</span><span>High</span></div><div class="current-band" id="plevel">Current band: —</div><div class="range" id="pprev">Previous: —</div></article><article class="metric"><h3>Water clarity</h3><div class="big" id="clarity">—</div><div class="range">FreshWater Watch Secchi tube reading</div></article><article class="metric"><h3>Water colour</h3><div class="big" id="colour">—</div><div class="range">Visual observation at survey</div></article></div><div class="note" style="margin-top:16px">Test results are recorded in <strong>concentration ranges</strong>, not precise values. Spreadsheet midpoint fields are not used as measured readings.</div></section>
 <section aria-label="Detailed survey results" id="detailedResults">
 <div class="report-controls noprint"><button class="secondary" type="button" id="expandAll">Expand all details</button><button class="secondary" type="button" id="collapseAll">Collapse details</button><span class="muted" style="align-self:center">Additional tests use the latest selected survey. Missing measurements are shown as not recorded.</span></div>
-<details class="panel detail-section" id="detailChemistry"><summary>Oxygen and water chemistry</summary><div class="detail-inner"><p class="muted">Dissolved oxygen, biochemical oxygen demand and pH. Units are shown only where confirmed in the CSV headings or source data.</p><div class="tablewrap"><table class="detail-table"><thead><tr><th>Test</th><th>Latest survey</th><th>Previous recorded result</th><th>Previous survey date</th></tr></thead><tbody id="chemBody"></tbody></table></div></div></details>
-<details class="panel detail-section" id="detailPhysical"><summary>Physical water conditions</summary><div class="detail-inner"><p class="muted">Temperature, turbidity, water clarity and colour.</p><div class="tablewrap"><table class="detail-table"><thead><tr><th>Measurement</th><th>Latest survey</th><th>Previous recorded result</th><th>Previous survey date</th></tr></thead><tbody id="physicalBody"></tbody></table></div></div></details>
-<details class="panel detail-section" id="detailBacteria"><summary>Bacteria tests</summary><div class="detail-inner"><p class="muted">Coliform bacteria results are displayed as entered. The test method and units should be checked before interpreting differences.</p><div class="tablewrap"><table class="detail-table"><thead><tr><th>Test</th><th>Latest survey</th><th>Previous recorded result</th><th>Previous survey date</th></tr></thead><tbody id="bacteriaBody"></tbody></table></div></div></details>
-<details class="panel detail-section" id="detailEnvironment"><summary>Environmental observations</summary><div class="detail-inner"><p class="muted">Visual observations recorded by volunteers, rather than laboratory measurements.</p><div class="tablewrap"><table class="detail-table"><thead><tr><th>Observation</th><th>Latest survey</th><th>Previous recorded result</th><th>Previous survey date</th></tr></thead><tbody id="environmentBody"></tbody></table></div></div></details>
+<details class="panel detail-section" id="detailChemistry"><summary>Oxygen and water chemistry</summary><div class="detail-inner"><p class="muted">Dissolved oxygen, biochemical oxygen demand and pH. Units are shown only where confirmed in the CSV headings or source data.</p><div class="detail-card-grid" id="chemBody"></div></div></details>
+<details class="panel detail-section" id="detailPhysical"><summary>Physical water conditions</summary><div class="detail-inner"><p class="muted">Temperature, turbidity, water clarity and colour.</p><div class="detail-card-grid" id="physicalBody"></div></div></details>
+<details class="panel detail-section" id="detailBacteria"><summary>Bacteria tests</summary><div class="detail-inner"><p class="muted">Coliform bacteria results are displayed as entered. The test method and units should be checked before interpreting differences.</p><div class="detail-card-grid" id="bacteriaBody"></div></div></details>
+<details class="panel detail-section" id="detailEnvironment"><summary>Environmental observations</summary><div class="detail-inner"><p class="muted">Visual observations recorded by volunteers, rather than laboratory measurements.</p><div class="detail-card-grid" id="environmentBody"></div></div></details>
 </section>
 <div class="comparison-section" id="comparisonSection">
 <div class="grid"><section class="panel"><h2>Nitrate comparison</h2><p class="muted">Latest nitrate test band for each site; bar lengths show the position on the seven-band test scale, not a continuous mg/L measurement.</p><div id="nchart"></div><div class="legend"><span>Selected site</span><span>Other surveyed sites</span></div></section><section class="panel"><h2>Phosphate comparison</h2><p class="muted">Latest phosphate test band for each site, using the same seven-band approach.</p><div id="pchart"></div><div class="legend"><span>Selected site</span><span>Other surveyed sites</span></div></section></div>
@@ -52,9 +62,24 @@ const DETAIL_FIELDS={
 };
 function nonempty(v){return v!==undefined&&v!==null&&String(v).trim()!=='';}
 function displayValue(v){return nonempty(v)?esc(String(v).replaceAll('_',' ')):'<span class="empty-value">Not recorded</span>';}
-function renderDetails(rows){const current=rows[0];for(const [target,fields] of Object.entries(DETAIL_FIELDS)){
- $(target).innerHTML=fields.map(([label,key])=>{const value=current.raw?.[key];const previous=rows.slice(1).find(r=>nonempty(r.raw?.[key]));return `<tr><td>${esc(label)}</td><td>${displayValue(value)}</td><td>${previous?displayValue(previous.raw[key]):'<span class="empty-value">No earlier result</span>'}</td><td>${previous?esc(dateText(previous.date)):'—'}</td></tr>`;}).join('');
-}}
+function renderDetails(rows){
+ const current=rows[0];
+ for(const [target,fields] of Object.entries(DETAIL_FIELDS)){
+   $(target).innerHTML=fields.map(([label,key])=>{
+     const value=current.raw?.[key];
+     const previous=rows.slice(1).find(r=>nonempty(r.raw?.[key]));
+     const hasValue=nonempty(value);
+     const currentText=hasValue?displayValue(value):'Not recorded';
+     const prevText=previous?displayValue(previous.raw[key]):'No earlier result';
+     return `<article class="detail-card ${hasValue?'':'missing'}">
+       <h3>${esc(label)}</h3>
+       <div class="detail-value">${currentText}</div>
+       <div class="detail-date">Latest survey: ${esc(dateText(current.date))}</div>
+       <div class="detail-previous"><strong>Previous:</strong> ${prevText}${previous?`<div class="detail-date">${esc(dateText(previous.date))}</div>`:''}</div>
+     </article>`;
+   }).join('');
+ }
+}
 function openDetailsForPrint(){document.querySelectorAll('.detail-section').forEach(el=>{el.dataset.wasOpen=el.open?'1':'0';el.open=true;});}
 function restoreDetailsAfterPrint(){document.querySelectorAll('.detail-section').forEach(el=>{if('wasOpen' in el.dataset){el.open=el.dataset.wasOpen==='1';delete el.dataset.wasOpen;}});document.body.classList.remove('print-summary','print-full','print-comparison');}
 $('expandAll').addEventListener('click',()=>document.querySelectorAll('.detail-section').forEach(el=>el.open=true));
