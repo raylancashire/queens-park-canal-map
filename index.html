@@ -634,6 +634,17 @@ select {
 .timelapse-details .timelapse-legend-note{font-size:11px}
 .timelapse-details .timelapse-export{padding:4px 0}
 @media(max-width:600px){.timelapse-panel{padding:9px 12px}.timelapse-inner{gap:7px}.timelapse-details{padding:8px 12px}}
+
+/* Survey-site photograph viewer (kept separate from map popups). */
+.site-photo{cursor:zoom-in}
+.site-photo:focus-visible{outline:3px solid #006400;outline-offset:3px}
+.site-photo-viewer{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:54px 18px 25px}
+.site-photo-viewer.is-open{display:flex}
+.site-photo-viewer figure{margin:0;max-width:100%;max-height:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
+.site-photo-viewer img{display:block;max-width:100%;max-height:calc(100dvh - 125px);width:auto;height:auto;object-fit:contain;border-radius:4px}
+.site-photo-viewer figcaption{color:#fff;text-align:center;font-size:15px;line-height:1.4}
+.site-photo-viewer-close{position:absolute;top:10px;right:15px;border:1px solid #fff8;background:#202820;color:#fff;border-radius:50%;width:40px;height:40px;font-size:27px;line-height:1;cursor:pointer}
+.site-photo-viewer-close:focus-visible{outline:3px solid #fff;outline-offset:3px}
 </style>
 
 <style>
@@ -1415,6 +1426,11 @@ function sitePhotoHTML(siteName) {
 
   return `<img
     class="site-photo"
+    role="button"
+    tabindex="0"
+    title="Click to enlarge photograph"
+    aria-label="Enlarge photograph: ${esc(alt)}"
+    data-photo-title="${esc(siteName)}"
     src="${esc(src)}"
     alt="${esc(alt)}"
     loading="lazy"
@@ -2697,6 +2713,56 @@ document.addEventListener("DOMContentLoaded",()=>{
     status.textContent=dates.length+' survey dates available; latest: '+(dates.length?dateText(dates[dates.length-1]):'none')+'. Open the time-lapse to explore them.';
     if(!dates.length){toggle.disabled=true;status.textContent="No dated surveys found.";}
   });
+})();
+</script>
+
+<!-- Site-photo viewer: hidden until a sampling-site photograph is selected. -->
+<div id="sitePhotoViewer" class="site-photo-viewer" role="dialog" aria-modal="true" aria-label="Enlarged sampling-site photograph" aria-hidden="true">
+  <button id="sitePhotoViewerClose" class="site-photo-viewer-close" type="button" aria-label="Close photograph">×</button>
+  <figure><img id="sitePhotoViewerImage" alt=""><figcaption id="sitePhotoViewerCaption"></figcaption></figure>
+</div>
+<script>
+(function(){
+  const viewer=document.getElementById('sitePhotoViewer');
+  const image=document.getElementById('sitePhotoViewerImage');
+  const caption=document.getElementById('sitePhotoViewerCaption');
+  const closeButton=document.getElementById('sitePhotoViewerClose');
+  let previousFocus=null;
+  function openPhoto(photo){
+    if(!photo || !photo.complete || !photo.naturalWidth)return;
+    previousFocus=document.activeElement;
+    image.src=photo.currentSrc || photo.src;
+    image.alt=photo.alt || 'Sampling-site photograph';
+    caption.textContent=photo.dataset.photoTitle || '';
+    viewer.classList.add('is-open');
+    viewer.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+    closeButton.focus();
+  }
+  function closePhoto(){
+    if(!viewer.classList.contains('is-open'))return;
+    viewer.classList.remove('is-open');
+    viewer.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+    image.removeAttribute('src');
+    if(previousFocus?.isConnected)previousFocus.focus();
+  }
+  document.addEventListener('click',event=>{
+    const photo=event.target.closest?.('.leaflet-popup .site-photo');
+    if(photo){event.stopPropagation();openPhoto(photo);}
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape' && viewer.classList.contains('is-open')){event.preventDefault();closePhoto();}
+    const photo=event.target.closest?.('.leaflet-popup .site-photo');
+    if(photo && (event.key==='Enter'||event.key===' ')){
+      event.preventDefault();event.stopPropagation();openPhoto(photo);
+    }
+    if(viewer.classList.contains('is-open') && event.key==='Tab'){
+      event.preventDefault();closeButton.focus();
+    }
+  });
+  closeButton.addEventListener('click',closePhoto);
+  viewer.addEventListener('click',event=>{if(event.target===viewer)closePhoto();});
 })();
 </script>
 </body>
