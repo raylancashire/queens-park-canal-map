@@ -33,6 +33,7 @@ The map displays sampling locations from the CSV using the latitude and longitud
 Current features include:
 
 - Interactive sampling-location markers
+- Clickable survey-site photographs with a compact enlarged-photo viewer
 - Automatic grouping of repeated samples by sampling site
 - Latest sample date and time
 - Nitrate result
@@ -54,6 +55,18 @@ Current features include:
   - Sampling sites
   - Samples in dataset
   - Latest sample
+
+---
+
+## Survey-site photographs and enlarged viewer
+
+Where a survey site has a photograph, its map popup displays a thumbnail. Select the photograph to open a larger version in a compact, centred white viewer, with the site name underneath. The photograph keeps its original proportions and the map remains visible around the viewer.
+
+Close the viewer using the **×** button, the **Escape** key, or by clicking outside the photograph. The feature supports mouse, keyboard and touch use on desktop, tablet and mobile.
+
+Photographs continue to use the existing site-image files; no duplicate image files or changes to the survey CSV are needed. Sites without an available photograph continue to display their normal popup information.
+
+The viewer is implemented in `index.html` and does not modify the Survey Scheduler, analysis page or site comparison report.
 
 ---
 
