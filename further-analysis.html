@@ -135,6 +135,21 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   font-weight:600;
   text-align:center;
 }
+
+/* Temperature time-series: chronological spacing and separate site series. */
+.temperature-timeseries-wrap{overflow-x:auto;padding:4px 0 2px}
+.temperature-timeseries{display:block;width:100%;min-width:760px;height:auto}
+.temperature-timeseries .grid{stroke:#dfe8e2;stroke-width:1}
+.temperature-timeseries .axis{stroke:#829c88;stroke-width:1.2}
+.temperature-timeseries .site-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.temperature-timeseries .point{stroke:#fff;stroke-width:2;cursor:help}
+.temperature-timeseries text{font-family:Arial,sans-serif;fill:#52695b;font-size:11px}
+.temperature-timeseries .value-label{font-size:10px;font-weight:700;fill:#243b2d}
+.temperature-site-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 4px 2px;font-size:12px;color:var(--muted)}
+.temperature-site-legend span{display:inline-flex;align-items:center;gap:6px}
+.temperature-site-legend i{width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 auto}
+@media(max-width:600px){.temperature-timeseries{min-width:680px}.temperature-site-legend{font-size:11px}}
+
 .single-result{
   display:flex;
   align-items:center;
@@ -2160,6 +2175,19 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 /* Sample Trend Analysis */
+/* Expand the all-sites Sample Trend chart without altering the analysis. */
+#sampleTrendChart[data-expandable="true"]{cursor:zoom-in}
+#sampleTrendChart[data-expandable="true"]:focus-visible{outline:3px solid #37744d;outline-offset:2px}
+.sample-trend-zoom[hidden]{display:none!important}
+.sample-trend-zoom{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(20,35,27,.58)}
+.sample-trend-zoom-panel{width:min(96vw,1500px);max-height:92vh;display:flex;flex-direction:column;background:white;border-radius:12px;padding:16px;box-shadow:0 18px 65px #0005}
+.sample-trend-zoom-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.sample-trend-zoom-head strong{font-size:17px}
+.sample-trend-zoom-close{cursor:pointer;border:1px solid #ccd8ce;background:white;border-radius:7px;padding:7px 12px;font:inherit}
+.sample-trend-zoom-body{overflow:auto;min-height:0}
+.sample-trend-zoom-body .sample-trend-svg{width:100%;min-width:800px;min-height:400px;max-height:calc(92vh - 95px)}
+@media(max-width:700px){.sample-trend-zoom{padding:8px}.sample-trend-zoom-panel{width:100%;padding:10px}.sample-trend-zoom-body .sample-trend-svg{min-width:750px}}
+
 .sample-trend-panel{padding:18px}
 .sample-trend-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.55}
 .sample-trend-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
@@ -2564,6 +2592,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="sampleTrendChart" class="sample-trend-chart-wrap" tabindex="0"></div>
+      <p id="sampleTrendExpandHint" style="font-size:12px;color:#66746b;margin:6px 0 0" hidden>Click the chart to enlarge it, or press Enter when focused.</p>
 
       <div class="sample-trend-method" tabindex="0">
         <strong>How the trend is assessed:</strong>
@@ -3341,10 +3370,99 @@ function filterAdditionalForSite(data,site){
   });
 }
 
+
+function renderTemperatureTimeSeries(containerId,data){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+
+  const points=data.map(row=>({
+    value:parseAdditionalNumber(row["Temperature °C"]),
+    date:parseUKDate(row["Date"],row["Time"]),
+    label:additionalDateLabel(row),
+    location:String(row["Location"]||"").trim()
+  })).filter(p=>Number.isFinite(p.value) && p.date instanceof Date && !Number.isNaN(p.date.getTime()))
+    .sort((a,b)=>a.date-b.date);
+
+  if(!points.length){
+    el.innerHTML='<div class="no-results">No results recorded yet.</div>';
+    return;
+  }
+  if(points.length===1){
+    const p=points[0];
+    el.innerHTML=`<div class="single-result"><div><strong>${esc(p.value)} °C</strong><span>${esc(p.label || "Date not recorded")}${p.location ? `<br>${esc(p.location)}` : ""}</span></div></div>`;
+    return;
+  }
+
+  const palette=["#006400","#2f6b9a","#a65f00","#7b4f9d","#008c8c","#b23a48","#6b6b2f","#3f7f5f"];
+  const siteNames=[];
+  const siteIndex=new Map();
+  points.forEach(p=>{
+    const name=p.location || "Site not recorded";
+    const key=normaliseSiteForMatch(name) || name;
+    if(!siteIndex.has(key)){
+      siteIndex.set(key,siteNames.length);
+      siteNames.push({key,name});
+    }
+    p.siteKey=key;
+  });
+
+  const W=920,H=390,left=58,right=24,top=28,bottom=68;
+  const plotW=W-left-right, plotH=H-top-bottom;
+  let tMin=points[0].date.getTime(), tMax=points[points.length-1].date.getTime();
+  if(tMin===tMax){tMin-=43200000;tMax+=43200000;}
+  const vals=points.map(p=>p.value);
+  let yMin=Math.floor(Math.min(...vals)-2), yMax=Math.ceil(Math.max(...vals)+2);
+  if(yMin===yMax){yMin-=2;yMax+=2;}
+  yMin=Math.max(0,yMin);
+  const x=t=>left+((t-tMin)/(tMax-tMin))*plotW;
+  const y=v=>top+((yMax-v)/(yMax-yMin))*plotH;
+  const fmtDate=d=>d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
+
+  const yTicks=5;
+  let svg=`<svg class="temperature-timeseries" viewBox="0 0 ${W} ${H}" role="img" aria-label="Water temperature results over time by sampling site">`;
+  for(let i=0;i<=yTicks;i++){
+    const v=yMin+(yMax-yMin)*(i/yTicks), yy=y(v);
+    svg+=`<line class="grid" x1="${left}" y1="${yy}" x2="${W-right}" y2="${yy}"></line>`;
+    svg+=`<text x="${left-10}" y="${yy+4}" text-anchor="end">${Number.isInteger(v)?v:v.toFixed(1)}°</text>`;
+  }
+  svg+=`<line class="axis" x1="${left}" y1="${top}" x2="${left}" y2="${H-bottom}"></line>`;
+  svg+=`<line class="axis" x1="${left}" y1="${H-bottom}" x2="${W-right}" y2="${H-bottom}"></line>`;
+  svg+=`<text x="16" y="${top+plotH/2}" text-anchor="middle" transform="rotate(-90 16 ${top+plotH/2})">Temperature (°C)</text>`;
+
+  const tickCount=Math.min(6,points.length);
+  for(let i=0;i<tickCount;i++){
+    const tt=tMin+(tMax-tMin)*(tickCount===1?0:i/(tickCount-1));
+    const xx=x(tt), d=new Date(tt);
+    svg+=`<line class="grid" x1="${xx}" y1="${top}" x2="${xx}" y2="${H-bottom}"></line>`;
+    svg+=`<text x="${xx}" y="${H-bottom+22}" text-anchor="middle">${esc(d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}))}</text>`;
+  }
+
+  siteNames.forEach((site,idx)=>{
+    const colour=palette[idx%palette.length];
+    const series=points.filter(p=>p.siteKey===site.key);
+    if(series.length>1){
+      const path=series.map((p,i)=>`${i?"L":"M"}${x(p.date.getTime()).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
+      svg+=`<path class="site-line" d="${path}" stroke="${colour}"></path>`;
+    }
+    series.forEach(p=>{
+      const xx=x(p.date.getTime()), yy=y(p.value);
+      const tip=`${p.location || "Site not recorded"} — ${fmtDate(p.date)}${p.label && !p.label.includes(fmtDate(p.date)) ? ` — ${p.label}` : ""} — ${p.value} °C`;
+      svg+=`<circle class="point" cx="${xx}" cy="${yy}" r="5.5" fill="${colour}" tabindex="0"><title>${esc(tip)}</title></circle>`;
+      svg+=`<text class="value-label" x="${xx}" y="${Math.max(top+10,yy-10)}" text-anchor="middle">${esc(p.value)}°</text>`;
+    });
+  });
+  svg+=`</svg>`;
+
+  const legend=siteNames.length>1
+    ? `<div class="temperature-site-legend" aria-label="Sampling site legend">${siteNames.map((site,idx)=>`<span><i style="background:${palette[idx%palette.length]}"></i>${esc(site.name)}</span>`).join("")}</div>`
+    : "";
+  el.innerHTML=`<div class="temperature-timeseries-wrap">${svg}</div>${legend}`;
+}
+
 function renderAdditionalForFocusedSite(){
   const data=filterAdditionalForSite(additionalWaterQualityData,currentFocusedSite);
 
-  renderAdditionalSeries("temperatureChart",data,"Temperature °C","°C");
+  renderTemperatureTimeSeries("temperatureChart",data);
   renderAdditionalSeries("phChart",data,"pH","");
   renderAdditionalSeries("coliformChart",data,"Coliform","");
   renderAdditionalSeries("bodChart",data,"BOD mg/L","mg/L");
@@ -4011,15 +4129,8 @@ function sampleTrendAnalysis(points,metric){
   };
 }
 
-function sampleTrendRecentDirection(points,metric,analysis=null){
+function sampleTrendRecentDirection(points,metric){
   if(points.length<2) return "Insufficient data";
-
-  // Keep the recent-direction card consistent with the established overall
-  // trend. If the regression is within the ±10% stability threshold, a
-  // short-term movement in the last few samples should not be presented as
-  // an established improvement or deterioration.
-  if(analysis && analysis.label==="Stable") return "Stable";
-
   const info=sampleTrendMetricInfo(metric);
   const recent=points.slice(-Math.min(3,points.length));
   const first=recent[0].value;
@@ -4179,7 +4290,7 @@ function renderSampleTrend(){
     <div class="sample-trend-status-detail" style="margin-top:5px;">${esc(dateRange)}</div>
   `;
 
-  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric,analysis);
+  const recent=sampleTrendRecentDirection(points,currentSampleTrendMetric);
   evidence.innerHTML=`
     <div class="sample-trend-card" tabindex="0">
       <small>First result</small>
@@ -4253,10 +4364,6 @@ function applySampleTrendSiteFocus(site){
    pH ANALYSIS — NEUTRAL-CENTRED VIEW
    ========================================================= */
 
-/* Keep the pH panel's site selection independent so it always
-   opens on All sites, regardless of another panel's saved focus. */
-let currentPHAnalysisSite="all";
-
 function phAnalysisValue(row){
   return snapshotFirstNumber(row,["pH","PH"]);
 }
@@ -4264,11 +4371,11 @@ function phAnalysisValue(row){
 function phAnalysisRows(){
   const source=snapshotAdditionalData || [];
 
-  if(currentPHAnalysisSite==="all") return source;
+  if(currentFocusedSite==="all") return source;
 
   return filterAdditionalForSite(
     source,
-    currentPHAnalysisSite
+    currentFocusedSite
   );
 }
 
@@ -4353,9 +4460,9 @@ function phAnalysisDistanceText(value){
 }
 
 function phAnalysisSiteLabel(){
-  return currentPHAnalysisSite==="all"
+  return currentFocusedSite==="all"
     ? "All sites"
-    : siteDisplayName(currentPHAnalysisSite);
+    : siteDisplayName(currentFocusedSite);
 }
 
 function populatePHAnalysisSiteSelect(){
@@ -4389,7 +4496,7 @@ function syncPHAnalysisSiteUI(){
   const select=document.getElementById("phAnalysisSiteSelect");
   if(!select) return;
 
-  if(currentPHAnalysisSite==="all"){
+  if(currentFocusedSite==="all"){
     select.value="all";
     return;
   }
@@ -4397,21 +4504,45 @@ function syncPHAnalysisSiteUI(){
   const match=[...select.options].find(
     option=>
       normaliseSiteForMatch(option.value)===
-      normaliseSiteForMatch(currentPHAnalysisSite)
+      normaliseSiteForMatch(currentFocusedSite)
   );
 
   if(match){
     select.value=match.value;
   }else{
-    currentPHAnalysisSite="all";
     select.value="all";
   }
 }
 
 function applyPHAnalysisSiteFocus(site){
-  currentPHAnalysisSite=site || "all";
+  currentFocusedSite=site || "all";
+
   syncPHAnalysisSiteUI();
+  syncSnapshotSiteUI();
+  syncSeasonalSiteUI();
+  syncChangeSummarySiteUI();
+  syncColiformRecurrenceSiteUI();
+
+  try{
+    localStorage.setItem(
+      SITE_SYNC_KEY,
+      currentFocusedSite
+    );
+  }catch(e){}
+
+  if(siteSyncChannel){
+    siteSyncChannel.postMessage({
+      type:"site-focus",
+      site:currentFocusedSite
+    });
+  }
+
   renderPHAnalysis();
+  if(typeof renderSnapshot==="function") renderSnapshot();
+  if(typeof renderChangeSummary==="function") renderChangeSummary();
+  if(typeof renderSeasonalPattern==="function") renderSeasonalPattern();
+  if(typeof renderColiformRecurrence==="function") renderColiformRecurrence();
+
   setTimeout(notifyParentOfHeight,40);
 }
 
@@ -7247,6 +7378,54 @@ if(document.getElementById("compareNitrate")){
 }
 
 load();
+</script>
+
+<div id="sampleTrendZoom" class="sample-trend-zoom" role="dialog" aria-modal="true" aria-labelledby="sampleTrendZoomTitle" hidden>
+  <div class="sample-trend-zoom-panel">
+    <div class="sample-trend-zoom-head"><strong id="sampleTrendZoomTitle">All sites – Sample Trend Analysis</strong><button id="sampleTrendZoomClose" class="sample-trend-zoom-close" type="button" aria-label="Close enlarged chart">✕ Close</button></div>
+    <div id="sampleTrendZoomBody" class="sample-trend-zoom-body"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const chart=document.getElementById('sampleTrendChart');
+  const site=document.getElementById('sampleTrendSiteSelect');
+  const dialog=document.getElementById('sampleTrendZoom');
+  const body=document.getElementById('sampleTrendZoomBody');
+  const close=document.getElementById('sampleTrendZoomClose');
+  const hint=document.getElementById('sampleTrendExpandHint');
+  if(!chart||!site||!dialog||!body||!close)return;
+  let priorFocus=null;
+  function available(){return site.value==='all' && !!chart.querySelector('svg')}
+  function sync(){
+    const enabled=available();
+    chart.dataset.expandable=String(enabled);
+    chart.setAttribute('role',enabled?'button':'region');
+    chart.setAttribute('aria-label',enabled?'Enlarge all-sites sample trend chart':'Sample trend chart');
+    if(hint)hint.hidden=!enabled;
+    if(!enabled && !dialog.hidden)hide();
+  }
+  function show(){
+    if(!available())return;
+    priorFocus=document.activeElement;
+    body.replaceChildren(chart.querySelector('svg').cloneNode(true));
+    const active=document.querySelector('.sample-trend-tabs button.active');
+    document.getElementById('sampleTrendZoomTitle').textContent='All sites – '+(active?.textContent?.trim()||'Sample')+' Trend Analysis';
+    dialog.hidden=false;
+    close.focus();
+  }
+  function hide(){dialog.hidden=true;body.replaceChildren();if(priorFocus?.isConnected)priorFocus.focus()}
+  chart.addEventListener('click',show);
+  chart.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&available()){e.preventDefault();show()}});
+  close.addEventListener('click',hide);
+  dialog.addEventListener('click',e=>{if(e.target===dialog)hide()});
+  document.addEventListener('keydown',e=>{if(dialog.hidden)return;if(e.key==='Escape')hide();else if(e.key==='Tab'){e.preventDefault();close.focus()}});
+  site.addEventListener('change',sync);
+  const observer=new MutationObserver(sync);
+  observer.observe(chart,{childList:true});
+  sync();
+})();
 </script>
 </body>
 </html>
