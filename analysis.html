@@ -908,6 +908,17 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 .temperature-chart-note{margin:8px 0 0;color:var(--muted);font-size:11px}
 @media(max-width:700px){.temperature-chart-svg{min-width:620px}.temperature-point-label{font-size:10px}}
 
+
+/* Water pollution incident register: in-page photograph viewer */
+.incident-photo-open{padding:0;border:0;background:transparent;cursor:zoom-in;display:inline-block;border-radius:6px}
+.incident-photo-open:focus-visible{outline:3px solid #006400;outline-offset:3px}
+#incidentPhotoLightbox{position:fixed;inset:0;z-index:20000;background:rgba(15,28,20,.46);display:none;align-items:center;justify-content:center;padding:18px}
+#incidentPhotoLightbox.is-open{display:flex}
+#incidentPhotoLightbox .incident-lightbox-card{position:relative;background:#fff;border-radius:12px;padding:16px;max-width:min(850px,96vw);max-height:94vh;box-shadow:0 14px 45px #0005;display:flex;flex-direction:column;gap:10px}
+#incidentPhotoLightbox img{display:block;max-width:100%;max-height:calc(94vh - 105px);width:auto;height:auto;object-fit:contain;margin:auto;border-radius:6px}
+#incidentPhotoLightbox .incident-lightbox-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#incidentPhotoLightbox .incident-lightbox-close{font:inherit;background:#fff;border:1px solid #cbd9ce;border-radius:7px;padding:7px 12px;cursor:pointer}
+#incidentPhotoLightbox .incident-lightbox-title{font-weight:600;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -979,16 +990,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 <section class="charts">
   <article id="nitratePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="nitrateTab">
     <h2>Nitrate occurrences</h2>
-    <p class="sub">All nitrate test bands are shown, including bands with no samples. Low, Moderate and High describe nutrient concentration using Canal Watch display groupings, not official ecological-status classifications. The vertical scale shows the number of samples.</p>
+    <p class="sub">Number and percentage of samples in each nitrate result band. The left-hand scale shows the number of samples; colours follow the FreshWater Watch nitrate scale.</p>
     <div id="nitrateChart" class="bar-list"></div>
-    <p id="nitrateScaleNote" class="sub" aria-live="polite"></p>
   </article>
 
   <article id="phosphatePanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="phosphateTab" hidden>
     <h2>Phosphate occurrences</h2>
-    <p class="sub">All phosphate test bands are shown, including bands with no samples. Low, Moderate and High describe nutrient concentrations using the FreshWater Watch reference chart; they are not official ecological-status classifications. The vertical scale shows the number of samples.</p>
+    <p class="sub">Number and percentage of samples in each phosphate result band. The left-hand scale shows the number of samples; colours follow the FreshWater Watch phosphate scale.</p>
     <div id="phosphateChart" class="bar-list"></div>
-    <p id="phosphateScaleNote" class="sub" aria-live="polite"></p>
   </article>
 
   <article id="turbidityPanel" class="chart-card chart-panel" role="tabpanel" aria-labelledby="turbidityTab" hidden>
@@ -1338,8 +1347,7 @@ function nutrientBandColour(measure,band){
     "1":"#F6ACCD",
     "2":"#F286B7",
     "5":"#F05AA1",
-    "10":"#D40D8C",
-    ">10":"#D40D8C"
+    "10":"#D40D8C"
   };
 
   const phosphateColours={
@@ -1355,8 +1363,7 @@ function nutrientBandColour(measure,band){
     "0.1":"#FBDDE7",
     "0.2":"#F7CDDB",
     "0.5":"#F398C1",
-    "1":"#CC79AF",
-    ">1":"#CC79AF"
+    "1":"#CC79AF"
   };
 
   const lookup=measure==="Nitrate"?nitrateColours:phosphateColours;
@@ -1513,75 +1520,6 @@ function renderChart(id,counts,total,measure){
  }).join("");
 
  el.innerHTML=axis+`<div class="bar-columns"><div class="bar-grid">${gridLines}</div>${bars}</div>`;
-}
-// Full FreshWater Watch nitrate test scale; concentration groupings are for display.
-const NITRATE_SCALE = [
-  {band:"<0.2", category:"Low"},
-  {band:"0.2-0.5", category:"Low"},
-  {band:"0.5-1", category:"Low"},
-  {band:"1-2", category:"Moderate"},
-  {band:"2-5", category:"Moderate"},
-  {band:"5-10", category:"High"},
-  {band:">10", category:"High"}
-];
-function renderNitrateChart(counts,total){
-  const el=document.getElementById("nitrateChart");
-  // Accept legacy less-than and exact-value exports without losing their samples.
-  const values={...counts};
-  if(values["0-0.2"]){values["<0.2"]=(values["<0.2"]||0)+values["0-0.2"];delete values["0-0.2"]}
-  const entries=NITRATE_SCALE.map(item=>({...item,count:values[item.band]||0}));
-  const axisMax=total<=10?10:Math.ceil(total/5)*5;
-  const ticks=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-axis-tick" style="bottom:${i/axisMax*100}%">${i}</span>`).join("");
-  const grid=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-grid-line" style="bottom:${i/axisMax*100}%"></span>`).join("");
-  const bars=entries.map(({band,category,count})=>{
-    const percent=total?(100*count/total).toFixed(1):"0.0";
-    const height=count?Math.max(1,100*count/axisMax):0;
-    return `<div class="bar-row" title="${esc(band)} mg/L — ${category} nutrient concentration — ${count} samples (${percent}%)">
-      <div class="bar-label">${esc(band)}<small style="display:block;font-size:10px;color:#52695b">${category}</small></div>
-      <div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${nutrientBandColour("Nitrate",band)}"><span class="bar-percent">${percent}%</span></div></div>
-    </div>`;
-  }).join("");
-  el.innerHTML=`<div class="bar-axis" aria-hidden="true"><span class="bar-axis-title">Number of samples</span>${ticks}</div><div class="bar-columns"><div class="bar-grid">${grid}</div>${bars}</div>`;
-  // Inform visitors about zero-count bands and the display groupings.
-  const note=document.getElementById("nitrateScaleNote");
-  if(note)note.textContent=`Nitrate concentration (mg/L): Low below 1; Moderate 1–5; High above 5. Display groupings are indicative, not regulatory thresholds. ${total} measured ${total===1?"sample":"samples"} in view.`;
-}
-// Phosphate bands from the supplied FreshWater Watch concentration chart.
-const PHOSPHATE_SCALE = [
-  {band:"<0.02",category:"Low"},
-  {band:"0.02-0.05",category:"Low"},
-  {band:"0.05-0.1",category:"Low"},
-  {band:"0.1-0.2",category:"Moderate"},
-  {band:"0.2-0.5",category:"High"},
-  {band:"0.5-1",category:"High"},
-  {band:">1",category:"High"}
-];
-function renderPhosphateChart(counts,total){
-  const el=document.getElementById("phosphateChart");
-  const values={...counts};
-  // Normalise common alternate export labels while keeping all samples.
-  const aliases={"0-0.02":"<0.02","<0.02":"<0.02","0.5-1.0":"0.5-1",">1.0":">1","1+":">1"};
-  for(const [oldBand,newBand] of Object.entries(aliases)){
-    if(oldBand!==newBand && values[oldBand]){
-      values[newBand]=(values[newBand]||0)+values[oldBand];
-      delete values[oldBand];
-    }
-  }
-  const entries=PHOSPHATE_SCALE.map(item=>({...item,count:values[item.band]||0}));
-  const axisMax=total<=10?10:Math.ceil(total/5)*5;
-  const ticks=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-axis-tick" style="bottom:${i/axisMax*100}%">${i}</span>`).join("");
-  const grid=Array.from({length:axisMax+1},(_,i)=>`<span class="bar-grid-line" style="bottom:${i/axisMax*100}%"></span>`).join("");
-  const bars=entries.map(({band,category,count})=>{
-    const percent=total?(100*count/total).toFixed(1):"0.0";
-    const height=count?Math.max(1,100*count/axisMax):0;
-    return `<div class="bar-row" title="${esc(band)} mg/L — ${category} nutrient concentration — ${count} samples (${percent}%)">
-      <div class="bar-label">${esc(band)}<small style="display:block;font-size:10px;color:#52695b">${category}</small></div>
-      <div class="bar-track"><div class="bar-fill" style="height:${height}%;background:${nutrientBandColour("Phosphate",band)}"><span class="bar-percent">${percent}%</span></div></div>
-    </div>`;
-  }).join("");
-  el.innerHTML=`<div class="bar-axis" aria-hidden="true"><span class="bar-axis-title">Number of samples</span>${ticks}</div><div class="bar-columns"><div class="bar-grid">${grid}</div>${bars}</div>`;
-  const note=document.getElementById("phosphateScaleNote");
-  if(note)note.textContent=`Phosphate concentration (mg/L): Low below 0.1; Moderate 0.1–0.2; High above 0.2. Categories are indicative, not regulatory thresholds. ${total} measured ${total===1?"sample":"samples"} in view.`;
 }
 function rows(measure,counts,total){return Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0])).map(([band,count])=>`<tr><td>${esc(measure)}</td><td>${esc(band)}</td><td>${count}</td><td>${(total?count/total*100:0).toFixed(1)}%</td></tr>`).join("")}
 
@@ -2268,8 +2206,8 @@ function renderSampleAnalysisForFocusedSite(){
   document.getElementById("phosphateResults").textContent=pVals.length;
   document.getElementById("turbidityResults").textContent=tVals.length;
 
-  renderNitrateChart(occurrences(nVals),nVals.length);
-  renderPhosphateChart(occurrences(pVals),pVals.length);
+  renderChart("nitrateChart",occurrences(nVals),nVals.length,"Nitrate");
+  renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate");
   renderTurbidityChart(turbidityOccurrences(tVals),tVals.length);
   updateScopeText(currentFocusedSite,data);
   renderWeatherAtSurvey();
@@ -3056,7 +2994,7 @@ async function renderPollutionIncidents(){
     const severity=incidentField(r,"Severity","severity")||"Not rated";
     const manage=admin&&r.id?`<td class="incident-row-actions"><button type="button" onclick="editPollutionIncident('${esc(String(r.id))}')">Edit</button></td>`:"";
     const photoUrl=photoUrls[index];
-    const photoCell=photoUrl?`<a href="${esc(photoUrl)}" target="_blank" rel="noopener"><img class="incident-register-photo" src="${esc(photoUrl)}" alt="Incident photograph"></a>`:"—";
+    const photoCell=photoUrl?`<button type="button" class="incident-photo-open" aria-label="Enlarge incident photograph at ${esc(incidentLocation(r))}" data-photo-title="${esc(incidentLocation(r))}"><img class="incident-register-photo" src="${esc(photoUrl)}" alt="Incident photograph"></button>`:"—";
     return `<tr><td>${esc(incidentDateDisplayShort(r))}</td><td>${esc(incidentLocation(r))}</td><td>${esc(incidentClassification(r))}</td><td>${esc(incidentField(r,"Pollution type","Type","pollution_type")||"—")}</td><td><span class="incident-badge" style="${incidentSeverityStyle(severity)}">${esc(severity)}</span>${incidentField(r,"Official category","official_category")?`<br><small>${esc(incidentField(r,"Official category","official_category"))}</small>`:""}</td><td>${esc(incidentStatus(r))}</td><td>${esc(incidentField(r,"Extent","extent")||"—")}</td><td>${esc(incidentField(r,"Wildlife impact","wildlife_impact")||"—")}</td><td>${photoCell}</td><td class="incident-description"><div class="incident-description-text" title="${esc(incidentField(r,"Description","description")||"—")}">${esc(incidentField(r,"Description","description")||"—")}</div></td>${manage}</tr>`;
   }).join("")}</tbody></table>`;
 }
@@ -4304,6 +4242,47 @@ canalSupabase.auth.onAuthStateChange((_event,session)=>{
 refreshIncidentAuthUI();
 load();
 
+</script>
+
+<div id="incidentPhotoLightbox" role="dialog" aria-modal="true" aria-label="Enlarged water pollution incident photograph" aria-hidden="true">
+  <div class="incident-lightbox-card">
+    <div class="incident-lightbox-top"><span class="incident-lightbox-title" id="incidentLightboxCaption"></span><button type="button" class="incident-lightbox-close" id="incidentLightboxClose">× Close</button></div>
+    <img id="incidentLightboxImage" alt="Enlarged water pollution incident photograph">
+  </div>
+</div>
+<script>
+(()=>{
+  const overlay=document.getElementById('incidentPhotoLightbox');
+  const image=document.getElementById('incidentLightboxImage');
+  const caption=document.getElementById('incidentLightboxCaption');
+  const close=document.getElementById('incidentLightboxClose');
+  let priorFocus=null;
+  function hide(){
+    if(!overlay.classList.contains('is-open'))return;
+    overlay.classList.remove('is-open');overlay.setAttribute('aria-hidden','true');
+    image.removeAttribute('src');
+    if(priorFocus?.isConnected)priorFocus.focus();
+  }
+  document.addEventListener('click',event=>{
+    const trigger=event.target.closest?.('.incident-photo-open');
+    if(!trigger)return;
+    event.preventDefault();
+    const thumb=trigger.querySelector('img');
+    if(!thumb?.src)return;
+    priorFocus=trigger;
+    image.src=thumb.currentSrc||thumb.src;
+    caption.textContent=trigger.dataset.photoTitle||'Water pollution incident';
+    overlay.classList.add('is-open');overlay.setAttribute('aria-hidden','false');
+    close.focus();
+  });
+  close.addEventListener('click',hide);
+  overlay.addEventListener('click',event=>{if(event.target===overlay)hide()});
+  document.addEventListener('keydown',event=>{
+    if(!overlay.classList.contains('is-open'))return;
+    if(event.key==='Escape'){event.preventDefault();hide()}
+    if(event.key==='Tab'){event.preventDefault();close.focus()}
+  });
+})();
 </script>
 </body>
 </html>
