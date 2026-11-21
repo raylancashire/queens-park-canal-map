@@ -3847,8 +3847,8 @@ function surveyDateTimeValue(row){
   if(!dateMatch) return sampleDateValue(row);
 
   const timeMatch=rawTime.match(/^(\d{1,2}):(\d{2})/);
-  const month=Number(dateMatch[1]);
-  const day=Number(dateMatch[2]);
+  const day=Number(dateMatch[1]);
+  const month=Number(dateMatch[2]);
   const year=Number(dateMatch[3]);
   const hour=timeMatch?Number(timeMatch[1]):12;
   const minute=timeMatch?Number(timeMatch[2]):0;
@@ -3881,40 +3881,53 @@ async function supabaseWeatherFetch(path){
 
 async function loadWeatherData(){
   try{
-    const [sites,observations]=await Promise.all([
-      supabaseWeatherFetch("weather_monitoring_sites?select=id,site_name&active=eq.true"),
-      supabaseWeatherFetch("weather_observations?select=monitoring_site_id,station_geohash,observed_at,temperature_c,humidity_percent,weather_code,wind_direction,wind_speed,wind_gust&order=observed_at.desc&limit=1000")
-    ]);
+    // Fetch observations across the dates actually covered by the surveys,
+    // rather than only the latest 1,000 observations across all sites.
+    const surveyTimes=freshwaterDataAll.map(surveyDateTimeValue).filter(Number.isFinite);
+    const first=surveyTimes.length?Math.min(...surveyTimes)-90*60000:Date.now()-365*86400000;
+    const last=surveyTimes.length?Math.max(...surveyTimes)+90*60000:Date.now();
+    const columns="monitoring_site_id,station_geohash,observed_at,temperature_c,humidity_percent,weather_code,wind_direction,wind_speed,wind_gust";
+    const sites=await supabaseWeatherFetch("weather_monitoring_sites?select=id,site_name&active=eq.true");
+    const observations=[];
+    const pageSize=1000;
+    for(let offset=0;offset<20000;offset+=pageSize){
+      const path=`weather_observations?select=${columns}&observed_at=gte.${encodeURIComponent(new Date(first).toISOString())}&observed_at=lte.${encodeURIComponent(new Date(last).toISOString())}&order=observed_at.asc&limit=${pageSize}&offset=${offset}`;
+      const page=await supabaseWeatherFetch(path);
+      if(!Array.isArray(page)) throw new Error("Unexpected archived weather response");
+      observations.push(...page);
+      if(page.length<pageSize) break;
+      if(offset+pageSize>=20000) throw new Error("Archived weather exceeds the 20,000-record safety limit; narrow the date range");
+    }
     weatherMonitoringSites=Array.isArray(sites)?sites:[];
-    weatherObservations=Array.isArray(observations)?observations:[];
+    weatherObservations=observations;
     weatherLoadError="";
   }catch(error){
     weatherLoadError=error instanceof Error?error.message:String(error);
   }
 }
 
-function closestWeatherForSurvey(row){
+function weatherMatchForSurvey(row){
   const site=weatherMonitoringSites.find(item=>
     weatherSiteKey(item.site_name)===weatherSiteKey(siteName(row))
   );
-  if(!site) return null;
-
+  if(!site) return {observation:null,reason:"No matching weather monitoring site."};
   const surveyTime=surveyDateTimeValue(row);
-  if(!surveyTime) return null;
+  if(!Number.isFinite(surveyTime)) return {observation:null,reason:"Survey date or time could not be interpreted."};
+  const siteObservations=weatherObservations.filter(item=>String(item.monitoring_site_id)===String(site.id));
+  if(!siteObservations.length) return {observation:null,reason:"No archived weather observations available for this site."};
   let best=null;
   let bestDifference=Infinity;
-
-  weatherObservations.forEach(observation=>{
-    if(String(observation.monitoring_site_id)!==String(site.id)) return;
+  for(const observation of siteObservations){
     const observedTime=new Date(observation.observed_at).getTime();
     const difference=Math.abs(observedTime-surveyTime);
     if(Number.isFinite(observedTime) && difference<bestDifference){
       best=observation;
       bestDifference=difference;
     }
-  });
-
-  return best && bestDifference<=90*60*1000 ? best : null;
+  }
+  return best && bestDifference<=90*60000
+    ? {observation:best,reason:""}
+    : {observation:null,reason:"No archived observation within 90 minutes of this survey."};
 }
 
 function weatherNumber(value,decimals=0){
@@ -3962,10 +3975,10 @@ function renderWeatherAtSurvey(){
   container.innerHTML=`<table class="weather-table">
     <thead><tr><th>Survey</th><th>Conditions</th><th>Air temperature</th><th>Humidity</th><th>Wind</th><th>Observation</th></tr></thead>
     <tbody>${surveys.map(row=>{
-      const observation=closestWeatherForSurvey(row);
+      const {observation,reason}=weatherMatchForSurvey(row);
       const surveyLabel=`${sampleDateLabel(row)}${getField(row,"Sample Time","sample_time")?` · ${getField(row,"Sample Time","sample_time")}`:""}`;
       if(!observation){
-        return `<tr><td><span class="weather-reading">${esc(siteName(row))}</span><br><span class="weather-muted">${esc(surveyLabel)}</span></td><td colspan="5" class="weather-muted">No archived observation for this survey.</td></tr>`;
+        return `<tr><td><span class="weather-reading">${esc(siteName(row))}</span><br><span class="weather-muted">${esc(surveyLabel)}</span></td><td colspan="5" class="weather-muted">${esc(reason)}</td></tr>`;
       }
       const wind=[
         observation.wind_direction,
