@@ -3872,7 +3872,19 @@ function surveyDateTimeValue(row){
 }
 
 function weatherCodeLabel(code){
-  return code!==null && code!==undefined && code!=="" && Number.isFinite(Number(code))?`Met Office code ${code}`:"—";
+  if(code===null || code===undefined || code==="" || !Number.isFinite(Number(code))) return "Not recorded";
+  const labels={
+    0:"Clear night",1:"Sunny day",2:"Partly cloudy (night)",3:"Partly cloudy (day)",
+    5:"Mist",6:"Fog",7:"Cloudy",8:"Overcast",9:"Light rain shower (night)",
+    10:"Light rain shower (day)",11:"Drizzle",12:"Light rain",13:"Heavy rain shower (night)",
+    14:"Heavy rain shower (day)",15:"Heavy rain",16:"Sleet shower (night)",
+    17:"Sleet shower (day)",18:"Sleet",19:"Hail shower (night)",
+    20:"Hail shower (day)",21:"Hail",22:"Light snow shower (night)",
+    23:"Light snow shower (day)",24:"Light snow",25:"Heavy snow shower (night)",
+    26:"Heavy snow shower (day)",27:"Heavy snow",28:"Thunder shower (night)",
+    29:"Thunder shower (day)",30:"Thunder"
+  };
+  return labels[Number(code)] || `Met Office code ${code}`;
 }
 
 async function supabaseWeatherFetch(path){
@@ -3989,7 +4001,7 @@ function renderWeatherAtSurvey(){
         observation.wind_direction,
         observation.wind_speed!==null && observation.wind_speed!==undefined && Number.isFinite(Number(observation.wind_speed))?`speed ${weatherNumber(observation.wind_speed,1)}`:"",
         observation.wind_gust!==null && observation.wind_gust!==undefined && Number.isFinite(Number(observation.wind_gust))?`gust ${weatherNumber(observation.wind_gust,1)}`:""
-      ].filter(Boolean).join(" · ")||"—";
+      ].filter(Boolean).join(" · ")||"Not recorded";
       const observedLabel=new Date(observation.observed_at).toLocaleString("en-GB",{timeZone:"Europe/London",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
       return `<tr>
         <td><span class="weather-reading">${esc(siteName(row))}</span><br><span class="weather-muted">${esc(surveyLabel)}</span></td>
