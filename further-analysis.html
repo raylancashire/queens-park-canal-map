@@ -426,6 +426,9 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
 .turbidity-bar-list{
   grid-template-columns:46px minmax(0,1fr);
 }
+@media(max-width:900px){
+  .bar-list:not(.turbidity-bar-list){overflow-x:auto;-webkit-overflow-scrolling:touch;grid-template-columns:46px minmax(520px,1fr)}
+}
 .turbidity-bar-list .bar-columns{
   gap:6px;
 }
@@ -481,6 +484,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   line-height:1;
 }
 .bar-columns{
+  min-width:0;
   display:flex;
   align-items:flex-end;
   gap:14px;
@@ -545,7 +549,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
 th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f7f9f7}
 .error{display:none;margin-bottom:16px;padding:12px 14px;border-radius:8px;background:#fff1f1;color:#8b1e1e}
 .note{margin-top:14px;color:var(--muted);font-size:11px}
-@media(max-width:760px){.summary{grid-template-columns:1fr}.wrap{padding:10px 10px 6px}.bar-list{height:240px;overflow-x:auto;grid-template-columns:42px minmax(430px,1fr)}.bar-columns{gap:7px}.bar-row{min-width:58px}.bar-track,.bar-axis,.bar-grid{height:165px}.chart-toggle button{flex:1 1 160px}}
+@media(max-width:760px){.summary{grid-template-columns:1fr}.wrap{padding:10px 10px 6px}.bar-list{height:240px;overflow-x:auto;-webkit-overflow-scrolling:touch;grid-template-columns:42px minmax(520px,1fr)}.bar-columns{gap:7px}.bar-row{min-width:58px}.bar-track,.bar-axis,.bar-grid{height:165px}.chart-toggle button{flex:1 1 160px}}
 
 /* Keep occurrence charts vertically aligned when description text wraps */
 #nitratePanel > .sub,
@@ -2937,7 +2941,7 @@ function renderTurbidityChart(counts,total){
       <div class="bar-label">${esc(item.label)}</div>
       <div class="bar-track">
         <div class="bar-fill" style="height:${height}%;background:${colour}">
-          ${pctLabel ? `<span class="bar-percent">${pctLabel}</span>` : ""}
+          ${pctLabel ? `<span class="bar-percent"><span class="bar-count">${count}</span><span>${pctLabel}</span></span>` : ""}
         </div>
       </div>
     </div>`;
