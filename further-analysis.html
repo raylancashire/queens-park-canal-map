@@ -2947,13 +2947,15 @@ function renderTurbidityChart(counts,total){
 }
 
 const NUTRIENT_SCALES={
-  Nitrate:["0-0.2","0.2-0.5","0.5-1","1-2","2-5","5-10",">10"],
-  Phosphate:["0-0.02","0.02-0.05","0.05-0.1","0.1-0.2","0.2-0.5","0.5-1",">1"]
+  Nitrate:["<0.2","0.2-0.5","0.5-1","1-2","2-5","5-10",">10"],
+  Phosphate:["<0.02","0.02-0.05","0.05-0.1","0.1-0.2","0.2-0.5","0.5-1",">1"]
 };
 function occurrences(vals,measure){
   const c=Object.fromEntries((NUTRIENT_SCALES[measure]||[]).map(band=>[band,0]));
   for(const r of vals){
-    const v=normaliseRange(r);
+    const raw=normaliseRange(r);
+    const v=measure==="Nitrate" && raw==="0-0.2" ? "<0.2" :
+      measure==="Phosphate" && raw==="0-0.02" ? "<0.02" : raw;
     if(v)c[v]=(c[v]||0)+1;
   }
   return c;
