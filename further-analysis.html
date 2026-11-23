@@ -1330,6 +1330,14 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
 }
 
 
+
+/* Oxygen saturation screening scale in change comparison */
+.change-saturation-scale{margin-top:11px}
+.change-saturation-track{height:11px;border-radius:6px;position:relative;background:linear-gradient(to right,#c83f40 0%,#c83f40 25%,#e57931 25%,#e57931 41.6667%,#dba323 41.6667%,#dba323 58.3333%,#83a83b 58.3333%,#83a83b 75%,#16834b 75%,#16834b 100%)}
+.change-saturation-marker{position:absolute;top:-4px;height:19px;width:3px;background:#182b22;box-shadow:0 0 0 2px white;transform:translateX(-50%)}
+.change-saturation-ticks{display:flex;justify-content:space-between;font-size:9px;color:#526158;margin-top:5px}
+.change-saturation-band{font-size:10px;font-weight:750;margin-top:5px}
+
 /* =========================================================
    CHANGE SINCE PREVIOUS SURVEY
    ========================================================= */
@@ -6246,7 +6254,7 @@ function changeIndicatorInfo(key){
     temperature:{label:"Temperature",unit:"°C",decimals:1,neutralDirection:true},
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
-    doSaturation:{label:"Oxygen Saturation",unit:"%",decimals:0,neutralDirection:true},
+    doSaturation:{label:"Oxygen Saturation",unit:"%",decimals:0},
     bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
     coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
@@ -6276,6 +6284,27 @@ function changeRankPH(value){
   return ranks[assessment.kind] || 2;
 }
 
+function changeSaturationBand(value){
+  if(!Number.isFinite(value)) return null;
+  if(value>120) return {label:"High saturation — investigate",colour:"#b35b2b",rank:3};
+  if(value>=90) return {label:"Good oxygen availability",colour:"#16834b",rank:5};
+  if(value>=70) return {label:"Moderate — monitor",colour:"#83a83b",rank:4};
+  if(value>=50) return {label:"Low — concern",colour:"#dba323",rank:3};
+  if(value>=30) return {label:"Very low — serious concern",colour:"#e57931",rank:2};
+  return {label:"Critical oxygen depletion",colour:"#c83f40",rank:1};
+}
+
+function changeSaturationScale(value){
+  const band=changeSaturationBand(value);
+  if(!band) return "";
+  const position=Math.max(0,Math.min(100,value/120*100));
+  return `<div class="change-saturation-scale" aria-label="Oxygen saturation ${esc(value.toFixed(0))} percent: ${esc(band.label)}">
+    <div class="change-saturation-track"><span class="change-saturation-marker" style="left:${position.toFixed(2)}%"></span></div>
+    <div class="change-saturation-ticks"><span>0%</span><span>30%</span><span>50%</span><span>70%</span><span>90%</span><span>120%</span></div>
+    <div class="change-saturation-band" style="color:${band.colour}">${esc(band.label)}${value>120?" (above scale)":""}</div>
+  </div>`;
+}
+
 function changeClassification(key,current,previous){
   if(!Number.isFinite(current) || !Number.isFinite(previous)){
     return {label:"Previous survey unavailable",cls:"neutral",symbol:"—"};
@@ -6289,9 +6318,22 @@ function changeClassification(key,current,previous){
     return {label:"Little / no change",cls:"stable",symbol:"→"};
   }
 
+  if(key==="doSaturation"){
+    const now=changeSaturationBand(current);
+    const before=changeSaturationBand(previous);
+    // Above 120% is a warning; moving towards the 90–120% range is favourable.
+    const nowScore=current>120 ? 120-current : current;
+    const prevScore=previous>120 ? 120-previous : previous;
+    if(now.rank>before.rank || (now.rank===before.rank && nowScore>prevScore))
+      return {label:"Improving",cls:"improved",symbol:"↑"};
+    if(now.rank<before.rank || (now.rank===before.rank && nowScore<prevScore))
+      return {label:"Deteriorating",cls:"worse",symbol:"↓"};
+    return {label:"Little / no change",cls:"stable",symbol:"→"};
+  }
+
   if(info.neutralDirection){
     return {
-      label:delta>0 ? "Warmer" : "Cooler",
+      label:delta>0 ? "Temperature increased — assess conditions" : "Temperature decreased — assess conditions",
       cls:"neutral",
       symbol:delta>0 ? "↑" : "↓"
     };
@@ -6372,6 +6414,8 @@ function changeCard(key,current,previous,currentDate,previousDate,note){
     ${Number.isFinite(current) && Number.isFinite(previous)
       ? `<div class="change-summary-delta">Change: <strong>${esc(changeDeltaText(key,current,previous))}</strong></div>`
       : ""}
+
+    ${key==="doSaturation" ? changeSaturationScale(current) : ""}
 
     <span class="change-summary-status ${status.cls}">
       ${status.symbol} ${esc(status.label)}
@@ -6530,7 +6574,7 @@ function renderChangeSummary(){
         item[0],item[1],item[2],
         item[3],
         item[4],
-        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : item[0]==="doSaturation" ? "change shown in percentage points; direction alone does not determine water quality" : ""
+        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : item[0]==="doSaturation" ? "screening bands only; interpret with DO (mg/L), time of day and other measurements" : ""
       )).join("")
     : '<div class="change-summary-empty">A second additional water-quality survey is needed before change can be calculated.</div>';
 
