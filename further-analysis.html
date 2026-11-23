@@ -2174,28 +2174,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
   color:var(--ink) !important;
 }
 
-/* Project / Site Trends: full-size scrollable chart viewer. */
-#projectTrendChart[data-expandable="true"]{cursor:zoom-in}
-#projectTrendChart[data-expandable="true"]:focus-visible{outline:3px solid #37744d;outline-offset:2px}
-.project-trend-zoom-body .project-trend-svg{display:block!important;width:auto!important;max-width:none!important;height:auto!important;min-width:0!important}
-
 /* Sample Trend Analysis */
-/* Expand the all-sites Sample Trend chart without altering the analysis. */
-#sampleTrendChart[data-expandable="true"]{cursor:zoom-in}
-#sampleTrendChart[data-expandable="true"]:focus-visible{outline:3px solid #37744d;outline-offset:2px}
-.sample-trend-zoom[hidden]{display:none!important}
-.sample-trend-zoom{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(20,35,27,.58)}
-.sample-trend-zoom-panel{width:min(96vw,1500px);max-height:92vh;display:flex;flex-direction:column;background:white;border-radius:12px;padding:16px;box-shadow:0 18px 65px #0005}
-.sample-trend-zoom-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.sample-trend-zoom-head strong{font-size:17px}
-.sample-trend-zoom-close{cursor:pointer;border:1px solid #ccd8ce;background:white;border-radius:7px;padding:7px 12px;font:inherit}
-/* Keep the chart at readable scale; scroll the long timeline rather than shrinking it. */
-.sample-trend-zoom-body{overflow-x:auto;overflow-y:auto;min-height:0;flex:1;overscroll-behavior:contain;scrollbar-gutter:stable}
-.sample-trend-zoom-body .sample-trend-svg{display:block;width:auto;max-width:none;height:auto;min-height:0}
-.sample-trend-zoom-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px;color:#56685b;font-size:12px}
-.sample-trend-zoom-pan{cursor:pointer;border:1px solid #ccd8ce;background:#f7faf7;border-radius:7px;padding:6px 10px;font:inherit;color:#234b31}
-@media(max-width:700px){.sample-trend-zoom{padding:8px}.sample-trend-zoom-panel{width:100%;padding:10px}.sample-trend-zoom-controls{font-size:11px}}
-
 .sample-trend-panel{padding:18px}
 .sample-trend-intro{margin:0 0 14px;color:#66746b;font-size:13px;line-height:1.55}
 .sample-trend-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
@@ -2600,7 +2579,6 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
       </div>
 
       <div id="sampleTrendChart" class="sample-trend-chart-wrap" tabindex="0"></div>
-      <p id="sampleTrendExpandHint" style="font-size:12px;color:#66746b;margin:6px 0 0" hidden>Click the chart to enlarge it, or press Enter when focused.</p>
 
       <div class="sample-trend-method" tabindex="0">
         <strong>How the trend is assessed:</strong>
@@ -2641,8 +2619,7 @@ th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;font-
         <button id="trendTurbidity" type="button" aria-pressed="false">Turbidity</button>
       </div>
 
-      <div id="projectTrendChart" class="project-trend-chart" tabindex="0"></div>
-      <p id="projectTrendExpandHint" style="font-size:12px;color:#66746b;margin:6px 0 0" hidden>Click the chart to enlarge it, or press Enter when focused.</p>
+      <div id="projectTrendChart" class="project-trend-chart"></div>
       <div id="projectTrendSummary" class="project-trend-summary"></div>
     </div>
   </section>
@@ -5233,6 +5210,7 @@ function snapshotIndicatorColour(metric){
     temperature:"#D9822B",
     ph:"#8C6BB1",
     do:"#2D7FB8",
+    doSaturation:"#167B91",
     bod:"#7A5A3A",
     coliform:"#A66A32"
   };
@@ -5327,6 +5305,14 @@ function snapshotFirstNumber(row,names){
     }
   }
   return null;
+}
+
+// Calculate saturation from paired readings in the same survey record.
+function snapshotOxygenSaturation(row){
+  const oxygen=snapshotFirstNumber(row,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
+  const temperature=snapshotFirstNumber(row,["Temperature °C","Temperature C","Temperature"]);
+  if(!Number.isFinite(oxygen) || !Number.isFinite(temperature)) return null;
+  return dissolvedOxygenPercentSaturation(oxygen,temperature);
 }
 
 function snapshotBOD(row){
@@ -5762,6 +5748,7 @@ function renderSnapshot(){
     "Dissolved Oxygen ppm",
     "Dissolved Oxygen mg/L"
   ])));
+  const oxygenSaturation=snapshotAverage(addRows.map(snapshotOxygenSaturation));
   const bod=snapshotAverage(addRows.map(snapshotBOD));
   // Coliform is a LaMotte threshold screening result, not a continuous measurement.
   // Do not average positive/negative values: interpret the current result and the
@@ -5818,6 +5805,14 @@ function renderSnapshot(){
       "do","Dissolved Oxygen (DO)",`${dissolvedOxygen.toFixed(1)} ppm`,
       currentSnapshotPeriod==="latest" ? "Latest additional test" : "Average recorded result",
       snapshotDOAssessment(dissolvedOxygen)
+    ));
+  }
+
+  if(Number.isFinite(oxygenSaturation)){
+    cards.push(snapshotCard(
+      "doSaturation","Oxygen Saturation",`${oxygenSaturation.toFixed(0)}%`,
+      currentSnapshotPeriod==="latest" ? "Latest paired DO and temperature readings" : "Average of paired DO and temperature readings",
+      {label:"Calculated saturation",kind:"neutral"}
     ));
   }
 
@@ -6251,6 +6246,7 @@ function changeIndicatorInfo(key){
     temperature:{label:"Temperature",unit:"°C",decimals:1,neutralDirection:true},
     ph:{label:"pH",unit:"",decimals:1,ph:true},
     do:{label:"Dissolved Oxygen (DO)",unit:"ppm",decimals:1,higherBetter:true},
+    doSaturation:{label:"Oxygen Saturation",unit:"%",decimals:0,neutralDirection:true},
     bod:{label:"BOD",unit:"ppm",decimals:1,lowerBetter:true},
     coliform:{label:"Coliform",unit:"coliforms/100ml",decimals:0,lowerBetter:true,coliform:true}
   };
@@ -6260,6 +6256,8 @@ function changeIndicatorInfo(key){
 function changeFormatValue(key,value){
   if(!Number.isFinite(value)) return "—";
   const info=changeIndicatorInfo(key);
+
+  if(key==="doSaturation") return `${value.toFixed(0)}%`;
 
   if(key==="coliform"){
     return value>=20
@@ -6338,6 +6336,7 @@ function changeDeltaText(key,current,previous){
   const info=changeIndicatorInfo(key);
   const delta=current-previous;
   const sign=delta>0?"+":"";
+  if(key==="doSaturation") return `${sign}${delta.toFixed(1)} percentage points`;
   let text=`${sign}${delta.toFixed(info.decimals)}${info.unit ? " "+info.unit : ""}`;
 
   if(previous!==0 && key!=="ph" && key!=="temperature" && key!=="coliform"){
@@ -6482,12 +6481,14 @@ function renderChangeSummary(){
   const tempGetter=r=>snapshotFirstNumber(r,["Temperature °C","Temperature C","Temperature"]);
   const phGetter=r=>snapshotFirstNumber(r,["pH","PH"]);
   const doGetter=r=>snapshotFirstNumber(r,["Dissolved Oxygen PPM","Dissolved Oxygen ppm","Dissolved Oxygen mg/L"]);
+  const saturationGetter=r=>snapshotOxygenSaturation(r);
   const bodGetter=r=>snapshotBOD(r);
   const coliformGetter=r=>snapshotFirstNumber(r,["Coliform (48 Hrs)","Coliform","Coliform (48 hrs)"]);
 
   const addTemperature=changeAdditionalMetricPair(tempGetter);
   const addPH=changeAdditionalMetricPair(phGetter);
   const addDO=changeAdditionalMetricPair(doGetter);
+  const addSaturation=changeAdditionalMetricPair(saturationGetter);
   const addBOD=changeAdditionalMetricPair(bodGetter);
   const addColiform=changeAdditionalMetricPair(coliformGetter);
 
@@ -6507,6 +6508,11 @@ function renderChangeSummary(){
       addDO.previous ? changeAverageFromRows(addDO.previous.rows,doGetter) : null,
       addDO.latest?.timestamp||0,
       addDO.previous?.timestamp||0],
+    ["doSaturation",
+      addSaturation.latest ? changeAverageFromRows(addSaturation.latest.rows,saturationGetter) : null,
+      addSaturation.previous ? changeAverageFromRows(addSaturation.previous.rows,saturationGetter) : null,
+      addSaturation.latest?.timestamp||0,
+      addSaturation.previous?.timestamp||0],
     ["bod",
       addBOD.latest ? changeAverageFromRows(addBOD.latest.rows,bodGetter) : null,
       addBOD.previous ? changeAverageFromRows(addBOD.previous.rows,bodGetter) : null,
@@ -6524,7 +6530,7 @@ function renderChangeSummary(){
         item[0],item[1],item[2],
         item[3],
         item[4],
-        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : ""
+        item[0]==="temperature" ? "temperature change is descriptive, not automatically good or bad" : item[0]==="doSaturation" ? "change shown in percentage points; direction alone does not determine water quality" : ""
       )).join("")
     : '<div class="change-summary-empty">A second additional water-quality survey is needed before change can be calculated.</div>';
 
@@ -7387,190 +7393,6 @@ if(document.getElementById("compareNitrate")){
 }
 
 load();
-</script>
-
-<div id="sampleTrendZoom" class="sample-trend-zoom" role="dialog" aria-modal="true" aria-labelledby="sampleTrendZoomTitle" hidden>
-  <div class="sample-trend-zoom-panel">
-    <div class="sample-trend-zoom-head"><strong id="sampleTrendZoomTitle">All sites – Sample Trend Analysis</strong><button id="sampleTrendZoomClose" class="sample-trend-zoom-close" type="button" aria-label="Close enlarged chart">✕ Close</button></div>
-    <div class="sample-trend-zoom-controls"><button type="button" id="sampleTrendZoomPan" class="sample-trend-zoom-pan" aria-pressed="false">Pause movement</button><span>Chart moves left and right automatically. Scroll or swipe to explore manually.</span></div>
-    <div id="sampleTrendZoomBody" class="sample-trend-zoom-body" tabindex="0" aria-label="Enlarged chart; scroll horizontally to see all dates"></div>
-  </div>
-</div>
-
-<script>
-(function(){
-  const chart=document.getElementById('sampleTrendChart');
-  const site=document.getElementById('sampleTrendSiteSelect');
-  const dialog=document.getElementById('sampleTrendZoom');
-  const body=document.getElementById('sampleTrendZoomBody');
-  const close=document.getElementById('sampleTrendZoomClose');
-  const hint=document.getElementById('sampleTrendExpandHint');
-  if(!chart||!site||!dialog||!body||!close)return;
-  const pan=document.getElementById('sampleTrendZoomPan');
-  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-  let priorFocus=null, frame=0, lastTime=0, direction=1, paused=false, holdUntil=0;
-  function available(){return site.value==='all' && !!chart.querySelector('svg')}
-  function sync(){
-    const enabled=available();
-    chart.dataset.expandable=String(enabled);
-    chart.setAttribute('role',enabled?'button':'region');
-    chart.setAttribute('aria-label',enabled?'Enlarge all-sites sample trend chart':'Sample trend chart');
-    if(hint)hint.hidden=!enabled;
-    if(!enabled && !dialog.hidden)hide();
-  }
-  function updatePanButton(){
-    pan.textContent=paused?'Resume movement':'Pause movement';
-    pan.setAttribute('aria-pressed',String(paused));
-  }
-  function animate(time){
-    if(dialog.hidden)return;
-    const dt=lastTime?Math.min(time-lastTime,50):0;
-    lastTime=time;
-    const limit=Math.max(0,body.scrollWidth-body.clientWidth);
-    if(!paused && !reducedMotion.matches && time>=holdUntil && limit>0){
-      // Approximately 45 pixels/second, with a short pause at either end.
-      const next=body.scrollLeft+direction*dt*.045;
-      if(next>=limit){body.scrollLeft=limit;direction=-1;holdUntil=time+900}
-      else if(next<=0){body.scrollLeft=0;direction=1;holdUntil=time+900}
-      else body.scrollLeft=next;
-    }
-    frame=requestAnimationFrame(animate);
-  }
-  function show(){
-    if(!available())return;
-    priorFocus=document.activeElement;
-    const svg=chart.querySelector('svg').cloneNode(true);
-    const viewWidth=svg.viewBox.baseVal.width || 1000;
-    const viewHeight=svg.viewBox.baseVal.height || 270;
-    // Use the original SVG viewBox at 1.6x scale, never fit the entire timeline
-    // into the dialog (which made labels and lines microscopic).
-    const scale=1.6;
-    svg.style.width=(viewWidth*scale)+'px';
-    svg.style.height=(viewHeight*scale)+'px';
-    svg.setAttribute('width',String(viewWidth*scale));
-    svg.setAttribute('height',String(viewHeight*scale));
-    body.replaceChildren(svg);
-    const active=document.querySelector('.sample-trend-tabs button.active');
-    document.getElementById('sampleTrendZoomTitle').textContent='All sites – '+(active?.textContent?.trim()||'Sample')+' Trend Analysis';
-    dialog.hidden=false;
-    body.scrollLeft=0;
-    paused=reducedMotion.matches;
-    updatePanButton();
-    direction=1;holdUntil=performance.now()+700;lastTime=0;
-    cancelAnimationFrame(frame);
-    frame=requestAnimationFrame(animate);
-    close.focus();
-  }
-  function hide(){
-    cancelAnimationFrame(frame);frame=0;lastTime=0;
-    dialog.hidden=true;body.replaceChildren();
-    if(priorFocus?.isConnected)priorFocus.focus();
-  }
-  pan.addEventListener('click',()=>{paused=!paused;lastTime=0;updatePanButton()});
-  // Manual scrolling takes priority for a few seconds, without fighting the animation.
-  body.addEventListener('wheel',()=>{holdUntil=performance.now()+4000},{passive:true});
-  body.addEventListener('touchstart',()=>{holdUntil=performance.now()+4000},{passive:true});
-  body.addEventListener('pointerdown',()=>{holdUntil=performance.now()+4000});
-  body.addEventListener('keydown',()=>{holdUntil=performance.now()+4000});
-  chart.addEventListener('click',show);
-  chart.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&available()){e.preventDefault();show()}});
-  close.addEventListener('click',hide);
-  dialog.addEventListener('click',e=>{if(e.target===dialog)hide()});
-  document.addEventListener('keydown',e=>{if(dialog.hidden)return;if(e.key==='Escape')hide();else if(e.key==='Tab'){e.preventDefault();close.focus()}});
-  site.addEventListener('change',sync);
-  const observer=new MutationObserver(sync);
-  observer.observe(chart,{childList:true});
-  sync();
-})();
-</script>
-
-<div id="projectTrendZoom" class="sample-trend-zoom" role="dialog" aria-modal="true" aria-labelledby="projectTrendZoomTitle" hidden>
-  <div class="sample-trend-zoom-panel">
-    <div class="sample-trend-zoom-head"><strong id="projectTrendZoomTitle">All sites – Project / Site Trends</strong><button id="projectTrendZoomClose" class="sample-trend-zoom-close" type="button" aria-label="Close enlarged project trend chart">✕ Close</button></div>
-    <div class="sample-trend-zoom-controls"><button type="button" id="projectTrendZoomPan" class="sample-trend-zoom-pan" aria-pressed="false">Pause movement</button><span>Chart moves left and right automatically. Scroll or swipe to explore manually.</span></div>
-    <div id="projectTrendZoomBody" class="sample-trend-zoom-body project-trend-zoom-body" tabindex="0" aria-label="Enlarged project trend chart; scroll horizontally to see all dates"></div>
-  </div>
-</div>
-<script>
-(function(){
-  const chart=document.getElementById('projectTrendChart');
-  const site=document.getElementById('projectTrendSiteSelect');
-  const dialog=document.getElementById('projectTrendZoom');
-  const body=document.getElementById('projectTrendZoomBody');
-  const close=document.getElementById('projectTrendZoomClose');
-  const hint=document.getElementById('projectTrendExpandHint');
-  const pan=document.getElementById('projectTrendZoomPan');
-  if(!chart||!site||!dialog||!body||!close||!pan)return;
-  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-  let priorFocus=null,frame=0,lastTime=0,direction=1,paused=false,holdUntil=0;
-  function available(){return site.value==='all'&&!!chart.querySelector('svg')}
-  function sync(){
-    const enabled=available();
-    chart.dataset.expandable=String(enabled);
-    chart.setAttribute('role',enabled?'button':'region');
-    chart.setAttribute('aria-label',enabled?'Enlarge all-sites project trend chart':'Project / Site trend chart');
-    if(hint)hint.hidden=!enabled;
-    if(!enabled&&!dialog.hidden)hide();
-  }
-  function updatePanButton(){
-    pan.textContent=paused?'Resume movement':'Pause movement';
-    pan.setAttribute('aria-pressed',String(paused));
-  }
-  function animate(time){
-    if(dialog.hidden)return;
-    const dt=lastTime?Math.min(time-lastTime,50):0;
-    lastTime=time;
-    const limit=Math.max(0,body.scrollWidth-body.clientWidth);
-    if(!paused&&!reducedMotion.matches&&time>=holdUntil&&limit>0){
-      const next=body.scrollLeft+direction*dt*.045;
-      if(next>=limit){body.scrollLeft=limit;direction=-1;holdUntil=time+900}
-      else if(next<=0){body.scrollLeft=0;direction=1;holdUntil=time+900}
-      else body.scrollLeft=next;
-    }
-    frame=requestAnimationFrame(animate);
-  }
-  function show(){
-    if(!available())return;
-    priorFocus=document.activeElement;
-    const svg=chart.querySelector('svg').cloneNode(true);
-    const viewWidth=svg.viewBox.baseVal.width||1000;
-    const viewHeight=svg.viewBox.baseVal.height||280;
-    const scale=1.6;
-    svg.style.width=(viewWidth*scale)+'px';
-    svg.style.height=(viewHeight*scale)+'px';
-    svg.setAttribute('width',String(viewWidth*scale));
-    svg.setAttribute('height',String(viewHeight*scale));
-    body.replaceChildren(svg);
-    const active=document.querySelector('#projectTrendsContent .site-comparison-tabs button.active');
-    document.getElementById('projectTrendZoomTitle').textContent='All sites – '+(active?.textContent?.trim()||'Project')+' Trend';
-    dialog.hidden=false;
-    body.scrollLeft=0;
-    paused=reducedMotion.matches;
-    updatePanButton();
-    direction=1;holdUntil=performance.now()+700;lastTime=0;
-    cancelAnimationFrame(frame);
-    frame=requestAnimationFrame(animate);
-    close.focus();
-  }
-  function hide(){
-    cancelAnimationFrame(frame);frame=0;lastTime=0;
-    dialog.hidden=true;body.replaceChildren();
-    if(priorFocus?.isConnected)priorFocus.focus();
-  }
-  pan.addEventListener('click',()=>{paused=!paused;lastTime=0;updatePanButton()});
-  body.addEventListener('wheel',()=>{holdUntil=performance.now()+4000},{passive:true});
-  body.addEventListener('touchstart',()=>{holdUntil=performance.now()+4000},{passive:true});
-  body.addEventListener('pointerdown',()=>{holdUntil=performance.now()+4000});
-  body.addEventListener('keydown',()=>{holdUntil=performance.now()+4000});
-  chart.addEventListener('click',show);
-  chart.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&available()){e.preventDefault();show()}});
-  close.addEventListener('click',hide);
-  dialog.addEventListener('click',e=>{if(e.target===dialog)hide()});
-  document.addEventListener('keydown',e=>{if(dialog.hidden)return;if(e.key==='Escape')hide()});
-  site.addEventListener('change',sync);
-  new MutationObserver(sync).observe(chart,{childList:true});
-  sync();
-})();
 </script>
 </body>
 </html>
