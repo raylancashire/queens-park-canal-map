@@ -562,7 +562,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
 
 .bar-count{display:block;font-size:12px;font-weight:800;line-height:1.15}
 /* Centre the turbidity occurrence count directly above its percentage. */
-#turbidityChart .bar-percent{text-align:center;}
+.bar-percent{text-align:center;}
 .bar-fill.unassessed{background:#777777}
 
 .table-wrap{margin-top:18px;overflow-x:auto}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
@@ -1454,13 +1454,14 @@ function renderTurbidityChart(counts,total){
   // automatically in steps of 5 when the dataset grows.
   const axisMax=total<=10 ? 10 : Math.ceil(total/5)*5;
 
-  const axisTicks=Array.from({length:axisMax+1},(_,value)=>
-    `<span class="bar-axis-tick" style="bottom:${(value/axisMax)*100}%">${value}</span>`
-  ).join("");
+  const tickStep=Math.max(1,Math.ceil(axisMax/6));
+  const axisTicks=Array.from({length:Math.floor(axisMax/tickStep)+1},(_,i)=>i*tickStep)
+    .concat(axisMax%tickStep ? [axisMax] : [])
+    .map(value=>`<span class="bar-axis-tick" style="bottom:${(value/axisMax)*100}%">${value}</span>`).join("");
 
-  const gridLines=Array.from({length:axisMax+1},(_,value)=>
-    `<span class="bar-grid-line" style="bottom:${(value/axisMax)*100}%"></span>`
-  ).join("");
+  const gridLines=Array.from({length:Math.floor(axisMax/tickStep)+1},(_,i)=>i*tickStep)
+    .concat(axisMax%tickStep ? [axisMax] : [])
+    .map(value=>`<span class="bar-grid-line" style="bottom:${(value/axisMax)*100}%"></span>`).join("");
 
   const axis=`<div class="bar-axis" aria-hidden="true">
     <span class="bar-axis-title">Number of samples</span>
@@ -1495,21 +1496,28 @@ function occurrences(vals){const c={};for(const r of vals){const v=normaliseRang
 function renderChart(id,counts,total,measure){
  const el=document.getElementById(id);
  const scale=NUTRIENT_SCALES[measure]||[];
- const entries=[...scale.map(band=>[band,counts[band]||0]),
-   ...Object.entries(counts).filter(([band])=>!scale.includes(band)).sort((a,b)=>sortBands(a[0],b[0]))];
+ // Combine equivalent first-band labels before drawing the seven categories.
+ const merged={...counts};
+ const first=measure==="Nitrate"?"0-0.2":"0-0.02";
+ const alias=measure==="Nitrate"?"<0.2":"<0.02";
+ merged[first]=(merged[first]||0)+(merged[alias]||0);
+ delete merged[alias];
+ const entries=[...scale.map(band=>[band,merged[band]||0]),
+   ...Object.entries(merged).filter(([band])=>!scale.includes(band)).sort((a,b)=>sortBands(a[0],b[0]))];
  if(!entries.length){el.innerHTML='<div style="color:#5f6f64;font-size:13px">No measured results.</div>';return}
 
  // Start with a 0–10 sample scale. If the project grows beyond 10
  // samples, automatically extend the top of the scale to the next
  // multiple of 5 (15, 20, 25, etc.).
  const axisMax=total<=10 ? 10 : Math.ceil(total/5)*5;
- const axisTicks=Array.from({length:axisMax+1},(_,value)=>
-   `<span class="bar-axis-tick" style="bottom:${(value/axisMax)*100}%">${value}</span>`
- ).join("");
+ const tickStep=Math.max(1,Math.ceil(axisMax/6));
+ const axisTicks=Array.from({length:Math.floor(axisMax/tickStep)+1},(_,i)=>i*tickStep)
+   .concat(axisMax%tickStep ? [axisMax] : [])
+   .map(value=>`<span class="bar-axis-tick" style="bottom:${(value/axisMax)*100}%">${value}</span>`).join("");
 
- const gridLines=Array.from({length:axisMax+1},(_,value)=>
-   `<span class="bar-grid-line" style="bottom:${(value/axisMax)*100}%"></span>`
- ).join("");
+ const gridLines=Array.from({length:Math.floor(axisMax/tickStep)+1},(_,i)=>i*tickStep)
+   .concat(axisMax%tickStep ? [axisMax] : [])
+   .map(value=>`<span class="bar-grid-line" style="bottom:${(value/axisMax)*100}%"></span>`).join("");
 
  const axis=`<div class="bar-axis" aria-hidden="true">
    <span class="bar-axis-title">Number of samples</span>
@@ -1522,10 +1530,10 @@ function renderChart(id,counts,total,measure){
          colour=measure==="Turbidity" ? turbidityBandColour(band) : nutrientBandColour(measure,band);
    const pctLabel=`${pct.toFixed(1)}%`;
    return`<div class="bar-row">
-     <div class="bar-label">${esc(band)}</div>
+     <div class="bar-label">${esc(band==="0-0.2"&&measure==="Nitrate"?"<0.2":band==="0-0.02"&&measure==="Phosphate"?"<0.02":band)}</div>
      <div class="bar-track">
        <div class="bar-fill" style="height:${height}%;background:${colour}">
-         <span class="bar-percent">${pctLabel}</span>
+         <span class="bar-percent"><span class="bar-count">${count}</span><span>${pctLabel}</span></span>
        </div>
      </div>
    </div>`
