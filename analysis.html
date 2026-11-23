@@ -560,6 +560,7 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
   color:var(--ink);
 }
 
+.bar-count{display:block;font-size:12px;font-weight:800;line-height:1.15}
 .bar-fill.unassessed{background:#777777}
 
 .table-wrap{margin-top:18px;overflow-x:auto}table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
@@ -1341,6 +1342,7 @@ function nutrientBandColour(measure,band){
     "1-2":"#F286B7",
     "2-5":"#F05AA1",
     "5-10":"#D40D8C",
+    ">10":"#A80069",
     "<0.2":"#FBDFEB",
     "0.2":"#FBDFEB",
     "0.5":"#F8CBDF",
@@ -1357,6 +1359,7 @@ function nutrientBandColour(measure,band){
     "0.1-0.2":"#F7CDDB",
     "0.2-0.5":"#F398C1",
     "0.5-1":"#CC79AF",
+    ">1":"#A64A8A",
     "<0.02":"#FEF4F5",
     "0.02":"#FEF4F5",
     "0.05":"#FEEBEF",
@@ -1473,7 +1476,7 @@ function renderTurbidityChart(counts,total){
       <div class="bar-label">${esc(item.label)}</div>
       <div class="bar-track">
         <div class="bar-fill" style="height:${height}%;background:${colour}">
-          ${pctLabel ? `<span class="bar-percent">${pctLabel}</span>` : ""}
+          ${pctLabel ? `<span class="bar-percent"><span class="bar-count">${count}</span><span>${pctLabel}</span></span>` : ""}
         </div>
       </div>
     </div>`;
@@ -1482,9 +1485,16 @@ function renderTurbidityChart(counts,total){
   el.innerHTML=axis+`<div class="bar-columns"><div class="bar-grid">${gridLines}</div>${bars}</div>`;
 }
 
+const NUTRIENT_SCALES={
+ Nitrate:["0-0.2","0.2-0.5","0.5-1","1-2","2-5","5-10",">10"],
+ Phosphate:["0-0.02","0.02-0.05","0.05-0.1","0.1-0.2","0.2-0.5","0.5-1",">1"]
+};
 function occurrences(vals){const c={};for(const r of vals){const v=normaliseRange(r);if(v)c[v]=(c[v]||0)+1}return c}
 function renderChart(id,counts,total,measure){
- const el=document.getElementById(id),entries=Object.entries(counts).sort((a,b)=>sortBands(a[0],b[0]));
+ const el=document.getElementById(id);
+ const scale=NUTRIENT_SCALES[measure]||[];
+ const entries=[...scale.map(band=>[band,counts[band]||0]),
+   ...Object.entries(counts).filter(([band])=>!scale.includes(band)).sort((a,b)=>sortBands(a[0],b[0]))];
  if(!entries.length){el.innerHTML='<div style="color:#5f6f64;font-size:13px">No measured results.</div>';return}
 
  // Start with a 0–10 sample scale. If the project grows beyond 10
