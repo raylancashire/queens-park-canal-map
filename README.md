@@ -589,3 +589,16 @@ The social media report now includes a third mode, **Site survey history**. Sele
 - The existing reporting-period and latest-sample modes, partner logos, website addresses, window controls and PNG export are retained.
 
 Replace `social-media.js` in the repository root. No HTML or CSV changes are required. The JavaScript syntax has been checked; live browser testing remains necessary. Historical endpoint differences are not evidence of a sustained trend.
+
+
+### Social media test icons — 24 November 2026
+
+The five smaller indicator squares include vector icons for temperature, pH, coliform, dissolved oxygen and biochemical oxygen demand. The latter two use their full names, wrapped over two lines. Existing data field mappings, comparison calculations and square dimensions are unchanged. Icons are drawn directly on the PNG canvas. Browser and mobile readability testing is still required.
+
+### Original-style test icons
+
+The five test icons use dark green vector outlines matching the earlier report screenshot: thermometer, laboratory flask, microscope, water droplets and waveform. Full oxygen indicator names remain unchanged.
+
+### Coliform Bacteria label
+
+The social media indicator now displays **Coliform Bacteria** over two lines, retaining the microscope icon and existing Coliform data field and calculations.
