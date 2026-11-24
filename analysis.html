@@ -561,6 +561,11 @@ html,body{margin:0;padding:0;min-height:0;height:auto}body{font-family:-apple-sy
 }
 
 .bar-count{display:block;font-size:12px;font-weight:800;line-height:1.15}
+/* Latest survey marker: reserve space below the existing category labels. */
+#nitrateChart,#phosphateChart,#turbidityChart{padding-bottom:32px;height:292px;box-sizing:border-box}
+@media(max-width:760px){#nitrateChart,#phosphateChart,#turbidityChart{height:272px}}
+.occurrence-latest{position:absolute;top:100%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:1px;color:#198754;font-size:11px;font-weight:700;line-height:12px;white-space:nowrap}
+.occurrence-latest svg{display:block;width:14px;height:14px;fill:currentColor}
 /* Centre the turbidity occurrence count directly above its percentage. */
 .bar-percent{text-align:center;}
 .bar-fill.unassessed{background:#777777}
@@ -1448,7 +1453,10 @@ function turbidityOccurrences(vals){
   return counts;
 }
 
-function renderTurbidityChart(counts,total){
+function occurrenceLatestMarker(active){
+  return active ? `<span class="occurrence-latest" aria-label="Latest survey result"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0 1 7h4v8h6V7h4z"/></svg><span>Latest</span></span>` : "";
+}
+function renderTurbidityChart(counts,total,latestBand=""){
   const el=document.getElementById("turbidityChart");
 
   // Match the nitrate/phosphate chart scale: 0–10 initially, then expand
@@ -1477,7 +1485,7 @@ function renderTurbidityChart(counts,total){
     const pctLabel=count ? `${pct.toFixed(1)}%` : "";
 
     return `<div class="bar-row">
-      <div class="bar-label">${esc(item.label)}</div>
+      <div class="bar-label">${esc(item.label)}</div>${occurrenceLatestMarker(item.key===latestBand)}
       <div class="bar-track">
         <div class="bar-fill" style="height:${height}%;background:${colour}">
           ${pctLabel ? `<span class="bar-percent"><span class="bar-count">${count}</span><span>${pctLabel}</span></span>` : ""}
@@ -1494,7 +1502,7 @@ const NUTRIENT_SCALES={
  Phosphate:["0-0.02","0.02-0.05","0.05-0.1","0.1-0.2","0.2-0.5","0.5-1",">1"]
 };
 function occurrences(vals){const c={};for(const r of vals){const v=normaliseRange(r);if(v)c[v]=(c[v]||0)+1}return c}
-function renderChart(id,counts,total,measure){
+function renderChart(id,counts,total,measure,latestBand=""){
  const el=document.getElementById(id);
  const scale=NUTRIENT_SCALES[measure]||[];
  // Combine equivalent first-band labels before drawing the seven categories.
@@ -1503,6 +1511,7 @@ function renderChart(id,counts,total,measure){
  const alias=measure==="Nitrate"?"<0.2":"<0.02";
  merged[first]=(merged[first]||0)+(merged[alias]||0);
  delete merged[alias];
+ if(latestBand===alias) latestBand=first;
  const entries=[...scale.map(band=>[band,merged[band]||0]),
    ...Object.entries(merged).filter(([band])=>!scale.includes(band)).sort((a,b)=>sortBands(a[0],b[0]))];
  if(!entries.length){el.innerHTML='<div style="color:#5f6f64;font-size:13px">No measured results.</div>';return}
@@ -1531,7 +1540,7 @@ function renderChart(id,counts,total,measure){
          colour=measure==="Turbidity" ? turbidityBandColour(band) : nutrientBandColour(measure,band);
    const pctLabel=`${pct.toFixed(1)}%`;
    return`<div class="bar-row">
-     <div class="bar-label">${esc(band==="0-0.2"&&measure==="Nitrate"?"<0.2":band==="0-0.02"&&measure==="Phosphate"?"<0.02":band)}</div>
+     <div class="bar-label">${esc(band==="0-0.2"&&measure==="Nitrate"?"<0.2":band==="0-0.02"&&measure==="Phosphate"?"<0.02":band)}</div>${occurrenceLatestMarker(band===latestBand)}
      <div class="bar-track">
        <div class="bar-fill" style="height:${height}%;background:${colour}">
          <span class="bar-percent"><span class="bar-count">${count}</span><span>${pctLabel}</span></span>
@@ -2227,9 +2236,18 @@ function renderSampleAnalysisForFocusedSite(){
   document.getElementById("phosphateResults").textContent=pVals.length;
   document.getElementById("turbidityResults").textContent=tVals.length;
 
-  renderChart("nitrateChart",occurrences(nVals),nVals.length,"Nitrate");
-  renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate");
-  renderTurbidityChart(turbidityOccurrences(tVals),tVals.length);
+  // Use the newest dated survey in the current scope, not the newest non-empty result.
+  let latestRow=null, latestTime=-Infinity;
+  for(const row of data){
+    const time=surveyDateTimeValue(row);
+    if(Number.isFinite(time) && time>latestTime){latestRow=row;latestTime=time;}
+  }
+  const latestN=latestRow?normaliseRange(getNitrate(latestRow)):"";
+  const latestP=latestRow?normaliseRange(getPhosphate(latestRow)):"";
+  const latestT=latestRow?turbidityScaleKey(getTurbidity(latestRow)):"";
+  renderChart("nitrateChart",occurrences(nVals),nVals.length,"Nitrate",NUTRIENT_SCALES.Nitrate.includes(latestN)||latestN==="<0.2"?latestN:"");
+  renderChart("phosphateChart",occurrences(pVals),pVals.length,"Phosphate",NUTRIENT_SCALES.Phosphate.includes(latestP)||latestP==="<0.02"?latestP:"");
+  renderTurbidityChart(turbidityOccurrences(tVals),tVals.length,latestT);
   updateScopeText(currentFocusedSite,data);
   renderWeatherAtSurvey();
 
