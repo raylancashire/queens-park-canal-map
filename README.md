@@ -11,7 +11,11 @@ The map is designed to be hosted using **GitHub Pages** and embedded into a **We
 The GitHub repository contains:
 
 - `index.html` — the interactive Leaflet map
-- `analysis.html` — sample analysis, participation analysis and water-pollution incident register
+- `analysis.html` — sample analysis, participation analysis, water-pollution incident register and social media report controls
+- `further-analysis.html` — further water-quality analysis
+- `social-media.js` — social media report generator
+- `social-media/qpt-logo.png` — Queen’s Park Trust logo
+- `social-media/urbanwise-logo.jpg` — Urbanwise.London logo
 - `freshwater.csv` — the water-quality sampling data
 - `water-pollution-incidents.csv` — optional/fallback incident-register data
 - `README.md` — project documentation
@@ -482,6 +486,89 @@ Exports are designed to show the map, survey markers, selected indicator, survey
 5. Test opening and closing the time-lapse, clicking labelled and unlabelled ticks, moving through all survey dates, mobile layout and PNG/WebM/MP4 export in your intended browser. Check that the basemap and attribution appear in exported files.
 
 **Verification:** The earlier map builds were checked for JavaScript syntax and ZIP integrity. Browser behaviour, MP4 availability and map-tile inclusion in exports require testing on the published site.
+
+---
+
+## Update — 24 November 2026: Social media reporting
+
+The **Create Social Media Post** button in Sample Analysis (`analysis.html`) opens a report generator for publishing Grand Union Canal water-quality updates. The generator is maintained separately in `social-media.js` and uses the existing sampling data and analysis helpers.
+
+### Report controls and comparison modes
+
+- **Reporting period:** select start and end dates and an individual survey site or all sites. The comparison uses the immediately preceding period of equal length. The default dates cover the latest recorded month up to the latest sample date.
+- **Latest sample comparison:** select an individual survey site to compare its two latest distinct recorded sample timestamps. Date controls are disabled in this mode; rows sharing a timestamp are grouped. Both sample dates are shown in the report.
+- The site selector is populated from the survey records and is independent of the main page filters after opening the report.
+- Preview the report before downloading a portrait PNG (1080 × 1350 pixels). Export is performed in the browser; nothing is automatically posted to social media.
+- Close the report using the circular **×** at the top right, clicking or tapping outside the window, or pressing Escape. Interactions inside the window do not dismiss it.
+
+### Overall condition
+
+The default **Automatic (map assessment)** option uses the map assessment logic: explicit recorded Assessment first, then FreshWater Watch feedback. Moderate is mapped to Fair. Missing assessments are excluded; if none is available, the report shows **Not yet assessed**.
+
+For multiple assessed records, the report uses the ordinal median grade, choosing the poorer of the two middle grades when necessary. This aggregation is specific to the report, not an additional map-marker calculation. In latest-sample mode it applies to the latest timestamp group.
+
+Selecting a different grade activates a manual override, identified on the graphic. Automatic assessment is restored by selecting Automatic again. The overall trend selector remains manual. The report uses the map assessment colours and does not represent a statutory ecological classification.
+
+### Principal indicator squares
+
+Three equal 328 × 328 pixel squares display nitrate, phosphate and turbidity. Results use the lower median observed band, without interpolating between test bands. The current displayed band uses all selected current results; nutrient comparison bands use sites represented in both periods.
+
+Nitrate and phosphate now use compact map-style cards with pale pink backgrounds, chemical notation, current result band in mg/L, Low / Moderate / High label, a seven-segment pink scale with the current band outlined, and the previous result and direction of band change. Longer descriptive paragraphs are omitted to keep the squares readable.
+
+| Band | Nitrate (N–NO₃, mg/L) | Phosphate (P–PO₄, mg/L) | Report label |
+|---|---|---|---|
+| 1 | <0.2 | <0.02 | Low |
+| 2 | 0.2–0.5 | 0.02–0.05 | Low |
+| 3 | 0.5–1 | 0.05–0.1 | Moderate |
+| 4 | 1–2 | 0.1–0.2 | Moderate |
+| 5 | 2–5 | 0.2–0.5 | High |
+| 6 | 5–10 | 0.5–1 | High |
+| 7 | >10 | >1 | High |
+
+The shared pink scale uses `#FBDFEB`, `#F8CBDF`, `#F6ACCD`, `#F286B7`, `#F05AA1`, `#D40D8C`, `#D40D8C` in band order, with an outline distinguishing the selected band. The Low / Moderate / High grouping is a report presentation rule and still needs checking against the live map thresholds.
+
+Turbidity retains the existing analysis band colours and contrasting text, with results in NTU. Missing results are explicitly identified.
+
+### Additional indicator squares
+
+Five smaller 192 × 192 pixel squares show temperature, pH, coliform, dissolved oxygen (DO) and biochemical oxygen demand (BOD). Each shows the direction and magnitude of change and current / previous numeric result counts.
+
+Changes are differences between medians of exact numeric measurements, restricted to sites present in both comparison periods. Reporting-period mode requires at least two numeric results in each period per indicator; latest-sample mode requires at least one per timestamp group. Non-numeric and censored additional measurements are excluded. Missing comparisons display **Insufficient data**, rather than zero change.
+
+Temperature and pH changes use neutral blue; unchanged results use grey. Lower coliform and BOD and higher DO are generally indicated in green, with the opposite directions in red. These are general directional cues, not regulatory classifications. Differences in sampling frequency can affect period comparisons.
+
+### Partnership branding
+
+The bottom of the graphic includes the original Queen’s Park Trust and Urbanwise.London logos under **Working in partnership**, retaining their proportions. Each website address is displayed below its logo:
+
+- Queen’s Park Trust: [www.queensparktrust.org/what-we-do/canal-watch](https://www.queensparktrust.org/what-we-do/canal-watch)
+- Urbanwise.London: [urbanwise.london](https://urbanwise.london)
+
+Addresses are displayed without the HTTPS prefix in the preview and PNG. They are not clickable within the exported image.
+
+### Repository layout and deployment
+
+```text
+queens-park-canal-map/
+├── analysis.html
+├── social-media.js
+├── social-media/
+│   ├── qpt-logo.png
+│   └── urbanwise-logo.jpg
+└── README.md
+```
+
+This is a partial tree; retain all other existing repository files and folders. The dedicated `social-media/` folder keeps report assets separate from existing map and survey-site photographs.
+
+1. Back up the published files.
+2. For initial installation, upload the updated `analysis.html` and latest `social-media.js` alongside it, and upload both logos into `social-media/`.
+3. If the generator is already installed, replace only `social-media.js` for the latest nutrient-card update; retain the existing logo folder and analysis page.
+4. Replace the repository README with this consolidated document, commit and allow GitHub Pages to refresh.
+5. Test both report modes, site selection, automatic and overridden assessments, missing results, nutrient band outlines, partner logos and URLs, PNG export and all three close methods. Check mobile readability and Webador embedding.
+
+No changes to `freshwater.csv`, `further-analysis.html`, the map or the separate Survey Scheduler are required for this report update.
+
+**Verification:** The latest generator source was inspected and its JavaScript syntax checked. Live GitHub Pages / Webador behaviour, nutrient classification parity and mobile readability remain to be verified. This documentation does not establish that the update has already been deployed.
 
 ---
 
