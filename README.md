@@ -578,3 +578,14 @@ No changes to `freshwater.csv`, `further-analysis.html`, the map or the separate
 
 Greener Canalside / FreshWater Watch project  
 Grand Union Canal
+
+## Update — 24 November 2026: Site survey history
+
+The social media report now includes a third mode, **Site survey history**. Select one survey site to include all its dated sample records; the date inputs are disabled. The graphic displays the earliest and latest survey dates, the number of distinct sample timestamps (surveys), and the number of sample records.
+
+- Overall condition: median recorded map assessment, with the existing manual override.
+- Nitrate, phosphate and turbidity: median recorded result band across the site's history. Nutrient cards additionally compare the first and latest available test bands.
+- Temperature, pH, coliform, DO and BOD: latest available measurement minus first available measurement at distinct timestamps. Multiple numeric readings at an endpoint are summarised by their median. At least two distinct timestamps with valid readings are required for each comparison; otherwise the report displays insufficient data. Endpoint dates can differ by indicator.
+- The existing reporting-period and latest-sample modes, partner logos, website addresses, window controls and PNG export are retained.
+
+Replace `social-media.js` in the repository root. No HTML or CSV changes are required. The JavaScript syntax has been checked; live browser testing remains necessary. Historical endpoint differences are not evidence of a sustained trend.
