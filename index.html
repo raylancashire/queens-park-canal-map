@@ -2016,6 +2016,7 @@ async function loadData() {
 
     const sel = document.getElementById("siteFilter");
 
+    const recordCountEl = document.getElementById("recordCount");
     const siteCountEl = document.getElementById("siteCount");
     const siteCountLabelEl = document.getElementById("siteCountLabel");
     const sampleCountEl = document.getElementById("sampleCount");
@@ -2058,7 +2059,11 @@ async function loadData() {
         siteCountEl.classList.add("site-name");
         siteCountLabelEl.textContent = "Sampling site";
 
-        sampleCountEl.textContent = rows.filter(row => !row.__mockSite).length;
+        const recordCount = rows.filter(row => !row.__mockSite).length;
+        recordCountEl.textContent = recordCount === 0
+          ? "No records at this site"
+          : `${recordCount} ${recordCount === 1 ? "record" : "records"} at this site`;
+        sampleCountEl.textContent = recordCount;
         sampleCountLabelEl.textContent = "Samples in view";
 
         participantCountEl.textContent = totalParticipantsForRows(rows);
@@ -2073,6 +2078,7 @@ async function loadData() {
         siteCountEl.classList.remove("site-name");
         siteCountLabelEl.textContent = "Sampling sites";
 
+        recordCountEl.textContent = `${validRows} ${validRows === 1 ? "record" : "records"} across ${actualSiteCount} ${actualSiteCount === 1 ? "site" : "sites"}`;
         sampleCountEl.textContent = validRows;
         sampleCountLabelEl.textContent = "Samples in view";
 
@@ -2268,9 +2274,6 @@ async function loadData() {
         map.fitBounds(defaultResultBounds, {padding:[25,25]});
       }
     });
-
-    document.getElementById("recordCount").textContent =
-      `${validRows} records loaded across ${siteNames.length} sites`;
 
     let hadStoredSelection = false;
     try {
